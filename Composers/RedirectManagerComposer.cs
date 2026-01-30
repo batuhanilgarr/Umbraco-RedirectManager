@@ -20,7 +20,7 @@ public class RedirectManagerComposer : IComposer
 
         builder.Services.Configure<UmbracoPipelineOptions>(options =>
         {
-            options.AddFilter(new UmbracoPipelineFilter("RedirectManager")
+            options.PipelineFilters.Insert(0, new UmbracoPipelineFilter("RedirectManager")
             {
                 PrePipeline = app =>
                 {
