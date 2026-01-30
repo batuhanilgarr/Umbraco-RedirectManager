@@ -1,13 +1,13 @@
 {
   "$schema": "../../umbraco-package-schema.json",
   "name": "8Bitiz.RedirectManager",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "extensions": [
     {
       "type": "section",
       "alias": "RedirectManager.Section",
       "name": "Redirect Manager Section",
-      "weight": 1000,
+      "weight": -1000,
       "meta": {
         "label": "Redirects",
         "pathname": "redirect-manager",
@@ -18,7 +18,7 @@
       "type": "dashboard",
       "alias": "redirectManager.dashboard",
       "name": "Redirect Manager Dashboard",
-      "element": "/App_Plugins/RedirectManager/redirect-dashboard.js?v=1.2.1",
+      "element": "/App_Plugins/RedirectManager/redirect-dashboard.js?v=1.2.2",
       "elementName": "redirect-manager-dashboard",
       "weight": 10,
       "meta": {
