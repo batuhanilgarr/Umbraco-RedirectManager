@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../buildMultiTargeting/8Bitiz.RedirectManager.props" />
-</Project>

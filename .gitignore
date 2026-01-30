@@ -1,0 +1,18 @@
+# Build results
+bin/
+obj/
+
+# NuGet packages
+*.nupkg
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vs/
+*.suo
+*.user
+
+# Logs
+*.log

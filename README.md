@@ -1,6 +1,6 @@
-# Umbraco Redirect Manager
+# 8Bitiz Redirect Manager
 
-A URL redirect manager plugin for Umbraco CMS (versions 13-17). Manage 301, 302, 404, and 410 redirects directly from the Umbraco backoffice.
+A URL redirect manager plugin for Umbraco CMS 17 LTS. Manage 301, 302, 404, and 410 redirects directly from the Umbraco backoffice.
 
 ## Features
 
@@ -8,17 +8,53 @@ A URL redirect manager plugin for Umbraco CMS (versions 13-17). Manage 301, 302,
 - **Backoffice Dashboard**: Easy-to-use interface for managing redirects
 - **Database Storage**: Redirects stored in a custom database table
 - **Automatic Migration**: Database table created automatically on installation
-- **Umbraco 13-17 Compatible**: Works with both AngularJS (v13) and Lit/TypeScript (v14+) backoffice
+- **Auto-update App_Plugins**: Files are automatically copied on build
 
 ## Installation
 
+### From NuGet.org
+
 ```bash
-dotnet add package Umbraco.RedirectManager
+dotnet add package 8Bitiz.RedirectManager
 ```
 
 Or via NuGet Package Manager:
 ```
-Install-Package Umbraco.RedirectManager
+Install-Package 8Bitiz.RedirectManager
+```
+
+### Local Installation (Development)
+
+1. Clone the repository:
+```bash
+git clone https://github.com/8Bitiz/RedirectManager.git
+```
+
+2. Build the package:
+```bash
+cd RedirectManager
+dotnet build
+```
+
+3. Add `nuget.config` to your solution folder:
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+    <add key="LocalFeed" value="/path/to/RedirectManager/bin/Debug/" />
+  </packageSources>
+</configuration>
+```
+
+4. Add the package to your project:
+```bash
+dotnet add package 8Bitiz.RedirectManager
+```
+
+5. Build your project (App_Plugins files will be copied automatically):
+```bash
+dotnet build
 ```
 
 ## Usage
