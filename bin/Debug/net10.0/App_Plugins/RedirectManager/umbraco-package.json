@@ -1,0 +1,26 @@
+{
+  "$schema": "../../umbraco-package-schema.json",
+  "name": "8Bitiz.RedirectManager",
+  "version": "1.0.5",
+  "extensions": [
+    {
+      "type": "dashboard",
+      "alias": "redirectManager.dashboard",
+      "name": "Redirect Manager Dashboard",
+      "element": "/App_Plugins/RedirectManager/redirect-dashboard.js",
+      "elementName": "redirect-manager-dashboard",
+      "weight": 10,
+      "meta": {
+        "label": "Redirect Manager",
+        "description": "URL yönlendirmelerini yönetin. 301, 302, 404 ve 410 status kodlarını destekler.",
+        "pathname": "redirect-manager"
+      },
+      "conditions": [
+        {
+          "alias": "Umb.Condition.SectionAlias",
+          "match": "Umb.Section.Settings"
+        }
+      ]
+    }
+  ]
+}

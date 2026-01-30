@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>8Bitiz.RedirectManager</id>
+    <version>1.0.1</version>
+    <authors>Your Name</authors>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <readme>README.md</readme>
+    <projectUrl>https://github.com/yourusername/Umbraco.RedirectManager</projectUrl>
+    <description>A URL redirect manager plugin for Umbraco CMS 17 LTS. Supports 301, 302, 404, and 410 status codes with backoffice management.</description>
+    <tags>umbraco plugin redirect seo 301 302 404 410</tags>
+    <repository type="git" url="https://github.com/yourusername/Umbraco.RedirectManager" />
+    <dependencies>
+      <group targetFramework="net10.0">
+        <dependency id="Umbraco.Cms" version="17.1.0" exclude="Build,Analyzers" />
+        <dependency id="Umbraco.Cms.Infrastructure" version="17.1.0" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+    <frameworkReferences>
+      <group targetFramework="net10.0">
+        <frameworkReference name="Microsoft.AspNetCore.App" />
+      </group>
+    </frameworkReferences>
+    <contentFiles>
+      <files include="any/any/App_Plugins/.DS_Store" buildAction="Content" />
+      <files include="any/any/App_Plugins/RedirectManager/dashboard.html" buildAction="Content" />
+      <files include="any/any/App_Plugins/RedirectManager/modal.html" buildAction="Content" />
+      <files include="any/any/App_Plugins/RedirectManager/package.manifest" buildAction="Content" />
+      <files include="any/any/App_Plugins/RedirectManager/redirect-dashboard.js" buildAction="Content" />
+      <files include="any/any/App_Plugins/RedirectManager/redirect.controller.js" buildAction="Content" />
+      <files include="any/any/App_Plugins/RedirectManager/redirect.css" buildAction="Content" />
+      <files include="any/any/App_Plugins/RedirectManager/redirect.resource.js" buildAction="Content" />
+      <files include="any/any/App_Plugins/RedirectManager/umbraco-package.json" buildAction="Content" />
+    </contentFiles>
+  </metadata>
+  <files>
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/bin/Debug/net10.0/Umbraco.RedirectManager.dll" target="lib/net10.0/Umbraco.RedirectManager.dll" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/appsettings-schema.json" target="./appsettings-schema.json" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/appsettings-schema.Umbraco.Cms.json" target="./appsettings-schema.Umbraco.Cms.json" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/umbraco-package-schema.json" target="./umbraco-package-schema.json" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/.DS_Store" target="contentFiles/any/any/App_Plugins/.DS_Store" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/.DS_Store" target="content/App_Plugins/.DS_Store" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/RedirectManager/dashboard.html" target="contentFiles/any/any/App_Plugins/RedirectManager/dashboard.html" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/RedirectManager/dashboard.html" target="content/App_Plugins/RedirectManager/dashboard.html" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/RedirectManager/modal.html" target="contentFiles/any/any/App_Plugins/RedirectManager/modal.html" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/RedirectManager/modal.html" target="content/App_Plugins/RedirectManager/modal.html" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/RedirectManager/package.manifest" target="contentFiles/any/any/App_Plugins/RedirectManager/package.manifest" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/RedirectManager/package.manifest" target="content/App_Plugins/RedirectManager/package.manifest" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/RedirectManager/redirect-dashboard.js" target="contentFiles/any/any/App_Plugins/RedirectManager/redirect-dashboard.js" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/RedirectManager/redirect-dashboard.js" target="content/App_Plugins/RedirectManager/redirect-dashboard.js" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/RedirectManager/redirect.controller.js" target="contentFiles/any/any/App_Plugins/RedirectManager/redirect.controller.js" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/RedirectManager/redirect.controller.js" target="content/App_Plugins/RedirectManager/redirect.controller.js" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/RedirectManager/redirect.css" target="contentFiles/any/any/App_Plugins/RedirectManager/redirect.css" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/RedirectManager/redirect.css" target="content/App_Plugins/RedirectManager/redirect.css" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/RedirectManager/redirect.resource.js" target="contentFiles/any/any/App_Plugins/RedirectManager/redirect.resource.js" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/RedirectManager/redirect.resource.js" target="content/App_Plugins/RedirectManager/redirect.resource.js" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/RedirectManager/umbraco-package.json" target="contentFiles/any/any/App_Plugins/RedirectManager/umbraco-package.json" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/App_Plugins/RedirectManager/umbraco-package.json" target="content/App_Plugins/RedirectManager/umbraco-package.json" />
+    <file src="/Users/bhan/CascadeProjects/Umbraco.RedirectManager/README.md" target="/README.md" />
+  </files>
+</package>

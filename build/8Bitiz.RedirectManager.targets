@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <RedirectManagerPackagePath>$(MSBuildThisFileDirectory)..\contentFiles\any\any\App_Plugins\RedirectManager\</RedirectManagerPackagePath>
+  </PropertyGroup>
+
+  <Target Name="CopyRedirectManagerAppPlugins" AfterTargets="Build" Condition="Exists('$(RedirectManagerPackagePath)')">
+    <ItemGroup>
+      <RedirectManagerFiles Include="$(RedirectManagerPackagePath)**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(RedirectManagerFiles)" 
+          DestinationFiles="@(RedirectManagerFiles->'$(ProjectDir)App_Plugins\RedirectManager\%(RecursiveDir)%(Filename)%(Extension)')" 
+          SkipUnchangedFiles="true" />
+    <Message Text="8Bitiz.RedirectManager: Copied App_Plugins files to $(ProjectDir)App_Plugins\RedirectManager\" Importance="high" />
+  </Target>
+</Project>

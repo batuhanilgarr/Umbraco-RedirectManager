@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+    
+    <!-- Package Info -->
+    <PackageId>8Bitiz.RedirectManager</PackageId>
+    <Version>1.0.5</Version>
+    <Authors>8Bitiz</Authors>
+    <Company>8Bitiz</Company>
+    <Description>A URL redirect manager plugin for Umbraco CMS 17 LTS. Supports 301, 302, 404, and 410 status codes with backoffice management.</Description>
+    <PackageTags>umbraco;umbraco-marketplace;plugin;redirect;seo;301;302;404;410</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/8bitiz/RedirectManager</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/8bitiz/RedirectManager</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    
+    <!-- Content files -->
+    <ContentTargetFolders>.</ContentTargetFolders>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Umbraco.Cms" Version="17.1.0" />
+    <PackageReference Include="Umbraco.Cms.Infrastructure" Version="17.1.0" />
+  </ItemGroup>
+
+  <!-- Include App_Plugins for backoffice UI -->
+  <ItemGroup>
+    <Content Include="App_Plugins\**\*" Pack="true" PackagePath="contentFiles\any\any\App_Plugins" CopyToOutputDirectory="PreserveNewest">
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+    </Content>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ContentWithTargetPath Include="App_Plugins\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>App_Plugins\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+    </ContentWithTargetPath>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="package.xml" />
+  </ItemGroup>
+
+  <!-- Include .targets file for auto-copy App_Plugins -->
+  <ItemGroup>
+    <None Include="build\8Bitiz.RedirectManager.targets" Pack="true" PackagePath="build\" />
+  </ItemGroup>
+
+</Project>
