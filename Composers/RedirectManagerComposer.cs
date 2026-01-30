@@ -14,6 +14,7 @@ public class RedirectManagerComposer : IComposer
 {
     public void Compose(IUmbracoBuilder builder)
     {
+        builder.Services.AddMemoryCache();
         builder.Services.AddScoped<IRedirectService, RedirectService>();
         
         builder.AddNotificationAsyncHandler<UmbracoApplicationStartedNotification, RedirectManagerMigrationNotificationHandler>();

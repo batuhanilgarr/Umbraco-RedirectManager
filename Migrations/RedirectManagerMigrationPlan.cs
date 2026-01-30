@@ -38,6 +38,7 @@ public class RedirectManagerMigrationNotificationHandler : INotificationAsyncHan
                         [Id] INT IDENTITY(1,1) NOT NULL,
                         [OldUrl] NVARCHAR(2048) NOT NULL,
                         [NewUrl] NVARCHAR(2048) NULL,
+                        [Description] NVARCHAR(2048) NULL,
                         [StatusCode] INT NOT NULL DEFAULT 301,
                         [CreatedDate] DATETIME NOT NULL DEFAULT GETUTCDATE(),
                         [UpdatedDate] DATETIME NOT NULL DEFAULT GETUTCDATE(),
@@ -59,6 +60,17 @@ public class RedirectManagerMigrationNotificationHandler : INotificationAsyncHan
                 {
                     _logger.LogInformation("Adding missing column IsRegex to table: {TableName}", RedirectEntry.TableName);
                     scope.Database.Execute($"ALTER TABLE [{RedirectEntry.TableName}] ADD [IsRegex] BIT NOT NULL CONSTRAINT [DF_{RedirectEntry.TableName}_IsRegex] DEFAULT 0");
+                }
+
+                var descriptionColumnExists = scope.Database.ExecuteScalar<int>(
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @0 AND COLUMN_NAME = @1",
+                    RedirectEntry.TableName,
+                    "Description") > 0;
+
+                if (!descriptionColumnExists)
+                {
+                    _logger.LogInformation("Adding missing column Description to table: {TableName}", RedirectEntry.TableName);
+                    scope.Database.Execute($"ALTER TABLE [{RedirectEntry.TableName}] ADD [Description] NVARCHAR(2048) NULL");
                 }
             }
             

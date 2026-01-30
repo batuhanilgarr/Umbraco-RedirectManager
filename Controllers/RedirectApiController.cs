@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Umbraco.Cms.Web.Common.Controllers;
@@ -12,6 +13,8 @@ namespace Umbraco.RedirectManager.Controllers;
 public class RedirectApiController : UmbracoApiController
 {
     private readonly IRedirectService _redirectService;
+
+    private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(100);
 
     public RedirectApiController(IRedirectService redirectService)
     {
@@ -34,6 +37,7 @@ public class RedirectApiController : UmbracoApiController
             Id = r.Id,
             OldUrl = r.OldUrl,
             NewUrl = r.NewUrl,
+            Description = r.Description,
             StatusCode = r.StatusCode,
             IsActive = r.IsActive,
             IsRegex = r.IsRegex
@@ -52,6 +56,7 @@ public class RedirectApiController : UmbracoApiController
             Id = redirect.Id,
             OldUrl = redirect.OldUrl,
             NewUrl = redirect.NewUrl,
+            Description = redirect.Description,
             StatusCode = redirect.StatusCode,
             IsActive = redirect.IsActive,
             IsRegex = redirect.IsRegex
@@ -67,12 +72,21 @@ public class RedirectApiController : UmbracoApiController
         if ((dto.StatusCode == 301 || dto.StatusCode == 302) && string.IsNullOrWhiteSpace(dto.NewUrl))
             return BadRequest("New URL is required for redirect status codes");
 
+        var validationError = ValidateRedirect(dto.OldUrl, dto.NewUrl, dto.StatusCode, dto.IsRegex);
+        if (validationError != null)
+            return BadRequest(validationError);
+
+        var duplicate = _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex);
+        if (duplicate != null)
+            return Conflict("A redirect with the same Old URL and Match type already exists");
+
         var redirect = _redirectService.Create(dto);
         return Ok(new RedirectEntryDto
         {
             Id = redirect.Id,
             OldUrl = redirect.OldUrl,
             NewUrl = redirect.NewUrl,
+            Description = redirect.Description,
             StatusCode = redirect.StatusCode,
             IsActive = redirect.IsActive,
             IsRegex = redirect.IsRegex
@@ -88,6 +102,14 @@ public class RedirectApiController : UmbracoApiController
         if ((dto.StatusCode == 301 || dto.StatusCode == 302) && string.IsNullOrWhiteSpace(dto.NewUrl))
             return BadRequest("New URL is required for redirect status codes");
 
+        var validationError = ValidateRedirect(dto.OldUrl, dto.NewUrl, dto.StatusCode, dto.IsRegex);
+        if (validationError != null)
+            return BadRequest(validationError);
+
+        var duplicate = _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex);
+        if (duplicate != null && duplicate.Id != id)
+            return Conflict("A redirect with the same Old URL and Match type already exists");
+
         var redirect = _redirectService.Update(id, dto);
         if (redirect == null)
             return NotFound();
@@ -97,6 +119,7 @@ public class RedirectApiController : UmbracoApiController
             Id = redirect.Id,
             OldUrl = redirect.OldUrl,
             NewUrl = redirect.NewUrl,
+            Description = redirect.Description,
             StatusCode = redirect.StatusCode,
             IsActive = redirect.IsActive,
             IsRegex = redirect.IsRegex
@@ -111,6 +134,99 @@ public class RedirectApiController : UmbracoApiController
             return NotFound();
 
         return Ok();
+    }
+
+    [HttpGet("test")]
+    public IActionResult Test([FromQuery] string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return BadRequest("Path is required");
+
+        var normalizedPath = path.Trim().ToLowerInvariant();
+        if (!normalizedPath.StartsWith("/"))
+            normalizedPath = "/" + normalizedPath;
+
+        var exact = _redirectService.GetByOldUrl(normalizedPath);
+        if (exact != null)
+        {
+            return Ok(new
+            {
+                matched = true,
+                matchType = "Exact",
+                redirect = new RedirectEntryDto
+                {
+                    Id = exact.Id,
+                    OldUrl = exact.OldUrl,
+                    NewUrl = exact.NewUrl,
+                    Description = exact.Description,
+                    StatusCode = exact.StatusCode,
+                    IsActive = exact.IsActive,
+                    IsRegex = exact.IsRegex
+                },
+                computedNewUrl = exact.NewUrl
+            });
+        }
+
+        foreach (var r in _redirectService.GetActiveRegexEntries())
+        {
+            if (string.IsNullOrWhiteSpace(r.OldUrl))
+                continue;
+
+            Regex regex;
+            try
+            {
+                regex = new Regex(r.OldUrl, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, RegexTimeout);
+            }
+            catch
+            {
+                continue;
+            }
+
+            bool matched;
+            try
+            {
+                matched = regex.IsMatch(normalizedPath);
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                continue;
+            }
+
+            if (!matched)
+                continue;
+
+            var computedNewUrl = r.NewUrl;
+            if ((r.StatusCode == 301 || r.StatusCode == 302) && !string.IsNullOrWhiteSpace(computedNewUrl))
+            {
+                try
+                {
+                    computedNewUrl = regex.Replace(normalizedPath, computedNewUrl);
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+
+            return Ok(new
+            {
+                matched = true,
+                matchType = "Regex",
+                redirect = new RedirectEntryDto
+                {
+                    Id = r.Id,
+                    OldUrl = r.OldUrl,
+                    NewUrl = r.NewUrl,
+                    Description = r.Description,
+                    StatusCode = r.StatusCode,
+                    IsActive = r.IsActive,
+                    IsRegex = r.IsRegex
+                },
+                computedNewUrl
+            });
+        }
+
+        return Ok(new { matched = false });
     }
 
     [HttpPost("bulk/delete")]
@@ -146,13 +262,15 @@ public class RedirectApiController : UmbracoApiController
             : _redirectService.GetAllFiltered(q, statusCode, isActive, isRegex);
 
         var sb = new StringBuilder();
-        sb.AppendLine("OldUrl,NewUrl,StatusCode,IsActive,IsRegex");
+        sb.AppendLine("OldUrl,NewUrl,Description,StatusCode,IsActive,IsRegex");
 
         foreach (var r in redirects)
         {
             sb.Append(EscapeCsv(r.OldUrl));
             sb.Append(',');
             sb.Append(EscapeCsv(r.NewUrl ?? string.Empty));
+            sb.Append(',');
+            sb.Append(EscapeCsv(r.Description ?? string.Empty));
             sb.Append(',');
             sb.Append(r.StatusCode);
             sb.Append(',');
@@ -204,6 +322,7 @@ public class RedirectApiController : UmbracoApiController
             }
 
             var newUrl = GetCol(map, cols, "NewUrl");
+            var description = GetCol(map, cols, "Description");
             var statusStr = GetCol(map, cols, "StatusCode");
             var isActiveStr = GetCol(map, cols, "IsActive");
             var isRegexStr = GetCol(map, cols, "IsRegex");
@@ -216,6 +335,7 @@ public class RedirectApiController : UmbracoApiController
             {
                 OldUrl = oldUrl,
                 NewUrl = string.IsNullOrWhiteSpace(newUrl) ? null : newUrl,
+                Description = string.IsNullOrWhiteSpace(description) ? null : description,
                 StatusCode = statusCode,
                 IsActive = isActiveVal,
                 IsRegex = isRegexVal
@@ -228,6 +348,7 @@ public class RedirectApiController : UmbracoApiController
                 {
                     OldUrl = dto.OldUrl,
                     NewUrl = dto.NewUrl,
+                    Description = dto.Description,
                     StatusCode = dto.StatusCode,
                     IsActive = dto.IsActive,
                     IsRegex = dto.IsRegex
@@ -304,5 +425,32 @@ public class RedirectApiController : UmbracoApiController
     public class BulkIdsDto
     {
         public List<int> Ids { get; set; } = new();
+    }
+
+    private static string? ValidateRedirect(string oldUrl, string? newUrl, int statusCode, bool isRegex)
+    {
+        if (isRegex)
+        {
+            try
+            {
+                _ = new Regex(oldUrl.Trim(), RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, RegexTimeout);
+            }
+            catch
+            {
+                return "Invalid regex pattern";
+            }
+        }
+
+        if (statusCode == 301 || statusCode == 302)
+        {
+            if (string.IsNullOrWhiteSpace(newUrl))
+                return "New URL is required for redirect status codes";
+
+            var target = newUrl.Trim();
+            if (!(target.StartsWith("/") || target.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || target.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
+                return "New URL must start with '/' or 'http(s)://'";
+        }
+
+        return null;
     }
 }

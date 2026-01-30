@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.RedirectManager.Models;
 
@@ -6,10 +7,14 @@ namespace Umbraco.RedirectManager.Services;
 public class RedirectService : IRedirectService
 {
     private readonly IScopeProvider _scopeProvider;
+    private readonly IMemoryCache _memoryCache;
 
-    public RedirectService(IScopeProvider scopeProvider)
+    private const string ActiveRegexCacheKey = "RedirectManager.ActiveRegexEntries";
+
+    public RedirectService(IScopeProvider scopeProvider, IMemoryCache memoryCache)
     {
         _scopeProvider = scopeProvider;
+        _memoryCache = memoryCache;
     }
 
     public IEnumerable<RedirectEntry> GetAll()
@@ -30,7 +35,7 @@ public class RedirectService : IRedirectService
 
         if (!string.IsNullOrWhiteSpace(query))
         {
-            sql += " AND (OldUrl LIKE @0 OR NewUrl LIKE @0)";
+            sql += " AND (OldUrl LIKE @0 OR NewUrl LIKE @0 OR Description LIKE @0)";
             args.Add($"%{query.Trim()}%");
         }
 
@@ -90,11 +95,16 @@ public class RedirectService : IRedirectService
 
     public IEnumerable<RedirectEntry> GetActiveRegexEntries()
     {
-        using var scope = _scopeProvider.CreateScope();
-        var results = scope.Database.Fetch<RedirectEntry>(
-            $"SELECT * FROM {RedirectEntry.TableName} WHERE IsActive = 1 AND IsRegex = 1 ORDER BY CreatedDate DESC");
-        scope.Complete();
-        return results;
+        return _memoryCache.GetOrCreate(ActiveRegexCacheKey, entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30);
+
+            using var scope = _scopeProvider.CreateScope();
+            var results = scope.Database.Fetch<RedirectEntry>(
+                $"SELECT * FROM {RedirectEntry.TableName} WHERE IsActive = 1 AND IsRegex = 1 ORDER BY CreatedDate DESC");
+            scope.Complete();
+            return results;
+        }) ?? Enumerable.Empty<RedirectEntry>();
     }
 
     public RedirectEntry Create(CreateRedirectEntryDto dto)
@@ -104,6 +114,7 @@ public class RedirectService : IRedirectService
         {
             OldUrl = NormalizeOldUrl(dto.OldUrl, isRegex),
             NewUrl = string.IsNullOrWhiteSpace(dto.NewUrl) ? null : NormalizeNewUrl(dto.NewUrl, isRegex),
+            Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim(),
             StatusCode = ValidateStatusCode(dto.StatusCode),
             IsActive = dto.IsActive,
             IsRegex = isRegex,
@@ -114,6 +125,8 @@ public class RedirectService : IRedirectService
         using var scope = _scopeProvider.CreateScope();
         scope.Database.Insert(entry);
         scope.Complete();
+
+        InvalidateRegexCache();
 
         return entry;
     }
@@ -133,12 +146,15 @@ public class RedirectService : IRedirectService
         existing.IsRegex = dto.IsRegex;
         existing.OldUrl = NormalizeOldUrl(dto.OldUrl, existing.IsRegex);
         existing.NewUrl = string.IsNullOrWhiteSpace(dto.NewUrl) ? null : NormalizeNewUrl(dto.NewUrl, existing.IsRegex);
+        existing.Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim();
         existing.StatusCode = ValidateStatusCode(dto.StatusCode);
         existing.IsActive = dto.IsActive;
         existing.UpdatedDate = DateTime.UtcNow;
 
         scope.Database.Update(existing);
         scope.Complete();
+
+        InvalidateRegexCache();
 
         return existing;
     }
@@ -148,6 +164,12 @@ public class RedirectService : IRedirectService
         using var scope = _scopeProvider.CreateScope();
         var rowsAffected = scope.Database.Delete<RedirectEntry>(id);
         scope.Complete();
+
+        if (rowsAffected > 0)
+        {
+            InvalidateRegexCache();
+        }
+
         return rowsAffected > 0;
     }
 
@@ -162,6 +184,12 @@ public class RedirectService : IRedirectService
         var sql = $"DELETE FROM {RedirectEntry.TableName} WHERE Id IN ({placeholders})";
         var rowsAffected = scope.Database.Execute(sql, idList.Cast<object>().ToArray());
         scope.Complete();
+
+        if (rowsAffected > 0)
+        {
+            InvalidateRegexCache();
+        }
+
         return rowsAffected;
     }
 
@@ -178,8 +206,16 @@ public class RedirectService : IRedirectService
         var sql = $"UPDATE {RedirectEntry.TableName} SET IsActive = @0, UpdatedDate = @1 WHERE Id IN ({placeholders})";
         var rowsAffected = scope.Database.Execute(sql, args.ToArray());
         scope.Complete();
+
+        if (rowsAffected > 0)
+        {
+            InvalidateRegexCache();
+        }
+
         return rowsAffected;
     }
+
+    private void InvalidateRegexCache() => _memoryCache.Remove(ActiveRegexCacheKey);
 
     private static string NormalizeUrl(string url)
     {

@@ -13,7 +13,9 @@ class RedirectManagerDashboard extends UmbLitElement {
         activeFilter: { type: String },
         regexFilter: { type: String },
         selectedIds: { type: Array },
-        importInProgress: { type: Boolean }
+        importInProgress: { type: Boolean },
+        messageText: { type: String },
+        messageType: { type: String }
     };
 
     static styles = css`
@@ -216,6 +218,59 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.regexFilter = '';
         this.selectedIds = [];
         this.importInProgress = false;
+        this.messageText = '';
+        this.messageType = 'info';
+    }
+
+    showMessage(text, type = 'info') {
+        this.messageText = text;
+        this.messageType = type;
+
+        window.clearTimeout(this._messageTimeout);
+        this._messageTimeout = window.setTimeout(() => {
+            this.messageText = '';
+        }, 4500);
+    }
+
+    async copyToClipboard(text) {
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                const input = document.createElement('input');
+                input.value = text;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+            }
+            this.showMessage('Copied to clipboard', 'success');
+        } catch (e) {
+            this.showMessage('Copy failed', 'error');
+        }
+    }
+
+    async testRedirect(path) {
+        try {
+            const response = await fetch(`/umbraco/api/redirectmanager/test?path=${encodeURIComponent(path)}`);
+            if (!response.ok) {
+                const error = await response.text();
+                this.showMessage(error || 'Test failed', 'error');
+                return;
+            }
+
+            const result = await response.json();
+            if (!result.matched) {
+                this.showMessage('No redirect matched', 'info');
+                return;
+            }
+
+            const code = result.redirect?.statusCode;
+            const to = result.computedNewUrl || '-';
+            this.showMessage(`Matched ${result.matchType} (${code}) -> ${to}`, 'success');
+        } catch (e) {
+            this.showMessage('Test failed', 'error');
+        }
     }
 
     connectedCallback() {
@@ -227,6 +282,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         return {
             oldUrl: '',
             newUrl: '',
+            description: '',
             statusCode: 301,
             isActive: true,
             isRegex: false
@@ -280,6 +336,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.formData = {
             oldUrl: redirect.oldUrl,
             newUrl: redirect.newUrl || '',
+            description: redirect.description || '',
             statusCode: redirect.statusCode,
             isActive: redirect.isActive,
             isRegex: !!redirect.isRegex
@@ -339,13 +396,17 @@ class RedirectManagerDashboard extends UmbLitElement {
                 body: JSON.stringify({ ids: this.selectedIds })
             });
             if (response.ok) {
-                this.loadRedirects();
+                const selected = new Set(this.selectedIds);
+                this.redirects = this.redirects.filter(r => !selected.has(r.id));
+                this.selectedIds = [];
+                this.showMessage('Selected redirects deleted', 'success');
             } else {
-                alert('Failed to delete selected redirects');
+                const error = await response.text();
+                this.showMessage(error || 'Failed to delete selected redirects', 'error');
             }
         } catch (error) {
             console.error('Failed to bulk delete:', error);
-            alert('Failed to delete selected redirects');
+            this.showMessage('Failed to delete selected redirects', 'error');
         }
     }
 
@@ -359,13 +420,16 @@ class RedirectManagerDashboard extends UmbLitElement {
                 body: JSON.stringify({ ids: this.selectedIds })
             });
             if (response.ok) {
-                this.loadRedirects();
+                const selected = new Set(this.selectedIds);
+                this.redirects = this.redirects.map(r => selected.has(r.id) ? { ...r, isActive } : r);
+                this.showMessage('Selected redirects updated', 'success');
             } else {
-                alert('Failed to update selected redirects');
+                const error = await response.text();
+                this.showMessage(error || 'Failed to update selected redirects', 'error');
             }
         } catch (error) {
             console.error('Failed to bulk update:', error);
-            alert('Failed to update selected redirects');
+            this.showMessage('Failed to update selected redirects', 'error');
         }
     }
 
@@ -395,15 +459,15 @@ class RedirectManagerDashboard extends UmbLitElement {
 
             if (response.ok) {
                 const result = await response.json();
-                alert(`Imported. Created: ${result.created}, Updated: ${result.updated}, Skipped: ${result.skipped}`);
+                this.showMessage(`Imported. Created: ${result.created}, Updated: ${result.updated}, Skipped: ${result.skipped}`, 'success');
                 this.loadRedirects();
             } else {
                 const error = await response.text();
-                alert(error || 'Import failed');
+                this.showMessage(error || 'Import failed', 'error');
             }
         } catch (error) {
             console.error('Import failed:', error);
-            alert('Import failed');
+            this.showMessage('Import failed', 'error');
         } finally {
             this.importInProgress = false;
             e.target.value = '';
@@ -412,12 +476,12 @@ class RedirectManagerDashboard extends UmbLitElement {
 
     async saveRedirect() {
         if (!this.formData.oldUrl) {
-            alert('Old URL is required');
+            this.showMessage('Old URL is required', 'error');
             return;
         }
 
         if ((this.formData.statusCode === 301 || this.formData.statusCode === 302) && !this.formData.newUrl) {
-            alert('New URL is required for redirect status codes');
+            this.showMessage('New URL is required for redirect status codes', 'error');
             return;
         }
 
@@ -438,15 +502,24 @@ class RedirectManagerDashboard extends UmbLitElement {
             }
 
             if (response.ok) {
+                const saved = await response.json();
+
+                if (this.editingRedirect) {
+                    this.redirects = this.redirects.map(r => r.id === saved.id ? saved : r);
+                    this.showMessage('Redirect updated', 'success');
+                } else {
+                    this.redirects = [saved, ...this.redirects];
+                    this.showMessage('Redirect created', 'success');
+                }
+
                 this.closeModal();
-                this.loadRedirects();
             } else {
                 const error = await response.text();
-                alert(error || 'Failed to save redirect');
+                this.showMessage(error || 'Failed to save redirect', 'error');
             }
         } catch (error) {
             console.error('Failed to save redirect:', error);
-            alert('Failed to save redirect');
+            this.showMessage('Failed to save redirect', 'error');
         }
     }
 
@@ -461,13 +534,16 @@ class RedirectManagerDashboard extends UmbLitElement {
             });
 
             if (response.ok) {
-                this.loadRedirects();
+                this.redirects = this.redirects.filter(r => r.id !== redirect.id);
+                this.selectedIds = this.selectedIds.filter(id => id !== redirect.id);
+                this.showMessage('Redirect deleted', 'success');
             } else {
-                alert('Failed to delete redirect');
+                const error = await response.text();
+                this.showMessage(error || 'Failed to delete redirect', 'error');
             }
         } catch (error) {
             console.error('Failed to delete redirect:', error);
-            alert('Failed to delete redirect');
+            this.showMessage('Failed to delete redirect', 'error');
         }
     }
 
@@ -486,6 +562,13 @@ class RedirectManagerDashboard extends UmbLitElement {
             <div class="header">
                 <div>
                     <h1>8Bitiz Redirect Manager</h1>
+
+                    ${this.messageText ? html`
+                        <div style="margin-top: 10px; padding: 10px 12px; border-radius: 6px; border: 1px solid #e9e9e9; background: ${this.messageType === 'success' ? '#e8f5e9' : this.messageType === 'error' ? '#fdecea' : '#eef2ff'}; color: #1b264f;">
+                            ${this.messageText}
+                        </div>
+                    ` : ''}
+
                     <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                         <input type="text" placeholder="Search old/new URL" style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; min-width: 220px;" .value=${this.query} @input=${(e) => { this.query = e.target.value; }} />
                         <select style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px;" .value=${this.statusFilter} @change=${(e) => { this.statusFilter = e.target.value; }}>
@@ -544,6 +627,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                             <th>Status</th>
                             <th>Old URL</th>
                             <th>New URL</th>
+                            <th>Notes</th>
                             <th>Type</th>
                             <th>Match</th>
                             <th>Active</th>
@@ -561,8 +645,21 @@ class RedirectManagerDashboard extends UmbLitElement {
                                         ${redirect.statusCode}
                                     </span>
                                 </td>
-                                <td class="url-cell" title="${redirect.oldUrl}">${redirect.oldUrl}</td>
-                                <td class="url-cell" title="${redirect.newUrl || ''}">${redirect.newUrl || '-'}</td>
+                                <td class="url-cell" title="${redirect.oldUrl}">
+                                    <div style="display:flex; gap:6px; align-items:center;">
+                                        <span>${redirect.oldUrl}</span>
+                                        <button class="btn btn-secondary btn-sm" @click=${() => this.copyToClipboard(redirect.oldUrl)}>Copy</button>
+                                    </div>
+                                </td>
+                                <td class="url-cell" title="${redirect.newUrl || ''}">
+                                    ${redirect.newUrl ? html`
+                                        <div style="display:flex; gap:6px; align-items:center;">
+                                            <span>${redirect.newUrl}</span>
+                                            <button class="btn btn-secondary btn-sm" @click=${() => this.copyToClipboard(redirect.newUrl)}>Copy</button>
+                                        </div>
+                                    ` : '-'}
+                                </td>
+                                <td class="url-cell" title="${redirect.description || ''}">${redirect.description || '-'}</td>
                                 <td>${this.getStatusLabel(redirect.statusCode)}</td>
                                 <td>${redirect.isRegex ? 'Regex' : 'Exact'}</td>
                                 <td>
@@ -571,6 +668,9 @@ class RedirectManagerDashboard extends UmbLitElement {
                                     </span>
                                 </td>
                                 <td class="actions">
+                                    <button class="btn btn-secondary btn-sm" @click=${() => this.testRedirect(redirect.oldUrl)}>
+                                        Test
+                                    </button>
                                     <button class="btn btn-secondary btn-sm" @click=${() => this.openEditModal(redirect)}>
                                         Edit
                                     </button>
@@ -621,6 +721,16 @@ class RedirectManagerDashboard extends UmbLitElement {
                                 <small>The URL path to redirect to</small>
                             </div>
                         ` : ''}
+
+                        <div class="form-group">
+                            <label>Notes</label>
+                            <textarea name="description"
+                                      rows="3"
+                                      .value=${this.formData.description}
+                                      @input=${this.handleInputChange}
+                                      placeholder="Optional notes..."></textarea>
+                            <small>Optional description to help identify the purpose of this redirect</small>
+                        </div>
 
                         <div class="form-group">
                             <div class="checkbox-group">

@@ -23,6 +23,11 @@ public class RedirectEntry
     [Length(2048)]
     public string? NewUrl { get; set; }
 
+    [Column("Description")]
+    [NullSetting(NullSetting = NullSettings.Null)]
+    [Length(2048)]
+    public string? Description { get; set; }
+
     [Column("StatusCode")]
     public int StatusCode { get; set; } = 301;
 
