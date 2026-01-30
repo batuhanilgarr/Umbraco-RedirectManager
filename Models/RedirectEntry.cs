@@ -34,4 +34,7 @@ public class RedirectEntry
 
     [Column("IsActive")]
     public bool IsActive { get; set; } = true;
+
+    [Column("IsRegex")]
+    public bool IsRegex { get; set; } = false;
 }

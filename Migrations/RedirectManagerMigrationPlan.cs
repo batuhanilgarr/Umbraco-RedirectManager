@@ -42,10 +42,24 @@ public class RedirectManagerMigrationNotificationHandler : INotificationAsyncHan
                         [CreatedDate] DATETIME NOT NULL DEFAULT GETUTCDATE(),
                         [UpdatedDate] DATETIME NOT NULL DEFAULT GETUTCDATE(),
                         [IsActive] BIT NOT NULL DEFAULT 1,
+                        [IsRegex] BIT NOT NULL DEFAULT 0,
                         CONSTRAINT [PK_{RedirectEntry.TableName}] PRIMARY KEY ([Id])
                     )");
                 
                 _logger.LogInformation("RedirectManager table created successfully");
+            }
+            else
+            {
+                var isRegexColumnExists = scope.Database.ExecuteScalar<int>(
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @0 AND COLUMN_NAME = @1",
+                    RedirectEntry.TableName,
+                    "IsRegex") > 0;
+
+                if (!isRegexColumnExists)
+                {
+                    _logger.LogInformation("Adding missing column IsRegex to table: {TableName}", RedirectEntry.TableName);
+                    scope.Database.Execute($"ALTER TABLE [{RedirectEntry.TableName}] ADD [IsRegex] BIT NOT NULL CONSTRAINT [DF_{RedirectEntry.TableName}_IsRegex] DEFAULT 0");
+                }
             }
             
             scope.Complete();

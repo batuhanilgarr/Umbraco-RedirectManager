@@ -21,6 +21,44 @@ public class RedirectService : IRedirectService
         return results;
     }
 
+    public IEnumerable<RedirectEntry> GetAllFiltered(string? query, int? statusCode, bool? isActive, bool? isRegex)
+    {
+        using var scope = _scopeProvider.CreateScope();
+
+        var sql = $"SELECT * FROM {RedirectEntry.TableName} WHERE 1=1";
+        var args = new List<object>();
+
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            sql += " AND (OldUrl LIKE @0 OR NewUrl LIKE @0)";
+            args.Add($"%{query.Trim()}%");
+        }
+
+        if (statusCode.HasValue)
+        {
+            sql += $" AND StatusCode = @{args.Count}";
+            args.Add(statusCode.Value);
+        }
+
+        if (isActive.HasValue)
+        {
+            sql += $" AND IsActive = @{args.Count}";
+            args.Add(isActive.Value ? 1 : 0);
+        }
+
+        if (isRegex.HasValue)
+        {
+            sql += $" AND IsRegex = @{args.Count}";
+            args.Add(isRegex.Value ? 1 : 0);
+        }
+
+        sql += " ORDER BY CreatedDate DESC";
+
+        var results = scope.Database.Fetch<RedirectEntry>(sql, args.ToArray());
+        scope.Complete();
+        return results;
+    }
+
     public RedirectEntry? GetById(int id)
     {
         using var scope = _scopeProvider.CreateScope();
@@ -35,19 +73,40 @@ public class RedirectService : IRedirectService
         using var scope = _scopeProvider.CreateScope();
         var normalizedUrl = NormalizeUrl(oldUrl);
         var result = scope.Database.SingleOrDefault<RedirectEntry>(
-            $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND IsActive = 1", normalizedUrl);
+            $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND IsActive = 1 AND IsRegex = 0", normalizedUrl);
         scope.Complete();
         return result;
     }
 
+    public RedirectEntry? GetByOldUrlAndIsRegex(string oldUrl, bool isRegex)
+    {
+        using var scope = _scopeProvider.CreateScope();
+        var value = NormalizeOldUrl(oldUrl, isRegex);
+        var result = scope.Database.SingleOrDefault<RedirectEntry>(
+            $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND IsRegex = @1", value, isRegex ? 1 : 0);
+        scope.Complete();
+        return result;
+    }
+
+    public IEnumerable<RedirectEntry> GetActiveRegexEntries()
+    {
+        using var scope = _scopeProvider.CreateScope();
+        var results = scope.Database.Fetch<RedirectEntry>(
+            $"SELECT * FROM {RedirectEntry.TableName} WHERE IsActive = 1 AND IsRegex = 1 ORDER BY CreatedDate DESC");
+        scope.Complete();
+        return results;
+    }
+
     public RedirectEntry Create(CreateRedirectEntryDto dto)
     {
+        var isRegex = dto.IsRegex;
         var entry = new RedirectEntry
         {
-            OldUrl = NormalizeUrl(dto.OldUrl),
-            NewUrl = string.IsNullOrWhiteSpace(dto.NewUrl) ? null : NormalizeUrl(dto.NewUrl),
+            OldUrl = NormalizeOldUrl(dto.OldUrl, isRegex),
+            NewUrl = string.IsNullOrWhiteSpace(dto.NewUrl) ? null : NormalizeNewUrl(dto.NewUrl, isRegex),
             StatusCode = ValidateStatusCode(dto.StatusCode),
             IsActive = dto.IsActive,
+            IsRegex = isRegex,
             CreatedDate = DateTime.UtcNow,
             UpdatedDate = DateTime.UtcNow
         };
@@ -71,8 +130,9 @@ public class RedirectService : IRedirectService
             return null;
         }
 
-        existing.OldUrl = NormalizeUrl(dto.OldUrl);
-        existing.NewUrl = string.IsNullOrWhiteSpace(dto.NewUrl) ? null : NormalizeUrl(dto.NewUrl);
+        existing.IsRegex = dto.IsRegex;
+        existing.OldUrl = NormalizeOldUrl(dto.OldUrl, existing.IsRegex);
+        existing.NewUrl = string.IsNullOrWhiteSpace(dto.NewUrl) ? null : NormalizeNewUrl(dto.NewUrl, existing.IsRegex);
         existing.StatusCode = ValidateStatusCode(dto.StatusCode);
         existing.IsActive = dto.IsActive;
         existing.UpdatedDate = DateTime.UtcNow;
@@ -91,6 +151,36 @@ public class RedirectService : IRedirectService
         return rowsAffected > 0;
     }
 
+    public int BulkDelete(IEnumerable<int> ids)
+    {
+        var idList = ids?.Distinct().ToArray() ?? Array.Empty<int>();
+        if (idList.Length == 0)
+            return 0;
+
+        using var scope = _scopeProvider.CreateScope();
+        var placeholders = string.Join(",", idList.Select((_, i) => $"@{i}"));
+        var sql = $"DELETE FROM {RedirectEntry.TableName} WHERE Id IN ({placeholders})";
+        var rowsAffected = scope.Database.Execute(sql, idList.Cast<object>().ToArray());
+        scope.Complete();
+        return rowsAffected;
+    }
+
+    public int BulkSetActive(IEnumerable<int> ids, bool isActive)
+    {
+        var idList = ids?.Distinct().ToArray() ?? Array.Empty<int>();
+        if (idList.Length == 0)
+            return 0;
+
+        using var scope = _scopeProvider.CreateScope();
+        var args = new List<object> { isActive ? 1 : 0, DateTime.UtcNow };
+        var placeholders = string.Join(",", idList.Select((_, i) => $"@{i + args.Count}"));
+        args.AddRange(idList.Cast<object>());
+        var sql = $"UPDATE {RedirectEntry.TableName} SET IsActive = @0, UpdatedDate = @1 WHERE Id IN ({placeholders})";
+        var rowsAffected = scope.Database.Execute(sql, args.ToArray());
+        scope.Complete();
+        return rowsAffected;
+    }
+
     private static string NormalizeUrl(string url)
     {
         if (string.IsNullOrWhiteSpace(url))
@@ -102,6 +192,26 @@ public class RedirectService : IRedirectService
             url = "/" + url;
 
         return url;
+    }
+
+    private static string NormalizeOldUrl(string oldUrl, bool isRegex)
+    {
+        if (isRegex)
+        {
+            return oldUrl?.Trim() ?? string.Empty;
+        }
+
+        return NormalizeUrl(oldUrl);
+    }
+
+    private static string NormalizeNewUrl(string newUrl, bool isRegex)
+    {
+        if (isRegex)
+        {
+            return newUrl?.Trim() ?? string.Empty;
+        }
+
+        return NormalizeUrl(newUrl);
     }
 
     private static int ValidateStatusCode(int statusCode)

@@ -7,7 +7,13 @@ class RedirectManagerDashboard extends UmbLitElement {
         loading: { type: Boolean },
         showModal: { type: Boolean },
         editingRedirect: { type: Object },
-        formData: { type: Object }
+        formData: { type: Object },
+        query: { type: String },
+        statusFilter: { type: String },
+        activeFilter: { type: String },
+        regexFilter: { type: String },
+        selectedIds: { type: Array },
+        importInProgress: { type: Boolean }
     };
 
     static styles = css`
@@ -204,6 +210,12 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.showModal = false;
         this.editingRedirect = null;
         this.formData = this.getEmptyFormData();
+        this.query = '';
+        this.statusFilter = '';
+        this.activeFilter = '';
+        this.regexFilter = '';
+        this.selectedIds = [];
+        this.importInProgress = false;
     }
 
     connectedCallback() {
@@ -216,21 +228,45 @@ class RedirectManagerDashboard extends UmbLitElement {
             oldUrl: '',
             newUrl: '',
             statusCode: 301,
-            isActive: true
+            isActive: true,
+            isRegex: false
         };
+    }
+
+    buildQueryParams() {
+        const params = new URLSearchParams();
+        if (this.query && this.query.trim().length > 0) params.set('q', this.query.trim());
+        if (this.statusFilter) params.set('statusCode', this.statusFilter);
+        if (this.activeFilter) params.set('isActive', this.activeFilter);
+        if (this.regexFilter) params.set('isRegex', this.regexFilter);
+        const qs = params.toString();
+        return qs.length > 0 ? `?${qs}` : '';
     }
 
     async loadRedirects() {
         this.loading = true;
         try {
-            const response = await fetch('/umbraco/api/redirectmanager/getall');
+            const response = await fetch(`/umbraco/api/redirectmanager/getall${this.buildQueryParams()}`);
             if (response.ok) {
                 this.redirects = await response.json();
+                this.selectedIds = [];
             }
         } catch (error) {
             console.error('Failed to load redirects:', error);
         }
         this.loading = false;
+    }
+
+    applyFilters() {
+        this.loadRedirects();
+    }
+
+    clearFilters() {
+        this.query = '';
+        this.statusFilter = '';
+        this.activeFilter = '';
+        this.regexFilter = '';
+        this.loadRedirects();
     }
 
     openAddModal() {
@@ -245,7 +281,8 @@ class RedirectManagerDashboard extends UmbLitElement {
             oldUrl: redirect.oldUrl,
             newUrl: redirect.newUrl || '',
             statusCode: redirect.statusCode,
-            isActive: redirect.isActive
+            isActive: redirect.isActive,
+            isRegex: !!redirect.isRegex
         };
         this.showModal = true;
     }
@@ -262,6 +299,115 @@ class RedirectManagerDashboard extends UmbLitElement {
             ...this.formData,
             [name]: type === 'checkbox' ? checked : (name === 'statusCode' ? parseInt(value) : value)
         };
+    }
+
+    toggleSelectAll(e) {
+        const checked = e.target.checked;
+        if (checked) {
+            this.selectedIds = this.redirects.map(r => r.id);
+        } else {
+            this.selectedIds = [];
+        }
+    }
+
+    toggleSelectId(id, checked) {
+        if (checked) {
+            if (!this.selectedIds.includes(id)) {
+                this.selectedIds = [...this.selectedIds, id];
+            }
+        } else {
+            this.selectedIds = this.selectedIds.filter(x => x !== id);
+        }
+    }
+
+    get allSelected() {
+        return this.redirects.length > 0 && this.selectedIds.length === this.redirects.length;
+    }
+
+    get anySelected() {
+        return this.selectedIds.length > 0;
+    }
+
+    async bulkDeleteSelected() {
+        if (!this.anySelected) return;
+        if (!confirm(`Delete ${this.selectedIds.length} redirect(s)?`)) return;
+
+        try {
+            const response = await fetch('/umbraco/api/redirectmanager/bulk/delete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: this.selectedIds })
+            });
+            if (response.ok) {
+                this.loadRedirects();
+            } else {
+                alert('Failed to delete selected redirects');
+            }
+        } catch (error) {
+            console.error('Failed to bulk delete:', error);
+            alert('Failed to delete selected redirects');
+        }
+    }
+
+    async bulkSetActiveSelected(isActive) {
+        if (!this.anySelected) return;
+
+        try {
+            const response = await fetch(isActive ? '/umbraco/api/redirectmanager/bulk/activate' : '/umbraco/api/redirectmanager/bulk/deactivate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: this.selectedIds })
+            });
+            if (response.ok) {
+                this.loadRedirects();
+            } else {
+                alert('Failed to update selected redirects');
+            }
+        } catch (error) {
+            console.error('Failed to bulk update:', error);
+            alert('Failed to update selected redirects');
+        }
+    }
+
+    exportCsv() {
+        const url = `/umbraco/api/redirectmanager/export${this.buildQueryParams()}`;
+        window.location.href = url;
+    }
+
+    triggerImport() {
+        const input = this.renderRoot?.querySelector('#importFileInput');
+        if (input) input.click();
+    }
+
+    async handleImportFile(e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+
+        this.importInProgress = true;
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('/umbraco/api/redirectmanager/import', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                alert(`Imported. Created: ${result.created}, Updated: ${result.updated}, Skipped: ${result.skipped}`);
+                this.loadRedirects();
+            } else {
+                const error = await response.text();
+                alert(error || 'Import failed');
+            }
+        } catch (error) {
+            console.error('Import failed:', error);
+            alert('Import failed');
+        } finally {
+            this.importInProgress = false;
+            e.target.value = '';
+        }
     }
 
     async saveRedirect() {
@@ -338,10 +484,50 @@ class RedirectManagerDashboard extends UmbLitElement {
     render() {
         return html`
             <div class="header">
-                <h1>8Bitiz Redirect Manager</h1>
-                <button class="btn btn-primary" @click=${this.openAddModal}>
-                    Add New Redirect
-                </button>
+                <div>
+                    <h1>8Bitiz Redirect Manager</h1>
+                    <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                        <input type="text" placeholder="Search old/new URL" style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; min-width: 220px;" .value=${this.query} @input=${(e) => { this.query = e.target.value; }} />
+                        <select style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px;" .value=${this.statusFilter} @change=${(e) => { this.statusFilter = e.target.value; }}>
+                            <option value="">All Status</option>
+                            <option value="301">301</option>
+                            <option value="302">302</option>
+                            <option value="404">404</option>
+                            <option value="410">410</option>
+                        </select>
+                        <select style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px;" .value=${this.activeFilter} @change=${(e) => { this.activeFilter = e.target.value; }}>
+                            <option value="">All</option>
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                        <select style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px;" .value=${this.regexFilter} @change=${(e) => { this.regexFilter = e.target.value; }}>
+                            <option value="">All Types</option>
+                            <option value="false">Exact</option>
+                            <option value="true">Regex</option>
+                        </select>
+                        <button class="btn btn-secondary" @click=${this.applyFilters}>Apply</button>
+                        <button class="btn btn-secondary" @click=${this.clearFilters}>Clear</button>
+                        <button class="btn btn-secondary" @click=${this.exportCsv}>Export CSV</button>
+                        <button class="btn btn-secondary" ?disabled=${this.importInProgress} @click=${this.triggerImport}>
+                            ${this.importInProgress ? 'Importing...' : 'Import CSV'}
+                        </button>
+                        <input id="importFileInput" type="file" accept=".csv,text/csv" style="display:none" @change=${this.handleImportFile} />
+                    </div>
+
+                    ${this.anySelected ? html`
+                        <div style="margin-top: 10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                            <strong>${this.selectedIds.length} selected</strong>
+                            <button class="btn btn-secondary btn-sm" @click=${() => this.bulkSetActiveSelected(true)}>Activate</button>
+                            <button class="btn btn-secondary btn-sm" @click=${() => this.bulkSetActiveSelected(false)}>Deactivate</button>
+                            <button class="btn btn-danger btn-sm" @click=${this.bulkDeleteSelected}>Delete Selected</button>
+                        </div>
+                    ` : ''}
+                </div>
+                <div>
+                    <button class="btn btn-primary" @click=${this.openAddModal}>
+                        Add New Redirect
+                    </button>
+                </div>
             </div>
 
             ${this.loading ? html`
@@ -352,10 +538,14 @@ class RedirectManagerDashboard extends UmbLitElement {
                 <table>
                     <thead>
                         <tr>
+                            <th style="width: 40px;">
+                                <input type="checkbox" .checked=${this.allSelected} @change=${this.toggleSelectAll} />
+                            </th>
                             <th>Status</th>
                             <th>Old URL</th>
                             <th>New URL</th>
                             <th>Type</th>
+                            <th>Match</th>
                             <th>Active</th>
                             <th>Actions</th>
                         </tr>
@@ -364,6 +554,9 @@ class RedirectManagerDashboard extends UmbLitElement {
                         ${this.redirects.map(redirect => html`
                             <tr>
                                 <td>
+                                    <input type="checkbox" .checked=${this.selectedIds.includes(redirect.id)} @change=${(e) => this.toggleSelectId(redirect.id, e.target.checked)} />
+                                </td>
+                                <td>
                                     <span class="status-badge status-${redirect.statusCode}">
                                         ${redirect.statusCode}
                                     </span>
@@ -371,6 +564,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                                 <td class="url-cell" title="${redirect.oldUrl}">${redirect.oldUrl}</td>
                                 <td class="url-cell" title="${redirect.newUrl || ''}">${redirect.newUrl || '-'}</td>
                                 <td>${this.getStatusLabel(redirect.statusCode)}</td>
+                                <td>${redirect.isRegex ? 'Regex' : 'Exact'}</td>
                                 <td>
                                     <span class="${redirect.isActive ? 'active-yes' : 'active-no'}">
                                         ${redirect.isActive ? 'Yes' : 'No'}
@@ -438,6 +632,20 @@ class RedirectManagerDashboard extends UmbLitElement {
                                 <label for="isActive">Active</label>
                             </div>
                             <small>Enable or disable this redirect</small>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" 
+                                       name="isRegex" 
+                                       id="isRegex"
+                                       .checked=${this.formData.isRegex} 
+                                       @change=${this.handleInputChange}>
+                                <label for="isRegex">Regex match</label>
+                            </div>
+                            <small>
+                                If enabled, Old URL is treated as a regex pattern. For 301/302 you can use capture groups in New URL (e.g. <code>$1</code>).
+                            </small>
                         </div>
 
                         <div class="modal-actions">

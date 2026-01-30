@@ -7,6 +7,7 @@ public class RedirectEntryDto
     public string? NewUrl { get; set; }
     public int StatusCode { get; set; } = 301;
     public bool IsActive { get; set; } = true;
+    public bool IsRegex { get; set; } = false;
 }
 
 public class CreateRedirectEntryDto
@@ -15,6 +16,7 @@ public class CreateRedirectEntryDto
     public string? NewUrl { get; set; }
     public int StatusCode { get; set; } = 301;
     public bool IsActive { get; set; } = true;
+    public bool IsRegex { get; set; } = false;
 }
 
 public class UpdateRedirectEntryDto
@@ -23,4 +25,5 @@ public class UpdateRedirectEntryDto
     public string? NewUrl { get; set; }
     public int StatusCode { get; set; } = 301;
     public bool IsActive { get; set; } = true;
+    public bool IsRegex { get; set; } = false;
 }

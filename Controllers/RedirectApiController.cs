@@ -1,3 +1,6 @@
+using System.IO;
+using System.Text;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Umbraco.Cms.Web.Common.Controllers;
 using Umbraco.RedirectManager.Models;
@@ -16,16 +19,24 @@ public class RedirectApiController : UmbracoApiController
     }
 
     [HttpGet("getall")]
-    public IActionResult GetAll()
+    public IActionResult GetAll(
+        [FromQuery] string? q,
+        [FromQuery] int? statusCode,
+        [FromQuery] bool? isActive,
+        [FromQuery] bool? isRegex)
     {
-        var redirects = _redirectService.GetAll();
+        var redirects = string.IsNullOrWhiteSpace(q) && statusCode == null && isActive == null && isRegex == null
+            ? _redirectService.GetAll()
+            : _redirectService.GetAllFiltered(q, statusCode, isActive, isRegex);
+
         return Ok(redirects.Select(r => new RedirectEntryDto
         {
             Id = r.Id,
             OldUrl = r.OldUrl,
             NewUrl = r.NewUrl,
             StatusCode = r.StatusCode,
-            IsActive = r.IsActive
+            IsActive = r.IsActive,
+            IsRegex = r.IsRegex
         }));
     }
 
@@ -42,7 +53,8 @@ public class RedirectApiController : UmbracoApiController
             OldUrl = redirect.OldUrl,
             NewUrl = redirect.NewUrl,
             StatusCode = redirect.StatusCode,
-            IsActive = redirect.IsActive
+            IsActive = redirect.IsActive,
+            IsRegex = redirect.IsRegex
         });
     }
 
@@ -62,7 +74,8 @@ public class RedirectApiController : UmbracoApiController
             OldUrl = redirect.OldUrl,
             NewUrl = redirect.NewUrl,
             StatusCode = redirect.StatusCode,
-            IsActive = redirect.IsActive
+            IsActive = redirect.IsActive,
+            IsRegex = redirect.IsRegex
         });
     }
 
@@ -85,7 +98,8 @@ public class RedirectApiController : UmbracoApiController
             OldUrl = redirect.OldUrl,
             NewUrl = redirect.NewUrl,
             StatusCode = redirect.StatusCode,
-            IsActive = redirect.IsActive
+            IsActive = redirect.IsActive,
+            IsRegex = redirect.IsRegex
         });
     }
 
@@ -97,5 +111,198 @@ public class RedirectApiController : UmbracoApiController
             return NotFound();
 
         return Ok();
+    }
+
+    [HttpPost("bulk/delete")]
+    public IActionResult BulkDelete([FromBody] BulkIdsDto dto)
+    {
+        var deleted = _redirectService.BulkDelete(dto.Ids);
+        return Ok(new { deleted });
+    }
+
+    [HttpPost("bulk/activate")]
+    public IActionResult BulkActivate([FromBody] BulkIdsDto dto)
+    {
+        var updated = _redirectService.BulkSetActive(dto.Ids, true);
+        return Ok(new { updated });
+    }
+
+    [HttpPost("bulk/deactivate")]
+    public IActionResult BulkDeactivate([FromBody] BulkIdsDto dto)
+    {
+        var updated = _redirectService.BulkSetActive(dto.Ids, false);
+        return Ok(new { updated });
+    }
+
+    [HttpGet("export")]
+    public IActionResult ExportCsv(
+        [FromQuery] string? q,
+        [FromQuery] int? statusCode,
+        [FromQuery] bool? isActive,
+        [FromQuery] bool? isRegex)
+    {
+        var redirects = string.IsNullOrWhiteSpace(q) && statusCode == null && isActive == null && isRegex == null
+            ? _redirectService.GetAll()
+            : _redirectService.GetAllFiltered(q, statusCode, isActive, isRegex);
+
+        var sb = new StringBuilder();
+        sb.AppendLine("OldUrl,NewUrl,StatusCode,IsActive,IsRegex");
+
+        foreach (var r in redirects)
+        {
+            sb.Append(EscapeCsv(r.OldUrl));
+            sb.Append(',');
+            sb.Append(EscapeCsv(r.NewUrl ?? string.Empty));
+            sb.Append(',');
+            sb.Append(r.StatusCode);
+            sb.Append(',');
+            sb.Append(r.IsActive ? "true" : "false");
+            sb.Append(',');
+            sb.Append(r.IsRegex ? "true" : "false");
+            sb.AppendLine();
+        }
+
+        var bytes = Encoding.UTF8.GetBytes(sb.ToString());
+        return File(bytes, "text/csv", "redirects.csv");
+    }
+
+    [HttpPost("import")]
+    [RequestSizeLimit(10_000_000)]
+    public async Task<IActionResult> ImportCsv([FromForm] IFormFile file)
+    {
+        if (file.Length == 0)
+            return BadRequest("File is empty");
+
+        using var stream = file.OpenReadStream();
+        using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+        var content = await reader.ReadToEndAsync();
+
+        var lines = content.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+        if (lines.Length == 0)
+            return BadRequest("No rows found");
+
+        var header = ParseCsvLine(lines[0]);
+        var map = header
+            .Select((h, i) => new { h = h.Trim(), i })
+            .ToDictionary(x => x.h, x => x.i, StringComparer.OrdinalIgnoreCase);
+
+        int created = 0;
+        int updated = 0;
+        int skipped = 0;
+
+        for (var rowIndex = 1; rowIndex < lines.Length; rowIndex++)
+        {
+            var cols = ParseCsvLine(lines[rowIndex]);
+            if (cols.Count == 0)
+                continue;
+
+            var oldUrl = GetCol(map, cols, "OldUrl");
+            if (string.IsNullOrWhiteSpace(oldUrl))
+            {
+                skipped++;
+                continue;
+            }
+
+            var newUrl = GetCol(map, cols, "NewUrl");
+            var statusStr = GetCol(map, cols, "StatusCode");
+            var isActiveStr = GetCol(map, cols, "IsActive");
+            var isRegexStr = GetCol(map, cols, "IsRegex");
+
+            var statusCode = int.TryParse(statusStr, out var sc) ? sc : 301;
+            var isActiveVal = !bool.TryParse(isActiveStr, out var ia) || ia;
+            var isRegexVal = bool.TryParse(isRegexStr, out var ir) && ir;
+
+            var dto = new UpdateRedirectEntryDto
+            {
+                OldUrl = oldUrl,
+                NewUrl = string.IsNullOrWhiteSpace(newUrl) ? null : newUrl,
+                StatusCode = statusCode,
+                IsActive = isActiveVal,
+                IsRegex = isRegexVal
+            };
+
+            var existing = _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex);
+            if (existing == null)
+            {
+                _redirectService.Create(new CreateRedirectEntryDto
+                {
+                    OldUrl = dto.OldUrl,
+                    NewUrl = dto.NewUrl,
+                    StatusCode = dto.StatusCode,
+                    IsActive = dto.IsActive,
+                    IsRegex = dto.IsRegex
+                });
+                created++;
+            }
+            else
+            {
+                _redirectService.Update(existing.Id, dto);
+                updated++;
+            }
+        }
+
+        return Ok(new { created, updated, skipped });
+    }
+
+    private static string EscapeCsv(string value)
+    {
+        if (value.Contains('"') || value.Contains(',') || value.Contains('\n') || value.Contains('\r'))
+        {
+            return '"' + value.Replace("\"", "\"\"") + '"';
+        }
+
+        return value;
+    }
+
+    private static List<string> ParseCsvLine(string line)
+    {
+        var result = new List<string>();
+        if (line == null)
+            return result;
+
+        var sb = new StringBuilder();
+        var inQuotes = false;
+
+        for (var i = 0; i < line.Length; i++)
+        {
+            var c = line[i];
+
+            if (c == '"')
+            {
+                if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
+                {
+                    sb.Append('"');
+                    i++;
+                }
+                else
+                {
+                    inQuotes = !inQuotes;
+                }
+
+                continue;
+            }
+
+            if (c == ',' && !inQuotes)
+            {
+                result.Add(sb.ToString());
+                sb.Clear();
+                continue;
+            }
+
+            sb.Append(c);
+        }
+
+        result.Add(sb.ToString());
+        return result;
+    }
+
+    private static string GetCol(Dictionary<string, int> map, List<string> cols, string name)
+    {
+        return map.TryGetValue(name, out var idx) && idx >= 0 && idx < cols.Count ? cols[idx] : string.Empty;
+    }
+
+    public class BulkIdsDto
+    {
+        public List<int> Ids { get; set; } = new();
     }
 }
