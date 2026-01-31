@@ -110,3 +110,9 @@ MIT License
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+**Optional:** To avoid `Co-authored-by: Cursor` in commit messages (e.g. when using Cursor IDE), install the prepare-commit-msg hook:
+
+```bash
+cp scripts/prepare-commit-msg.sample .git/hooks/prepare-commit-msg && chmod +x .git/hooks/prepare-commit-msg
+```

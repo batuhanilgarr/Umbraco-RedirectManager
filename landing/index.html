@@ -21,6 +21,7 @@
                 <a href="#features">Features</a>
                 <a href="#install">Install</a>
                 <a href="#status-codes">Status codes</a>
+                <a href="#changelog">Changelog</a>
                 <a href="https://github.com/8Bitiz/RedirectManager" target="_blank" rel="noopener">GitHub</a>
             </nav>
         </div>
@@ -158,6 +159,77 @@ dotnet add package 8Bitiz.RedirectManager</code></pre>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="changelog" class="section section-changelog">
+            <div class="container">
+                <h2 class="section-title">Changelog</h2>
+                <p class="section-lead">Release notes for all versions.</p>
+                <div class="changelog-list">
+                    <article class="changelog-entry">
+                        <h3 class="changelog-version">1.2.11</h3>
+                        <ul>
+                            <li>Add/Edit Redirect modal: inline CSS in shadow DOM so styles always apply.</li>
+                            <li><code>ensureModalStylesLoaded()</code> loads redirect.css when dashboard opens.</li>
+                        </ul>
+                    </article>
+                    <article class="changelog-entry">
+                        <h3 class="changelog-version">1.2.10</h3>
+                        <ul>
+                            <li>Query string support: redirects match path + query (e.g. <code>/raporlar.aspx?type=11</code>).</li>
+                            <li>Lookup tries path+query first, then path only for backward compatibility.</li>
+                        </ul>
+                    </article>
+                    <article class="changelog-entry">
+                        <h3 class="changelog-version">1.2.9</h3>
+                        <ul>
+                            <li>Modal CSS added to <code>redirect.css</code> for light DOM (when modal is outside shadow root).</li>
+                        </ul>
+                    </article>
+                    <article class="changelog-entry">
+                        <h3 class="changelog-version">1.2.8</h3>
+                        <ul>
+                            <li>Add/Edit Redirect modal: form layout, focus states, textarea, checkboxes, helper text.</li>
+                            <li>Landing page added.</li>
+                        </ul>
+                    </article>
+                    <article class="changelog-entry">
+                        <h3 class="changelog-version">1.2.7</h3>
+                        <ul>
+                            <li>Table header center align.</li>
+                            <li>URL and Actions column width tweaks.</li>
+                        </ul>
+                    </article>
+                    <article class="changelog-entry">
+                        <h3 class="changelog-version">1.2.6</h3>
+                        <ul>
+                            <li>Actions column: Test, Edit, Delete stacked vertically.</li>
+                            <li>Old URL / New URL cells: URL and Copy button stacked vertically.</li>
+                        </ul>
+                    </article>
+                    <article class="changelog-entry">
+                        <h3 class="changelog-version">1.2.5</h3>
+                        <ul>
+                            <li>Table scroll fix in Umbraco backoffice flex layout (<code>min-width: 0</code>, <code>overflow</code>).</li>
+                            <li>Wider URL and Notes columns.</li>
+                        </ul>
+                    </article>
+                    <article class="changelog-entry">
+                        <h3 class="changelog-version">1.2.4</h3>
+                        <ul>
+                            <li>Dashboard layout: horizontal scroll wrapper, column min-widths so all fields and buttons fit.</li>
+                            <li>Docker BaGet setup, NuGet docs, CSV import sample.</li>
+                        </ul>
+                    </article>
+                    <article class="changelog-entry">
+                        <h3 class="changelog-version">1.2.3</h3>
+                        <ul>
+                            <li>Initial NuGet package: 301, 302, 404, 410, exact and regex, backoffice dashboard.</li>
+                            <li>CSV export/import API, bulk delete/activate, Test URL API.</li>
+                        </ul>
+                    </article>
                 </div>
             </div>
         </section>

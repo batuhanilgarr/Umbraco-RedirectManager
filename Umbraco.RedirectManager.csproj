@@ -8,7 +8,7 @@
     
     <!-- Package Info -->
     <PackageId>8Bitiz.RedirectManager</PackageId>
-    <Version>1.2.11</Version>
+    <Version>1.2.12</Version>
     <Authors>8Bitiz</Authors>
     <Company>8Bitiz</Company>
     <Description>A URL redirect manager plugin for Umbraco CMS 17 LTS. Supports 301, 302, 404, and 410 status codes with backoffice management.</Description>
@@ -55,5 +55,16 @@
   <ItemGroup>
     <None Include="build\8Bitiz.RedirectManager.targets" Pack="true" PackagePath="build\" />
   </ItemGroup>
+
+  <!-- Sync Version from csproj to umbraco-package.json (version + element ?v=) before Build -->
+  <Target Name="UpdateUmbracoPackageVersion" BeforeTargets="Build" Condition="'$(Version)' != ''">
+    <PropertyGroup>
+      <_UmbracoPackageJsonPath>$(ProjectDir)App_Plugins/RedirectManager/umbraco-package.json</_UmbracoPackageJsonPath>
+      <_UmbracoPackageJsonContent>$([System.IO.File]::ReadAllText($(_UmbracoPackageJsonPath)))</_UmbracoPackageJsonContent>
+      <_UmbracoPackageJsonVersionReplaced>$([System.Text.RegularExpressions.Regex]::Replace($(_UmbracoPackageJsonContent), '&quot;version&quot;:\s*&quot;[^&quot;]*&quot;', '&quot;version&quot;: &quot;$(Version)&quot;'))</_UmbracoPackageJsonVersionReplaced>
+      <_UmbracoPackageJsonElementReplaced>$([System.Text.RegularExpressions.Regex]::Replace($(_UmbracoPackageJsonVersionReplaced), 'redirect-dashboard\.js\?v=[^&quot;&amp;]*', 'redirect-dashboard.js?v=$(Version)'))</_UmbracoPackageJsonElementReplaced>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_UmbracoPackageJsonPath)" Lines="$(_UmbracoPackageJsonElementReplaced)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+  </Target>
 
 </Project>
