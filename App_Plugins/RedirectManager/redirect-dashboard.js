@@ -64,6 +64,11 @@ class RedirectManagerDashboard extends UmbLitElement {
             color: white;
         }
 
+        .btn-danger {
+            background-color: green;
+            color: white;
+        }
+
         .btn-secondary {
             background-color: #6c757d;
             color: white;
@@ -322,6 +327,72 @@ class RedirectManagerDashboard extends UmbLitElement {
         }
     `;
 
+    /** Inline modal styles so they apply even when global redirect.css is not loaded or modal is in shadow DOM */
+    static get modalInlineStyles() {
+        return `
+            .redirect-manager-modal-root .modal-overlay {
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+                z-index: 1000; padding: 20px; overflow-y: auto;
+            }
+            .redirect-manager-modal-root .modal {
+                background: #fff; border-radius: 12px; padding: 28px 32px; width: 520px;
+                max-width: calc(100vw - 40px); max-height: calc(100vh - 40px); overflow-y: auto;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.2); margin: auto;
+            }
+            .redirect-manager-modal-root .modal h2 {
+                margin: 0 0 24px 0; font-size: 1.35rem; font-weight: 600; color: #1b264f;
+                padding-bottom: 12px; border-bottom: 1px solid #e9e9e9;
+            }
+            .redirect-manager-modal-root .modal .form-group { margin-bottom: 20px; }
+            .redirect-manager-modal-root .modal .form-group label {
+                display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #333;
+            }
+            .redirect-manager-modal-root .modal .form-group input[type="text"],
+            .redirect-manager-modal-root .modal .form-group select,
+            .redirect-manager-modal-root .modal .form-group textarea {
+                width: 100%; padding: 10px 12px; border: 1px solid #d8d7d9; border-radius: 6px;
+                font-size: 14px; font-family: inherit; box-sizing: border-box;
+                transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            }
+            .redirect-manager-modal-root .modal .form-group input:focus,
+            .redirect-manager-modal-root .modal .form-group select:focus,
+            .redirect-manager-modal-root .modal .form-group textarea:focus {
+                outline: none; border-color: #3544b1; box-shadow: 0 0 0 3px rgba(53,68,177,0.15);
+            }
+            .redirect-manager-modal-root .modal .form-group textarea { resize: vertical; min-height: 80px; }
+            .redirect-manager-modal-root .modal .form-group small {
+                display: block; margin-top: 6px; color: #666; font-size: 12px; line-height: 1.4;
+            }
+            .redirect-manager-modal-root .modal .form-group small code {
+                padding: 2px 6px; background: #f0f0f0; border-radius: 4px; font-size: 11px; color: #333;
+            }
+            .redirect-manager-modal-root .modal .checkbox-group {
+                display: flex; align-items: center; gap: 10px;
+            }
+            .redirect-manager-modal-root .modal .checkbox-group input[type="checkbox"] {
+                width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #3544b1;
+            }
+            .redirect-manager-modal-root .modal .checkbox-group label {
+                margin-bottom: 0; cursor: pointer; font-weight: 500;
+            }
+            .redirect-manager-modal-root .modal .modal-actions {
+                display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;
+                padding-top: 20px; border-top: 1px solid #e9e9e9;
+            }
+            .redirect-manager-modal-root .modal .modal-actions .btn {
+                min-width: 100px; padding: 10px 20px; border: none; border-radius: 6px;
+                font-size: 14px; font-weight: 600; cursor: pointer;
+            }
+            .redirect-manager-modal-root .modal .modal-actions .btn.btn-primary {
+                background: #3544b1; color: #fff;
+            }
+            .redirect-manager-modal-root .modal .modal-actions .btn.btn-secondary {
+                background: #e9e9e9; color: #333; border: 1px solid #d8d7d9;
+            }
+        `;
+    }
+
     constructor() {
         super();
         this.redirects = [];
@@ -392,7 +463,19 @@ class RedirectManagerDashboard extends UmbLitElement {
 
     connectedCallback() {
         super.connectedCallback();
+        this.ensureModalStylesLoaded();
         this.loadRedirects();
+    }
+
+    /** Ensure redirect.css is in document so modal styles apply if modal is in light DOM */
+    ensureModalStylesLoaded() {
+        const id = 'redirect-manager-styles';
+        if (document.getElementById(id)) return;
+        const link = document.createElement('link');
+        link.id = id;
+        link.rel = 'stylesheet';
+        link.href = '/App_Plugins/RedirectManager/redirect.css';
+        document.head.appendChild(link);
     }
 
     getEmptyFormData() {
@@ -789,7 +872,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                                         <button class="btn btn-secondary btn-sm" @click=${() => this.testRedirect(redirect.oldUrl)}>
                                             Test
                                         </button>
-                                        <button class="btn btn-secondary btn-sm" @click=${() => this.openEditModal(redirect)}>
+                                        <button class="btn btn-info btn-sm" @click=${() => this.openEditModal(redirect)}>
                                             Edit
                                         </button>
                                         <button class="btn btn-danger btn-sm" @click=${() => this.deleteRedirect(redirect)}>
@@ -804,9 +887,11 @@ class RedirectManagerDashboard extends UmbLitElement {
             `}
 
             ${this.showModal ? html`
-                <div class="modal-overlay" @click=${(e) => e.target === e.currentTarget && this.closeModal()}>
-                    <div class="modal">
-                        <h2>${this.editingRedirect ? 'Edit Redirect' : 'Add New Redirect'}</h2>
+                <div class="redirect-manager-modal-root">
+                    <style>${RedirectManagerDashboard.modalInlineStyles}</style>
+                    <div class="modal-overlay" @click=${(e) => e.target === e.currentTarget && this.closeModal()}>
+                        <div class="modal" @click=${(e) => e.stopPropagation()}>
+                            <h2>${this.editingRedirect ? 'Edit Redirect' : 'Add New Redirect'}</h2>
                         
                         <div class="form-group">
                             <label>Status Code</label>
@@ -880,6 +965,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                         <div class="modal-actions">
                             <button class="btn btn-secondary" @click=${this.closeModal}>Cancel</button>
                             <button class="btn btn-primary" @click=${this.saveRedirect}>Save</button>
+                        </div>
                         </div>
                     </div>
                 </div>
