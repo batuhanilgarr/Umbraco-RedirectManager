@@ -171,6 +171,7 @@ class RedirectManagerDashboard extends UmbLitElement {
             display: flex;
             flex-wrap: nowrap;
             gap: 8px;
+            flex-direction: column;
         }
 
         .actions .btn {
@@ -698,14 +699,14 @@ class RedirectManagerDashboard extends UmbLitElement {
                                         </span>
                                     </td>
                                     <td class="url-cell" title="${redirect.oldUrl}">
-                                        <div style="display:flex; gap:6px; align-items:center;">
+                                        <div style="display:flex; gap:6px; align-items:center;flex-direction:column;">
                                             <span>${redirect.oldUrl}</span>
                                             <button class="btn btn-secondary btn-sm" @click=${() => this.copyToClipboard(redirect.oldUrl)}>Copy</button>
                                         </div>
                                     </td>
                                     <td class="url-cell" title="${redirect.newUrl || ''}">
                                         ${redirect.newUrl ? html`
-                                            <div style="display:flex; gap:6px; align-items:center;">
+                                            <div style="display:flex; gap:6px; align-items:center;flex-direction:column;">
                                                 <span>${redirect.newUrl}</span>
                                                 <button class="btn btn-secondary btn-sm" @click=${() => this.copyToClipboard(redirect.newUrl)}>Copy</button>
                                             </div>
