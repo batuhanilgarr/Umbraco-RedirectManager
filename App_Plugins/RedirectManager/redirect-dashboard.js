@@ -195,65 +195,130 @@ class RedirectManagerDashboard extends UmbLitElement {
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
         }
 
         .modal {
             background: white;
-            border-radius: 8px;
-            padding: 24px;
-            width: 500px;
-            max-width: 90%;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 28px 32px;
+            width: 520px;
+            max-width: calc(100vw - 40px);
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            margin: auto;
         }
 
         .modal h2 {
-            margin: 0 0 20px 0;
+            margin: 0 0 24px 0;
+            font-size: 1.35rem;
+            font-weight: 600;
             color: #1b264f;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e9e9e9;
         }
 
         .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 20px;
+        }
+
+        .form-group:last-of-type {
+            margin-bottom: 0;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
             color: #333;
         }
 
-        .form-group input,
-        .form-group select {
+        .form-group input[type="text"],
+        .form-group select,
+        .form-group textarea {
             width: 100%;
-            padding: 10px;
+            padding: 10px 12px;
             border: 1px solid #d8d7d9;
-            border-radius: 4px;
+            border-radius: 6px;
             font-size: 14px;
+            font-family: inherit;
             box-sizing: border-box;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3544b1;
+            box-shadow: 0 0 0 3px rgba(53, 68, 177, 0.15);
+        }
+
+        .form-group input[type="text"]::placeholder,
+        .form-group textarea::placeholder {
+            color: #999;
+        }
+
+        .form-group select {
+            cursor: pointer;
+            appearance: auto;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
         }
 
         .form-group small {
             display: block;
-            margin-top: 4px;
+            margin-top: 6px;
             color: #666;
             font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .form-group small code {
+            padding: 2px 6px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #333;
         }
 
         .checkbox-group {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
-        .checkbox-group input {
-            width: auto;
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            cursor: pointer;
+            accent-color: #3544b1;
+        }
+
+        .checkbox-group label {
+            margin-bottom: 0;
+            cursor: pointer;
+            font-weight: 500;
         }
 
         .modal-actions {
             display: flex;
             justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #e9e9e9;
+        }
+
+        .modal-actions .btn {
+            min-width: 100px;
         }
     `;
 
