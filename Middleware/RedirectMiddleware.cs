@@ -30,7 +30,17 @@ public class RedirectMiddleware
             return;
         }
 
-        var redirect = redirectService.GetByOldUrl(path);
+        // Path + query string (e.g. /raporlar.aspx?type=11) so rules with query string match
+        var pathAndQuery = path;
+        if (context.Request.QueryString.HasValue)
+        {
+            var query = context.Request.QueryString.Value;
+            pathAndQuery = path + (query!.StartsWith("?", StringComparison.Ordinal) ? query : "?" + query);
+        }
+
+        var redirect = redirectService.GetByOldUrl(pathAndQuery);
+        if (redirect == null && pathAndQuery != path)
+            redirect = redirectService.GetByOldUrl(path);
 
         if (redirect != null && redirect.IsActive)
         {
