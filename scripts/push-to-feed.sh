@@ -16,7 +16,8 @@ dotnet build -c Release --no-incremental
 echo "==> Paket oluşturuluyor..."
 dotnet pack -c Release --no-build -o "$REPO_ROOT/out/packages"
 
-NUPKG=$(ls "$REPO_ROOT/out/packages"/*.nupkg 2>/dev/null | head -1)
+# En son oluşturulan paketi push et (versiyon sırasına göre değil, tarihe göre)
+NUPKG=$(ls -t "$REPO_ROOT/out/packages"/*.nupkg 2>/dev/null | head -1)
 if [ -z "$NUPKG" ]; then
   echo "Hata: .nupkg dosyası bulunamadı."
   exit 1

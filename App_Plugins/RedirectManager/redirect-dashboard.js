@@ -114,7 +114,7 @@ class RedirectManagerDashboard extends UmbLitElement {
             font-family: monospace;
             font-size: 13px;
             min-width: 200px;
-            max-width: 400px;
+            max-width: 250px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -146,7 +146,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         }
 
         td.actions-cell {
-            min-width: 220px;
+            min-width: 140px;
             white-space: nowrap;
         }
 
@@ -677,14 +677,14 @@ class RedirectManagerDashboard extends UmbLitElement {
                                 <th style="width: 40px;">
                                     <input type="checkbox" .checked=${this.allSelected} @change=${this.toggleSelectAll} />
                                 </th>
-                                <th>Status</th>
-                                <th>Old URL</th>
-                                <th>New URL</th>
-                                <th>Notes</th>
-                                <th>Type</th>
-                                <th>Match</th>
-                                <th>Active</th>
-                                <th>Actions</th>
+                                <th style="text-align: center;">Status</th>
+                                <th style="text-align: center;">Old URL</th>
+                                <th style="text-align: center;">New URL</th>
+                                <th style="text-align: center;">Notes</th>
+                                <th style="text-align: center;">Type</th>
+                                <th style="text-align: center;">Match</th>
+                                <th style="text-align: center;">Active</th>
+                                <th style="text-align: center;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
