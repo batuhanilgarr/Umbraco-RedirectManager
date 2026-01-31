@@ -22,6 +22,10 @@ class RedirectManagerDashboard extends UmbLitElement {
         :host {
             display: block;
             padding: 20px;
+            /* Umbraco backoffice flex container içinde scroll'un tabloda olması için */
+            min-width: 0;
+            max-width: 100%;
+            overflow: hidden;
         }
 
         .header {
@@ -76,6 +80,9 @@ class RedirectManagerDashboard extends UmbLitElement {
             margin-top: 10px;
             border-radius: 8px;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            /* Flex içinde scroll için wrapper'ın genişliği sınırlı olmalı */
+            min-width: 0;
+            width: 100%;
         }
 
         table {
@@ -106,8 +113,8 @@ class RedirectManagerDashboard extends UmbLitElement {
         .url-cell {
             font-family: monospace;
             font-size: 13px;
-            max-width: 320px;
-            min-width: 180px;
+            min-width: 200px;
+            max-width: 400px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -131,8 +138,8 @@ class RedirectManagerDashboard extends UmbLitElement {
         }
 
         .notes-cell {
-            min-width: 120px;
-            max-width: 200px;
+            min-width: 140px;
+            max-width: 280px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
