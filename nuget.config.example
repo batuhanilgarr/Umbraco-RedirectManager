@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Bu dosyayı nuget.config olarak kopyalayıp KURULUM YAPACAĞINIZ projenin solution klasörüne koyun.
+  Aşağıdaki seçeneklerden birini kullanın (veya ikisini birden).
+-->
+<configuration>
+  <packageSources>
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+
+    <!-- Seçenek A: Docker NuGet sunucusu (BaGet). allowInsecureConnections HTTP için gerekli -->
+    <add key="RedirectManagerNuGet" value="http://localhost:5555/v3/index.json" allowInsecureConnections="true" />
+
+    <!-- Seçenek B: Sunucu başka bir makinede ise URL'yi değiştirin, örn: -->
+    <!-- <add key="RedirectManagerNuGet" value="http://NUGET-SUNUCU-IP:5555/v3/index.json" /> -->
+
+    <!-- Seçenek C: Yerel klasör feed (Docker kullanmıyorsanız) -->
+    <!-- <add key="LocalRedirectManagerFeed" value="/ABSOLUTE/PATH/TO/Umbraco.RedirectManager/bin/Debug/net10.0" /> -->
+  </packageSources>
+</configuration>

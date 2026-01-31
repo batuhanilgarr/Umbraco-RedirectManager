@@ -1,0 +1,22 @@
+# Özel NuGet sunucusu (BaGet) - Plugin'i bu sunucuya push edip
+# istediğiniz projede dotnet add package ile kurabilirsiniz.
+#
+# Başlatmak:  docker compose -f docker/docker-compose.yml up -d
+# Durdurmak: docker compose -f docker/docker-compose.yml down
+#
+# Feed URL: http://localhost:5555/v3/index.json
+
+services:
+  nuget-server:
+    image: loicsharma/baget:latest
+    container_name: redirectmanager-nuget
+    ports:
+      - "5555:80"
+    env_file:
+      - baget.env
+    volumes:
+      - baget-data:/var/baget
+    restart: unless-stopped
+
+volumes:
+  baget-data:

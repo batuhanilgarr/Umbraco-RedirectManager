@@ -70,25 +70,33 @@ class RedirectManagerDashboard extends UmbLitElement {
             font-size: 12px;
         }
 
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: 10px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
         table {
             width: 100%;
+            min-width: 1280px;
             border-collapse: collapse;
             background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         th, td {
             padding: 12px 16px;
             text-align: left;
             border-bottom: 1px solid #e9e9e9;
+            vertical-align: middle;
         }
 
         th {
             background-color: #f5f5f5;
             font-weight: 600;
             color: #333;
+            white-space: nowrap;
         }
 
         tbody tr:hover {
@@ -98,9 +106,40 @@ class RedirectManagerDashboard extends UmbLitElement {
         .url-cell {
             font-family: monospace;
             font-size: 13px;
-            max-width: 250px;
+            max-width: 320px;
+            min-width: 180px;
             overflow: hidden;
             text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .url-cell > div {
+            min-width: 0;
+        }
+
+        .url-cell span {
+            display: inline-block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+        }
+
+        .url-cell > div span {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .notes-cell {
+            min-width: 120px;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        td.actions-cell {
+            min-width: 220px;
             white-space: nowrap;
         }
 
@@ -123,7 +162,12 @@ class RedirectManagerDashboard extends UmbLitElement {
 
         .actions {
             display: flex;
+            flex-wrap: nowrap;
             gap: 8px;
+        }
+
+        .actions .btn {
+            flex-shrink: 0;
         }
 
         .loading, .empty {
@@ -618,70 +662,72 @@ class RedirectManagerDashboard extends UmbLitElement {
             ` : this.redirects.length === 0 ? html`
                 <div class="empty">No redirects found. Click "Add New Redirect" to create one.</div>
             ` : html`
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 40px;">
-                                <input type="checkbox" .checked=${this.allSelected} @change=${this.toggleSelectAll} />
-                            </th>
-                            <th>Status</th>
-                            <th>Old URL</th>
-                            <th>New URL</th>
-                            <th>Notes</th>
-                            <th>Type</th>
-                            <th>Match</th>
-                            <th>Active</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${this.redirects.map(redirect => html`
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
                             <tr>
-                                <td>
-                                    <input type="checkbox" .checked=${this.selectedIds.includes(redirect.id)} @change=${(e) => this.toggleSelectId(redirect.id, e.target.checked)} />
-                                </td>
-                                <td>
-                                    <span class="status-badge status-${redirect.statusCode}">
-                                        ${redirect.statusCode}
-                                    </span>
-                                </td>
-                                <td class="url-cell" title="${redirect.oldUrl}">
-                                    <div style="display:flex; gap:6px; align-items:center;">
-                                        <span>${redirect.oldUrl}</span>
-                                        <button class="btn btn-secondary btn-sm" @click=${() => this.copyToClipboard(redirect.oldUrl)}>Copy</button>
-                                    </div>
-                                </td>
-                                <td class="url-cell" title="${redirect.newUrl || ''}">
-                                    ${redirect.newUrl ? html`
-                                        <div style="display:flex; gap:6px; align-items:center;">
-                                            <span>${redirect.newUrl}</span>
-                                            <button class="btn btn-secondary btn-sm" @click=${() => this.copyToClipboard(redirect.newUrl)}>Copy</button>
-                                        </div>
-                                    ` : '-'}
-                                </td>
-                                <td class="url-cell" title="${redirect.description || ''}">${redirect.description || '-'}</td>
-                                <td>${this.getStatusLabel(redirect.statusCode)}</td>
-                                <td>${redirect.isRegex ? 'Regex' : 'Exact'}</td>
-                                <td>
-                                    <span class="${redirect.isActive ? 'active-yes' : 'active-no'}">
-                                        ${redirect.isActive ? 'Yes' : 'No'}
-                                    </span>
-                                </td>
-                                <td class="actions">
-                                    <button class="btn btn-secondary btn-sm" @click=${() => this.testRedirect(redirect.oldUrl)}>
-                                        Test
-                                    </button>
-                                    <button class="btn btn-secondary btn-sm" @click=${() => this.openEditModal(redirect)}>
-                                        Edit
-                                    </button>
-                                    <button class="btn btn-danger btn-sm" @click=${() => this.deleteRedirect(redirect)}>
-                                        Delete
-                                    </button>
-                                </td>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" .checked=${this.allSelected} @change=${this.toggleSelectAll} />
+                                </th>
+                                <th>Status</th>
+                                <th>Old URL</th>
+                                <th>New URL</th>
+                                <th>Notes</th>
+                                <th>Type</th>
+                                <th>Match</th>
+                                <th>Active</th>
+                                <th>Actions</th>
                             </tr>
-                        `)}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            ${this.redirects.map(redirect => html`
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" .checked=${this.selectedIds.includes(redirect.id)} @change=${(e) => this.toggleSelectId(redirect.id, e.target.checked)} />
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-${redirect.statusCode}">
+                                            ${redirect.statusCode}
+                                        </span>
+                                    </td>
+                                    <td class="url-cell" title="${redirect.oldUrl}">
+                                        <div style="display:flex; gap:6px; align-items:center;">
+                                            <span>${redirect.oldUrl}</span>
+                                            <button class="btn btn-secondary btn-sm" @click=${() => this.copyToClipboard(redirect.oldUrl)}>Copy</button>
+                                        </div>
+                                    </td>
+                                    <td class="url-cell" title="${redirect.newUrl || ''}">
+                                        ${redirect.newUrl ? html`
+                                            <div style="display:flex; gap:6px; align-items:center;">
+                                                <span>${redirect.newUrl}</span>
+                                                <button class="btn btn-secondary btn-sm" @click=${() => this.copyToClipboard(redirect.newUrl)}>Copy</button>
+                                            </div>
+                                        ` : '-'}
+                                    </td>
+                                    <td class="notes-cell" title="${redirect.description || ''}">${redirect.description || '-'}</td>
+                                    <td>${this.getStatusLabel(redirect.statusCode)}</td>
+                                    <td>${redirect.isRegex ? 'Regex' : 'Exact'}</td>
+                                    <td>
+                                        <span class="${redirect.isActive ? 'active-yes' : 'active-no'}">
+                                            ${redirect.isActive ? 'Yes' : 'No'}
+                                        </span>
+                                    </td>
+                                    <td class="actions actions-cell">
+                                        <button class="btn btn-secondary btn-sm" @click=${() => this.testRedirect(redirect.oldUrl)}>
+                                            Test
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" @click=${() => this.openEditModal(redirect)}>
+                                            Edit
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" @click=${() => this.deleteRedirect(redirect)}>
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            `)}
+                        </tbody>
+                    </table>
+                </div>
             `}
 
             ${this.showModal ? html`

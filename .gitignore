@@ -1,6 +1,7 @@
 # Build results
 bin/
 obj/
+out/
 
 # NuGet packages
 *.nupkg
