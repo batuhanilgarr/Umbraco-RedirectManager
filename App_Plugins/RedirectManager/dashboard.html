@@ -8,6 +8,36 @@
             </umb-button>
         </umb-box-header>
         <umb-box-content>
+            <h1>Bitiz Redirect Manager</h1>
+            <p>Bu panel, sitenizdeki URL yönlendirmelerini merkezi olarak yönetmenizi sağlar. Yeni yönlendirmeler ekleyebilir, mevcutları güncelleyebilir veya silebilirsiniz.</p>
+            
+            <!-- Status Code Legend -->
+            <div class="redirect-status-legend">
+                <h3>Status Code Açıklamaları:</h3>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <span class="redirect-status redirect-status-301">301</span>
+                        <span class="legend-label">Kalıcı Yönlendirme</span>
+                        <span class="legend-description">- Arama motorlarına kalıcı olarak yeni URL'yi kullanmasını söyler</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="redirect-status redirect-status-302">302</span>
+                        <span class="legend-label">Geçici Yönlendirme</span>
+                        <span class="legend-description">- Geçici olarak farklı bir URL'ye yönlendirir</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="redirect-status redirect-status-404">404</span>
+                        <span class="legend-label">Bulunamadı</span>
+                        <span class="legend-description">- Sayfa bulunamadı hatası döndürür</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="redirect-status redirect-status-410">410</span>
+                        <span class="legend-label">Kaldırıldı</span>
+                        <span class="legend-description">- Sayfa kalıcı olarak kaldırıldığını belirtir</span>
+                    </div>
+                </div>
+            </div>
+
             <div ng-if="vm.loading" class="redirect-loading">
                 <umb-load-indicator></umb-load-indicator>
             </div>
