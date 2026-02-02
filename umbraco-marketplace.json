@@ -15,25 +15,21 @@
     "license": "https://opensource.org/licenses/MIT"
   },
   "icon": {
-    "url": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/Gemini_Generated_Image_sa0p57sa0p57sa0p-519f712d-a1cb-40e9-a186-354f93d772a7.png",
-    "description": "8Bitiz Redirect Manager package icon"
+    "url": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/bitiz_redirect_logo.png",
+    "description": "Bitiz Redirect Manager package icon"
   },
   "screenshots": [
     {
-      "url": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/Screenshot_2026-02-02_at_16-50-49_Settings_Umbraco-754d6000-cee8-4c1f-906a-79c17b8d1229.png",
+      "url": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/1.png",
       "caption": "Dashboard – Bitiz Redirect Manager overview with status code legend, filters, and redirect list."
     },
     {
-      "url": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/Screenshot_2026-02-02_at_16-51-09_Settings_Umbraco-c51a1fa4-3a65-498e-a2f8-d678ba0b429a.png",
+      "url": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/2.png",
       "caption": "Add New Redirect – clean modal with status code, Old/New URL, notes, Active and Regex match toggles."
     },
     {
-      "url": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/Screenshot_2026-02-02_at_16-51-16_Settings_Umbraco-6f024a2a-585f-4fd6-a249-843e96fddf95.png",
+      "url": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/3.png",
       "caption": "Edit Redirect – update existing rules with the same modern form and toggles."
-    },
-    {
-      "url": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/Gemini_Generated_Image_sa0p57sa0p57sa0p-519f712d-a1cb-40e9-a186-354f93d772a7.png",
-      "caption": "Promo artwork – 8Bitiz Redirect Manager retro‑style promotional image."
     }
   ],
   "authors": [
