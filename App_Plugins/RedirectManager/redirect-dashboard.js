@@ -870,32 +870,32 @@ class RedirectManagerDashboard extends UmbLitElement {
                 <div>
                     <h1>Bitiz Redirect Manager</h1>
                     <p style="margin-top: 8px; margin-bottom: 16px; color: #666; font-size: 14px; line-height: 1.5;">
-                        Bu panel, sitenizdeki URL yönlendirmelerini merkezi olarak yönetmenizi sağlar. Yeni yönlendirmeler ekleyebilir, mevcutları güncelleyebilir veya silebilirsiniz.
+                        This panel lets you centrally manage URL redirects for your site. You can add new redirects, update existing ones, or remove rules that are no longer needed.
                     </p>
 
                     <!-- Status Code Legend -->
                     <div class="redirect-status-legend" style="background: #f8f9fa; border: 1px solid #e9e9e9; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
-                        <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #333;">Status Code Açıklamaları:</h3>
+                        <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #333;">Status Code Descriptions:</h3>
                         <div style="display: flex; flex-wrap: wrap; gap: 16px;">
                             <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 calc(50% - 8px); min-width: 250px;">
                                 <span class="redirect-status redirect-status-301" style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; color: #fff; background-color: #2bc37b;">301</span>
-                                <span style="font-weight: 600; color: #333; font-size: 13px;">Kalıcı Yönlendirme</span>
-                                <span style="color: #666; font-size: 12px;">- Arama motorlarına kalıcı olarak yeni URL'yi kullanmasını söyler</span>
+                                <span style="font-weight: 600; color: #333; font-size: 13px;">Permanent Redirect</span>
+                                <span style="color: #666; font-size: 12px;">- Tells browsers and search engines to always use the new URL</span>
                             </div>
                             <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 calc(50% - 8px); min-width: 250px;">
                                 <span class="redirect-status redirect-status-302" style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; color: #333; background-color: #f5c520;">302</span>
-                                <span style="font-weight: 600; color: #333; font-size: 13px;">Geçici Yönlendirme</span>
-                                <span style="color: #666; font-size: 12px;">- Geçici olarak farklı bir URL'ye yönlendirir</span>
+                                <span style="font-weight: 600; color: #333; font-size: 13px;">Temporary Redirect</span>
+                                <span style="color: #666; font-size: 12px;">- Temporarily redirects traffic to another URL</span>
                             </div>
                             <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 calc(50% - 8px); min-width: 250px;">
                                 <span class="redirect-status redirect-status-404" style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; color: #fff; background-color: #d42054;">404</span>
-                                <span style="font-weight: 600; color: #333; font-size: 13px;">Bulunamadı</span>
-                                <span style="color: #666; font-size: 12px;">- Sayfa bulunamadı hatası döndürür</span>
+                                <span style="font-weight: 600; color: #333; font-size: 13px;">Not Found</span>
+                                <span style="color: #666; font-size: 12px;">- Returns a standard 404 \"Page not found\" response</span>
                             </div>
                             <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 calc(50% - 8px); min-width: 250px;">
                                 <span class="redirect-status redirect-status-410" style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; color: #fff; background-color: #6c757d;">410</span>
-                                <span style="font-weight: 600; color: #333; font-size: 13px;">Kaldırıldı</span>
-                                <span style="color: #666; font-size: 12px;">- Sayfa kalıcı olarak kaldırıldığını belirtir</span>
+                                <span style="font-weight: 600; color: #333; font-size: 13px;">Gone</span>
+                                <span style="color: #666; font-size: 12px;">- Indicates the page has been permanently removed</span>
                             </div>
                         </div>
                     </div>
