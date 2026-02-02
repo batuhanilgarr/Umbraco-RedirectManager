@@ -344,21 +344,44 @@ class RedirectManagerDashboard extends UmbLitElement {
                 margin: 0 0 24px 0; font-size: 1.35rem; font-weight: 600; color: #1b264f;
                 padding-bottom: 12px; border-bottom: 1px solid #e9e9e9;
             }
-            .redirect-manager-modal-root .modal .form-group { margin-bottom: 20px; }
+            .redirect-manager-modal-root .modal .form-group { 
+                margin-bottom: 24px; 
+                padding-bottom: 20px; 
+                border-bottom: 1px solid #f0f0f0; 
+            }
+            .redirect-manager-modal-root .modal .form-group:last-of-type {
+                border-bottom: none; 
+                margin-bottom: 0; 
+                padding-bottom: 0; 
+            }
             .redirect-manager-modal-root .modal .form-group label {
-                display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #333;
+                display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #1b264f; letter-spacing: 0.01em;
             }
             .redirect-manager-modal-root .modal .form-group input[type="text"],
             .redirect-manager-modal-root .modal .form-group select,
             .redirect-manager-modal-root .modal .form-group textarea {
-                width: 100%; padding: 10px 12px; border: 1px solid #d8d7d9; border-radius: 6px;
-                font-size: 14px; font-family: inherit; box-sizing: border-box;
-                transition: border-color 0.15s ease, box-shadow 0.15s ease;
+                width: 100%; padding: 12px 14px; border: 2px solid #e0e0e0; border-radius: 8px;
+                font-size: 14px; font-family: inherit; box-sizing: border-box; color: #333;
+                transition: all 0.2s ease; background-color: #fff;
             }
-            .redirect-manager-modal-root .modal .form-group input:focus,
+            .redirect-manager-modal-root .modal .form-group input[type="text"]:hover,
+            .redirect-manager-modal-root .modal .form-group select:hover,
+            .redirect-manager-modal-root .modal .form-group textarea:hover {
+                border-color: #c0c0c0;
+            }
+            .redirect-manager-modal-root .modal .form-group input[type="text"]:focus,
             .redirect-manager-modal-root .modal .form-group select:focus,
             .redirect-manager-modal-root .modal .form-group textarea:focus {
-                outline: none; border-color: #3544b1; box-shadow: 0 0 0 3px rgba(53,68,177,0.15);
+                outline: none; border-color: #3544b1; box-shadow: 0 0 0 4px rgba(53,68,177,0.1); background-color: #fafbff;
+            }
+            .redirect-manager-modal-root .modal .form-group select {
+                cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+                background-repeat: no-repeat; background-position: right 14px center; background-size: 12px;
+                padding-right: 36px; appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            }
+            .redirect-manager-modal-root .modal .form-group input[type="text"]::placeholder,
+            .redirect-manager-modal-root .modal .form-group textarea::placeholder {
+                color: #999; opacity: 1;
             }
             .redirect-manager-modal-root .modal .form-group textarea { resize: vertical; min-height: 80px; }
             .redirect-manager-modal-root .modal .form-group small {
@@ -377,18 +400,27 @@ class RedirectManagerDashboard extends UmbLitElement {
                 margin-bottom: 0; cursor: pointer; font-weight: 500;
             }
             .redirect-manager-modal-root .modal .modal-actions {
-                display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;
-                padding-top: 20px; border-top: 1px solid #e9e9e9;
+                display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;
+                padding-top: 20px; border-top: 2px solid #f0f0f0;
             }
             .redirect-manager-modal-root .modal .modal-actions .btn {
-                min-width: 100px; padding: 10px 20px; border: none; border-radius: 6px;
-                font-size: 14px; font-weight: 600; cursor: pointer;
+                min-width: 100px; padding: 10px 24px; border: none; border-radius: 6px;
+                font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
             }
             .redirect-manager-modal-root .modal .modal-actions .btn.btn-primary {
-                background: #3544b1; color: #fff;
+                background: #2bc37b; color: #fff;
+            }
+            .redirect-manager-modal-root .modal .modal-actions .btn.btn-primary:hover {
+                background: #25a866; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(43,195,123,0.3);
+            }
+            .redirect-manager-modal-root .modal .modal-actions .btn.btn-primary:active {
+                transform: translateY(0);
             }
             .redirect-manager-modal-root .modal .modal-actions .btn.btn-secondary {
                 background: #e9e9e9; color: #333; border: 1px solid #d8d7d9;
+            }
+            .redirect-manager-modal-root .modal .modal-actions .btn.btn-secondary:hover {
+                background: #f5f5f5; color: #000;
             }
         `;
     }
@@ -761,7 +793,37 @@ class RedirectManagerDashboard extends UmbLitElement {
         return html`
             <div class="header">
                 <div>
-                    <h1>8Bitiz Redirect Manager</h1>
+                    <h1>Bitiz Redirect Manager</h1>
+                    <p style="margin-top: 8px; margin-bottom: 16px; color: #666; font-size: 14px; line-height: 1.5;">
+                        Bu panel, sitenizdeki URL yönlendirmelerini merkezi olarak yönetmenizi sağlar. Yeni yönlendirmeler ekleyebilir, mevcutları güncelleyebilir veya silebilirsiniz.
+                    </p>
+
+                    <!-- Status Code Legend -->
+                    <div class="redirect-status-legend" style="background: #f8f9fa; border: 1px solid #e9e9e9; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
+                        <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #333;">Status Code Açıklamaları:</h3>
+                        <div style="display: flex; flex-wrap: wrap; gap: 16px;">
+                            <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 calc(50% - 8px); min-width: 250px;">
+                                <span class="redirect-status redirect-status-301" style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; color: #fff; background-color: #2bc37b;">301</span>
+                                <span style="font-weight: 600; color: #333; font-size: 13px;">Kalıcı Yönlendirme</span>
+                                <span style="color: #666; font-size: 12px;">- Arama motorlarına kalıcı olarak yeni URL'yi kullanmasını söyler</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 calc(50% - 8px); min-width: 250px;">
+                                <span class="redirect-status redirect-status-302" style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; color: #333; background-color: #f5c520;">302</span>
+                                <span style="font-weight: 600; color: #333; font-size: 13px;">Geçici Yönlendirme</span>
+                                <span style="color: #666; font-size: 12px;">- Geçici olarak farklı bir URL'ye yönlendirir</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 calc(50% - 8px); min-width: 250px;">
+                                <span class="redirect-status redirect-status-404" style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; color: #fff; background-color: #d42054;">404</span>
+                                <span style="font-weight: 600; color: #333; font-size: 13px;">Bulunamadı</span>
+                                <span style="color: #666; font-size: 12px;">- Sayfa bulunamadı hatası döndürür</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 calc(50% - 8px); min-width: 250px;">
+                                <span class="redirect-status redirect-status-410" style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; color: #fff; background-color: #6c757d;">410</span>
+                                <span style="font-weight: 600; color: #333; font-size: 13px;">Kaldırıldı</span>
+                                <span style="color: #666; font-size: 12px;">- Sayfa kalıcı olarak kaldırıldığını belirtir</span>
+                            </div>
+                        </div>
+                    </div>
 
                     ${this.messageText ? html`
                         <div style="margin-top: 10px; padding: 10px 12px; border-radius: 6px; border: 1px solid #e9e9e9; background: ${this.messageType === 'success' ? '#e8f5e9' : this.messageType === 'error' ? '#fdecea' : '#eef2ff'}; color: #1b264f;">
