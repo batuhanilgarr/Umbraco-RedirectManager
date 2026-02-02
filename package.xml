@@ -2,19 +2,19 @@
 <umbPackage>
   <info>
     <package>
-      <name>Umbraco Redirect Manager</name>
-      <version>1.0.0</version>
+      <name>Bitiz Redirect Manager</name>
+      <version>1.2.16</version>
       <license url="https://opensource.org/licenses/MIT">MIT License</license>
-      <url>https://github.com/yourusername/Umbraco.RedirectManager</url>
+      <url>https://github.com/8bitiz/RedirectManager</url>
       <requirements>
-        <major>13</major>
+        <major>17</major>
         <minor>0</minor>
         <patch>0</patch>
       </requirements>
     </package>
     <author>
-      <name>Your Name</name>
-      <website>https://yourwebsite.com</website>
+      <name>8Bitiz</name>
+      <website>https://github.com/8bitiz</website>
     </author>
     <readme><![CDATA[
       Umbraco Redirect Manager - A URL redirect manager plugin for Umbraco CMS.

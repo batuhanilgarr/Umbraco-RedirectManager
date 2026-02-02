@@ -1,14 +1,17 @@
 # 8Bitiz Redirect Manager
 
-A URL redirect manager plugin for Umbraco CMS 17 LTS. Manage 301, 302, 404, and 410 redirects directly from the Umbraco backoffice.
+A URL redirect manager plugin for Umbraco CMS 17 LTS. Manage 301, 302, 404, and 410 redirects directly from the Umbraco backoffice with a modern dashboard, CSV import/export, regex support, and a built-in test tool.
 
 ## Features
 
-- **Multiple Status Codes**: Support for 301 (Permanent), 302 (Temporary), 404 (Not Found), and 410 (Gone)
-- **Backoffice Dashboard**: Easy-to-use interface for managing redirects
-- **Database Storage**: Redirects stored in a custom database table
-- **Automatic Migration**: Database table created automatically on installation
-- **Auto-update App_Plugins**: Files are automatically copied on build
+- **Multiple status codes**: 301 (Permanent), 302 (Temporary), 404 (Not Found), and 410 (Gone).
+- **Modern backoffice dashboard**: Clean Umbraco 17 dashboard built with Lit; search, filter, and bulk actions.
+- **Regex and exact match**: Support for both exact path redirects and regex rules with capture groups.
+- **CSV import/export**: Quickly migrate or bulk edit redirects via CSV.
+- **Test tool**: Test a path before saving to see which redirect will match.
+- **Database storage**: Redirects stored in a dedicated table, fully controlled from the backoffice.
+- **Automatic migration**: Database table created/updated automatically on installation.
+- **Auto-update App_Plugins**: App_Plugins assets are copied on build via the included MSBuild targets.
 
 ## Installation
 
@@ -72,11 +75,11 @@ dotnet build
 
 ## Usage
 
-1. Install the package
-2. Restart your Umbraco application
-3. Navigate to the "Settings" section in the backoffice
-4. Click on "Redirect Manager" dashboard
-5. Add, edit, or delete redirects as needed
+1. Install the package.
+2. Restart your Umbraco application.
+3. Navigate to the **Settings** section in the Umbraco backoffice.
+4. Open the **Redirect Manager** dashboard.
+5. Add, edit, test, or delete redirects as needed, or import/export CSV files for bulk changes.
 
 ## Status Codes
 

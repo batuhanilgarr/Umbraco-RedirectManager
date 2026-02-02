@@ -1,0 +1,57 @@
+{
+  "name": "8Bitiz Redirect Manager",
+  "version": "1.2.16",
+  "description": "Modern URL redirect manager for Umbraco 17 LTS. Manage 301, 302, 404, and 410 redirects from a clean backoffice dashboard with regex support, CSV import/export, and a built‑in test tool.",
+  "categories": [
+    "Editor Tools",
+    "Analytics & Insights",
+    "Developer Tools"
+  ],
+  "packageId": "8Bitiz.RedirectManager",
+  "links": {
+    "documentation": "https://github.com/8bitiz/RedirectManager#readme",
+    "issueTracker": "https://github.com/8bitiz/RedirectManager/issues",
+    "sourceRepository": "https://github.com/8bitiz/RedirectManager",
+    "license": "https://opensource.org/licenses/MIT"
+  },
+  "icon": {
+    "url": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/Gemini_Generated_Image_sa0p57sa0p57sa0p-519f712d-a1cb-40e9-a186-354f93d772a7.png",
+    "description": "8Bitiz Redirect Manager package icon"
+  },
+  "screenshots": [
+    {
+      "url": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/Screenshot_2026-02-02_at_16-50-49_Settings_Umbraco-754d6000-cee8-4c1f-906a-79c17b8d1229.png",
+      "caption": "Dashboard – Bitiz Redirect Manager overview with status code legend, filters, and redirect list."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/Screenshot_2026-02-02_at_16-51-09_Settings_Umbraco-c51a1fa4-3a65-498e-a2f8-d678ba0b429a.png",
+      "caption": "Add New Redirect – clean modal with status code, Old/New URL, notes, Active and Regex match toggles."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/Screenshot_2026-02-02_at_16-51-16_Settings_Umbraco-6f024a2a-585f-4fd6-a249-843e96fddf95.png",
+      "caption": "Edit Redirect – update existing rules with the same modern form and toggles."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/Gemini_Generated_Image_sa0p57sa0p57sa0p-519f712d-a1cb-40e9-a186-354f93d772a7.png",
+      "caption": "Promo artwork – 8Bitiz Redirect Manager retro‑style promotional image."
+    }
+  ],
+  "authors": [
+    {
+      "name": "8Bitiz",
+      "url": "https://github.com/8bitiz"
+    }
+  ],
+  "keywords": [
+    "umbraco",
+    "redirect",
+    "redirects",
+    "301",
+    "302",
+    "404",
+    "410",
+    "seo",
+    "editor tools"
+  ]
+}
+
