@@ -336,91 +336,166 @@ class RedirectManagerDashboard extends UmbLitElement {
                 z-index: 1000; padding: 20px; overflow-y: auto;
             }
             .redirect-manager-modal-root .modal {
-                background: #fff; border-radius: 12px; padding: 28px 32px; width: 520px;
+                background: #fff; border-radius: 16px; padding: 36px 40px; width: 600px;
                 max-width: calc(100vw - 40px); max-height: calc(100vh - 40px); overflow-y: auto;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.2); margin: auto;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.15); margin: auto;
+                display: flex; flex-direction: column;
             }
             .redirect-manager-modal-root .modal h2 {
-                margin: 0 0 24px 0; font-size: 1.35rem; font-weight: 600; color: #1b264f;
-                padding-bottom: 12px; border-bottom: 1px solid #e9e9e9;
+                margin: 0 0 32px 0; font-size: 1.5rem; font-weight: 700; color: #1b264f;
+                padding-bottom: 16px; border-bottom: 2px solid #f0f0f0; letter-spacing: -0.01em;
             }
             .redirect-manager-modal-root .modal .form-group { 
-                margin-bottom: 24px; 
-                padding-bottom: 20px; 
-                border-bottom: 1px solid #f0f0f0; 
+                margin-bottom: 32px; 
             }
             .redirect-manager-modal-root .modal .form-group:last-of-type {
-                border-bottom: none; 
                 margin-bottom: 0; 
-                padding-bottom: 0; 
             }
             .redirect-manager-modal-root .modal .form-group label {
-                display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #1b264f; letter-spacing: 0.01em;
+                display: block; margin-bottom: 10px; font-weight: 600; font-size: 14px; color: #1b264f; letter-spacing: 0.01em;
             }
             .redirect-manager-modal-root .modal .form-group input[type="text"],
             .redirect-manager-modal-root .modal .form-group select,
             .redirect-manager-modal-root .modal .form-group textarea {
-                width: 100%; padding: 12px 14px; border: 2px solid #e0e0e0; border-radius: 8px;
-                font-size: 14px; font-family: inherit; box-sizing: border-box; color: #333;
-                transition: all 0.2s ease; background-color: #fff;
+                width: 100%; padding: 14px 16px; border: 2px solid #e5e7eb; border-radius: 10px;
+                font-size: 14px; font-family: inherit; box-sizing: border-box; color: #1f2937;
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); background-color: #fff;
             }
             .redirect-manager-modal-root .modal .form-group input[type="text"]:hover,
             .redirect-manager-modal-root .modal .form-group select:hover,
             .redirect-manager-modal-root .modal .form-group textarea:hover {
-                border-color: #c0c0c0;
+                border-color: #d1d5db;
             }
             .redirect-manager-modal-root .modal .form-group input[type="text"]:focus,
             .redirect-manager-modal-root .modal .form-group select:focus,
             .redirect-manager-modal-root .modal .form-group textarea:focus {
-                outline: none; border-color: #3544b1; box-shadow: 0 0 0 4px rgba(53,68,177,0.1); background-color: #fafbff;
+                outline: none; border-color: #3544b1; box-shadow: 0 0 0 4px rgba(53,68,177,0.12); background-color: #fafbff;
             }
             .redirect-manager-modal-root .modal .form-group select {
                 cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-                background-repeat: no-repeat; background-position: right 14px center; background-size: 12px;
-                padding-right: 36px; appearance: none; -webkit-appearance: none; -moz-appearance: none;
+                background-repeat: no-repeat; background-position: right 16px center; background-size: 12px;
+                padding-right: 40px; appearance: none; -webkit-appearance: none; -moz-appearance: none;
             }
             .redirect-manager-modal-root .modal .form-group input[type="text"]::placeholder,
             .redirect-manager-modal-root .modal .form-group textarea::placeholder {
-                color: #999; opacity: 1;
+                color: #9ca3af; opacity: 1;
             }
-            .redirect-manager-modal-root .modal .form-group textarea { resize: vertical; min-height: 80px; }
+            .redirect-manager-modal-root .modal .form-group textarea { resize: vertical; min-height: 100px; }
             .redirect-manager-modal-root .modal .form-group small {
-                display: block; margin-top: 6px; color: #666; font-size: 12px; line-height: 1.4;
+                display: block; margin-top: 8px; color: #6b7280; font-size: 12px; line-height: 1.5;
             }
             .redirect-manager-modal-root .modal .form-group small code {
-                padding: 2px 6px; background: #f0f0f0; border-radius: 4px; font-size: 11px; color: #333;
+                padding: 2px 6px; background: #f3f4f6; border-radius: 4px; font-size: 11px; color: #374151; font-family: 'Monaco', 'Courier New', monospace;
             }
-            .redirect-manager-modal-root .modal .checkbox-group {
-                display: flex; align-items: center; gap: 10px;
+            .redirect-manager-modal-root .modal .status-code-select-wrapper {
+                position: relative;
             }
-            .redirect-manager-modal-root .modal .checkbox-group input[type="checkbox"] {
-                width: 18px; height: 18px; margin: 0; cursor: pointer; accent-color: #3544b1;
+            .redirect-manager-modal-root .modal .status-code-badge {
+                position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+                padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
+                pointer-events: none; margin-top: 0;
             }
-            .redirect-manager-modal-root .modal .checkbox-group label {
-                margin-bottom: 0; cursor: pointer; font-weight: 500;
+            .redirect-manager-modal-root .modal .status-code-badge.status-301 {
+                background: #d1fae5; color: #065f46;
+            }
+            .redirect-manager-modal-root .modal .status-code-badge.status-302 {
+                background: #fef3c7; color: #92400e;
+            }
+            .redirect-manager-modal-root .modal .status-code-badge.status-404 {
+                background: #fee2e2; color: #991b1b;
+            }
+            .redirect-manager-modal-root .modal .status-code-badge.status-410 {
+                background: #e5e7eb; color: #374151;
+            }
+            .redirect-manager-modal-root .modal .status-code-select-wrapper select {
+                padding-right: 100px;
+            }
+            .redirect-manager-modal-root .modal .form-row {
+                display: flex; gap: 16px; justify-content: space-between;
+            }
+            .redirect-manager-modal-root .modal .form-row .form-group {
+                flex: 1;
+            }
+            .redirect-manager-modal-root .modal .form-row .form-group + .form-group {
+                margin-left: 8px;
+            }
+            @media (max-width: 768px) {
+                .redirect-manager-modal-root .modal {
+                    width: 100%;
+                    padding: 24px 20px;
+                }
+                .redirect-manager-modal-root .modal h2 {
+                    font-size: 1.3rem; margin-bottom: 24px;
+                }
+                .redirect-manager-modal-root .modal .form-group {
+                    margin-bottom: 24px;
+                }
+                .redirect-manager-modal-root .modal .form-row {
+                    flex-direction: column;
+                }
+                .redirect-manager-modal-root .modal .form-row .form-group + .form-group {
+                    margin-left: 0;
+                }
+                .redirect-manager-modal-root .modal .status-code-badge {
+                    display: none;
+                }
+                .redirect-manager-modal-root .modal .status-code-select-wrapper select {
+                    padding-right: 40px;
+                }
+            }
+            .redirect-manager-modal-root .modal .toggle-group {
+                display: flex; align-items: center; justify-content: space-between; gap: 16px;
+                padding: 16px; background: #f9fafb; border-radius: 10px; border: 1px solid #e5e7eb;
+            }
+            .redirect-manager-modal-root .modal .toggle-group .toggle-label {
+                flex: 1; margin-bottom: 0; cursor: pointer; font-weight: 500; color: #374151;
+            }
+            .redirect-manager-modal-root .modal .toggle-switch {
+                position: relative; display: inline-block; width: 52px; height: 28px;
+                flex-shrink: 0;
+            }
+            .redirect-manager-modal-root .modal .toggle-switch input {
+                opacity: 0; width: 0; height: 0;
+            }
+            .redirect-manager-modal-root .modal .toggle-slider {
+                position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+                background-color: #d1d5db; transition: 0.3s; border-radius: 28px;
+            }
+            .redirect-manager-modal-root .modal .toggle-slider:before {
+                position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px;
+                background-color: white; transition: 0.3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            }
+            .redirect-manager-modal-root .modal .toggle-switch input:checked + .toggle-slider {
+                background-color: #2bc37b;
+            }
+            .redirect-manager-modal-root .modal .toggle-switch input:focus + .toggle-slider {
+                box-shadow: 0 0 0 3px rgba(43,195,123,0.2);
+            }
+            .redirect-manager-modal-root .modal .toggle-switch input:checked + .toggle-slider:before {
+                transform: translateX(24px);
             }
             .redirect-manager-modal-root .modal .modal-actions {
-                display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px;
-                padding-top: 20px; border-top: 2px solid #f0f0f0;
+                display: flex; justify-content: flex-end; gap: 12px; margin-top: 40px;
+                padding-top: 24px; border-top: 2px solid #f0f0f0;
             }
             .redirect-manager-modal-root .modal .modal-actions .btn {
-                min-width: 100px; padding: 10px 24px; border: none; border-radius: 6px;
-                font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+                min-width: 120px; padding: 12px 28px; border: none; border-radius: 10px;
+                font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             }
             .redirect-manager-modal-root .modal .modal-actions .btn.btn-primary {
-                background: #2bc37b; color: #fff;
+                background: #2bc37b; color: #fff; box-shadow: 0 2px 8px rgba(43,195,123,0.25);
             }
             .redirect-manager-modal-root .modal .modal-actions .btn.btn-primary:hover {
-                background: #25a866; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(43,195,123,0.3);
+                background: #25a866; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(43,195,123,0.35);
             }
             .redirect-manager-modal-root .modal .modal-actions .btn.btn-primary:active {
-                transform: translateY(0);
+                transform: translateY(0); box-shadow: 0 2px 8px rgba(43,195,123,0.25);
             }
             .redirect-manager-modal-root .modal .modal-actions .btn.btn-secondary {
-                background: #e9e9e9; color: #333; border: 1px solid #d8d7d9;
+                background: transparent; color: #6b7280; border: 2px solid #e5e7eb;
             }
             .redirect-manager-modal-root .modal .modal-actions .btn.btn-secondary:hover {
-                background: #f5f5f5; color: #000;
+                background: #f9fafb; color: #374151; border-color: #d1d5db;
             }
         `;
     }
@@ -857,6 +932,9 @@ class RedirectManagerDashboard extends UmbLitElement {
                             ${this.importInProgress ? 'Importing...' : 'Import CSV'}
                         </button>
                         <input id="importFileInput" type="file" accept=".csv,text/csv" style="display:none" @change=${this.handleImportFile} />
+                        <button class="btn btn-primary" style="margin-left: auto;" @click=${this.openAddModal}>
+                            Add New Redirect
+                        </button>
                     </div>
 
                     ${this.anySelected ? html`
@@ -867,11 +945,6 @@ class RedirectManagerDashboard extends UmbLitElement {
                             <button class="btn btn-danger btn-sm" @click=${this.bulkDeleteSelected}>Delete Selected</button>
                         </div>
                     ` : ''}
-                </div>
-                <div>
-                    <button class="btn btn-primary" @click=${this.openAddModal}>
-                        Add New Redirect
-                    </button>
                 </div>
             </div>
 
@@ -957,36 +1030,43 @@ class RedirectManagerDashboard extends UmbLitElement {
                         
                         <div class="form-group">
                             <label>Status Code</label>
-                            <select name="statusCode" .value=${this.formData.statusCode} @change=${this.handleInputChange}>
-                                <option value="301">301 - Permanent Redirect</option>
-                                <option value="302">302 - Temporary Redirect</option>
-                                <option value="404">404 - Not Found</option>
-                                <option value="410">410 - Gone</option>
-                            </select>
+                            <div class="status-code-select-wrapper">
+                                <select name="statusCode" .value=${this.formData.statusCode} @change=${this.handleInputChange}>
+                                    <option value="301">301 - Permanent Redirect</option>
+                                    <option value="302">302 - Temporary Redirect</option>
+                                    <option value="404">404 - Not Found</option>
+                                    <option value="410">410 - Gone</option>
+                                </select>
+                                <span class="status-code-badge status-${this.formData.statusCode}">
+                                    ${this.formData.statusCode === 301 ? 'Kalıcı' : this.formData.statusCode === 302 ? 'Geçici' : this.formData.statusCode === 404 ? 'Bulunamadı' : 'Kaldırıldı'}
+                                </span>
+                            </div>
                             <small>Select the redirect type</small>
                         </div>
 
-                        <div class="form-group">
-                            <label>Old URL *</label>
-                            <input type="text" 
-                                   name="oldUrl" 
-                                   .value=${this.formData.oldUrl} 
-                                   @input=${this.handleInputChange}
-                                   placeholder="/old-page">
-                            <small>The URL path to redirect from</small>
-                        </div>
-
-                        ${this.formData.statusCode === 301 || this.formData.statusCode === 302 ? html`
+                        <div class="form-row">
                             <div class="form-group">
-                                <label>New URL *</label>
+                                <label>Old URL *</label>
                                 <input type="text" 
-                                       name="newUrl" 
-                                       .value=${this.formData.newUrl} 
+                                       name="oldUrl" 
+                                       .value=${this.formData.oldUrl} 
                                        @input=${this.handleInputChange}
-                                       placeholder="/new-page">
-                                <small>The URL path to redirect to</small>
+                                       placeholder="/old-page">
+                                <small>The URL path to redirect from</small>
                             </div>
-                        ` : ''}
+
+                            ${this.formData.statusCode === 301 || this.formData.statusCode === 302 ? html`
+                                <div class="form-group">
+                                    <label>New URL *</label>
+                                    <input type="text" 
+                                           name="newUrl" 
+                                           .value=${this.formData.newUrl} 
+                                           @input=${this.handleInputChange}
+                                           placeholder="/new-page">
+                                    <small>The URL path to redirect to</small>
+                                </div>
+                            ` : ''}
+                        </div>
 
                         <div class="form-group">
                             <label>Notes</label>
@@ -999,25 +1079,31 @@ class RedirectManagerDashboard extends UmbLitElement {
                         </div>
 
                         <div class="form-group">
-                            <div class="checkbox-group">
-                                <input type="checkbox" 
-                                       name="isActive" 
-                                       id="isActive"
-                                       .checked=${this.formData.isActive} 
-                                       @change=${this.handleInputChange}>
-                                <label for="isActive">Active</label>
+                            <div class="toggle-group">
+                                <label class="toggle-label" for="isActive">Active</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" 
+                                           name="isActive" 
+                                           id="isActive"
+                                           .checked=${this.formData.isActive} 
+                                           @change=${this.handleInputChange}>
+                                    <span class="toggle-slider"></span>
+                                </label>
                             </div>
                             <small>Enable or disable this redirect</small>
                         </div>
 
                         <div class="form-group">
-                            <div class="checkbox-group">
-                                <input type="checkbox" 
-                                       name="isRegex" 
-                                       id="isRegex"
-                                       .checked=${this.formData.isRegex} 
-                                       @change=${this.handleInputChange}>
-                                <label for="isRegex">Regex match</label>
+                            <div class="toggle-group">
+                                <label class="toggle-label" for="isRegex">Regex match</label>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" 
+                                           name="isRegex" 
+                                           id="isRegex"
+                                           .checked=${this.formData.isRegex} 
+                                           @change=${this.handleInputChange}>
+                                    <span class="toggle-slider"></span>
+                                </label>
                             </div>
                             <small>
                                 If enabled, Old URL is treated as a regex pattern. For 301/302 you can use capture groups in New URL (e.g. <code>$1</code>).
