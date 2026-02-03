@@ -5,6 +5,7 @@
   "dashboards": [
     {
       "alias": "redirectManagerDashboard",
+      "name": "Redirect Manager",
       "view": "/App_Plugins/RedirectManager/dashboard.html",
       "sections": ["settings"],
       "weight": 10,

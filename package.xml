@@ -3,7 +3,7 @@
   <info>
     <package>
       <name>Bitiz Redirect Manager</name>
-      <version>1.2.20</version>
+      <version>1.2.21</version>
       <license url="https://opensource.org/licenses/MIT">MIT License</license>
       <url>https://github.com/8bitiz/RedirectManager</url>
       <requirements>
