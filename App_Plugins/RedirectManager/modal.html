@@ -10,7 +10,9 @@
                 </select>
             </umb-control-group>
 
-            <umb-control-group label="Old URL" description="The URL path to redirect from (e.g., /old-page)" required="true">
+            <umb-control-group label="Old URL"
+                               description="The URL path to redirect from"
+                               required="true">
                 <input type="text"
                        ng-model="model.redirect.oldUrl"
                        class="umb-property-editor umb-textstring"
@@ -19,7 +21,7 @@
             </umb-control-group>
 
             <umb-control-group label="New URL"
-                               description="The URL path to redirect to (required for 301/302)"
+                               description="The URL path to redirect to"
                                ng-if="model.redirect.statusCode == 301 || model.redirect.statusCode == 302">
                 <input type="text"
                        ng-model="model.redirect.newUrl"
@@ -27,9 +29,24 @@
                        placeholder="/new-page">
             </umb-control-group>
 
+            <umb-control-group label="Notes"
+                               description="Optional description to help identify the purpose of this redirect">
+                <textarea ng-model="model.redirect.description"
+                          rows="3"
+                          class="umb-property-editor umb-textarea"
+                          placeholder="Optional notes..."></textarea>
+            </umb-control-group>
+
             <umb-control-group label="Active" description="Enable or disable this redirect">
                 <umb-toggle checked="model.redirect.isActive"
                             on-click="model.redirect.isActive = !model.redirect.isActive">
+                </umb-toggle>
+            </umb-control-group>
+
+            <umb-control-group label="Regex match"
+                               description="If enabled, Old URL is treated as a regex pattern. For 301/302 you can use capture groups in New URL (e.g. $1).">
+                <umb-toggle checked="model.redirect.isRegex"
+                            on-click="model.redirect.isRegex = !model.redirect.isRegex">
                 </umb-toggle>
             </umb-control-group>
         </umb-box-content>

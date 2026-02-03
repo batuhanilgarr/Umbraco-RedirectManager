@@ -40,8 +40,10 @@
                 redirect: {
                     oldUrl: "",
                     newUrl: "",
+                    description: "",
                     statusCode: "301",
-                    isActive: true
+                    isActive: true,
+                    isRegex: false
                 },
                 close: function () {
                     vm.closeModal();
@@ -60,8 +62,10 @@
                     id: redirect.id,
                     oldUrl: redirect.oldUrl,
                     newUrl: redirect.newUrl || "",
+                    description: redirect.description || "",
                     statusCode: redirect.statusCode.toString(),
-                    isActive: redirect.isActive
+                    isActive: redirect.isActive,
+                    isRegex: !!redirect.isRegex
                 },
                 close: function () {
                     vm.closeModal();
