@@ -6,6 +6,21 @@
                         label="Add New Redirect"
                         action="vm.openAddModal()">
             </umb-button>
+            <umb-button type="button"
+                        button-style="secondary"
+                        label="Export CSV"
+                        action="vm.exportCsv()">
+            </umb-button>
+            <umb-button type="button"
+                        button-style="secondary"
+                        label="Import CSV"
+                        action="vm.triggerImport()">
+            </umb-button>
+            <input id="redirectManagerImportFileInput"
+                   type="file"
+                   accept=".csv,text/csv"
+                   style="display:none"
+                   onchange="angular.element(this).scope().vm.handleImportFile(this.files)" />
         </umb-box-header>
         <umb-box-content>
             <h1>Bitiz Redirect Manager</h1>

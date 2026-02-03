@@ -22,6 +22,17 @@
             },
             test: function (path) {
                 return $http.get(baseUrl + "test", { params: { path: path } });
+            },
+            exportUrl: function () {
+                return baseUrl + "export";
+            },
+            importCsv: function (file) {
+                var formData = new FormData();
+                formData.append("file", file);
+                return $http.post(baseUrl + "import", formData, {
+                    transformRequest: angular.identity,
+                    headers: { "Content-Type": undefined }
+                });
             }
         };
     }
