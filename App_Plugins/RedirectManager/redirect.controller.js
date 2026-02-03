@@ -82,6 +82,27 @@
             vm.modalModel = null;
         };
 
+        vm.testRedirect = function (redirect) {
+            if (!redirect || !redirect.oldUrl) {
+                notificationsService.error("Test", "Old URL is missing.");
+                return;
+            }
+
+            redirectResource.test(redirect.oldUrl).then(function (response) {
+                var result = response.data;
+                if (!result.matched) {
+                    notificationsService.info("Test", "No redirect matched.");
+                    return;
+                }
+
+                var code = result.redirect && result.redirect.statusCode;
+                var to = result.computedNewUrl || "-";
+                notificationsService.success("Test", "Matched " + result.matchType + " (" + code + ") -> " + to);
+            }, function () {
+                notificationsService.error("Test", "Failed to test redirect.");
+            });
+        };
+
         vm.saveRedirect = function (model) {
             var redirect = model.redirect;
             redirect.statusCode = parseInt(redirect.statusCode);

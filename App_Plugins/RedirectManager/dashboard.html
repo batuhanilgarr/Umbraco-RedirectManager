@@ -52,7 +52,9 @@
                         <th>Status</th>
                         <th>Old URL</th>
                         <th>New URL</th>
-                        <th>Status Code</th>
+                        <th>Notes</th>
+                        <th>Type</th>
+                        <th>Match</th>
                         <th>Active</th>
                         <th>Actions</th>
                     </tr>
@@ -66,13 +68,21 @@
                         </td>
                         <td class="redirect-url">{{redirect.oldUrl}}</td>
                         <td class="redirect-url">{{redirect.newUrl || '-'}}</td>
+                        <td class="redirect-notes">{{redirect.description || '-'}}</td>
                         <td>{{vm.getStatusCodeLabel(redirect.statusCode)}}</td>
+                        <td>{{redirect.isRegex ? 'Regex' : 'Exact'}}</td>
                         <td>
                             <span ng-class="{'redirect-active': redirect.isActive, 'redirect-inactive': !redirect.isActive}">
                                 {{redirect.isActive ? 'Yes' : 'No'}}
                             </span>
                         </td>
                         <td class="redirect-actions">
+                            <umb-button type="button"
+                                        button-style="secondary"
+                                        size="xs"
+                                        label="Test"
+                                        action="vm.testRedirect(redirect)">
+                            </umb-button>
                             <umb-button type="button"
                                         button-style="info"
                                         size="xs"

@@ -8,7 +8,7 @@
     
     <!-- Package Info -->
     <PackageId>8Bitiz.RedirectManager</PackageId>
-    <Version>1.2.24</Version>
+    <Version>1.2.25</Version>
     <Authors>8Bitiz</Authors>
     <Company>8Bitiz</Company>
     <Description>A URL redirect manager plugin for Umbraco CMS 13 and 17. Supports 301, 302, 404, and 410 status codes with backoffice management.</Description>

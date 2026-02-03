@@ -19,6 +19,9 @@
             },
             delete: function (id) {
                 return $http.delete(baseUrl + "delete/" + id);
+            },
+            test: function (path) {
+                return $http.get(baseUrl + "test", { params: { path: path } });
             }
         };
     }
