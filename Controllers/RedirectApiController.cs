@@ -286,10 +286,19 @@ public class RedirectApiController : UmbracoApiController
 
     [HttpPost("import")]
     [RequestSizeLimit(10_000_000)]
-    public async Task<IActionResult> ImportCsv([FromForm] IFormFile file)
+    public async Task<IActionResult> ImportCsv([FromForm] IFormFile? file)
     {
         if (file == null)
-            return BadRequest("File is missing");
+        {
+            if (Request?.Form?.Files != null && Request.Form.Files.Count > 0)
+            {
+                file = Request.Form.Files[0];
+            }
+            else
+            {
+                return BadRequest("File is missing");
+            }
+        }
 
         if (file.Length == 0)
             return BadRequest("File is empty");
