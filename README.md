@@ -1,4 +1,4 @@
-# 8Bitiz Redirect Manager
+# Bitiz Redirect Manager
 
 A URL redirect manager plugin for Umbraco CMS 17 LTS. Manage 301, 302, 404, and 410 redirects directly from the Umbraco backoffice with a modern dashboard, CSV import/export, regex support, and a built-in test tool.
 
