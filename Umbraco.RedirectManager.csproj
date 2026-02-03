@@ -1,17 +1,17 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
     
     <!-- Package Info -->
     <PackageId>8Bitiz.RedirectManager</PackageId>
-    <Version>1.2.19</Version>
+    <Version>1.2.20</Version>
     <Authors>8Bitiz</Authors>
     <Company>8Bitiz</Company>
-    <Description>A URL redirect manager plugin for Umbraco CMS 17 LTS. Supports 301, 302, 404, and 410 status codes with backoffice management.</Description>
+    <Description>A URL redirect manager plugin for Umbraco CMS 13 and 17. Supports 301, 302, 404, and 410 status codes with backoffice management.</Description>
     <PackageTags>umbraco;umbraco-marketplace;plugin;redirect;seo;301;302;404;410</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/8bitiz/RedirectManager</PackageProjectUrl>
@@ -28,9 +28,14 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <PackageReference Include="Umbraco.Cms" Version="17.1.0" />
     <PackageReference Include="Umbraco.Cms.Infrastructure" Version="17.1.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="Umbraco.Cms" Version="13.9.2" />
+    <PackageReference Include="Umbraco.Cms.Infrastructure" Version="13.9.2" />
   </ItemGroup>
 
   <!-- Include App_Plugins for backoffice UI -->
