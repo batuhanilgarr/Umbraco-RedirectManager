@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<language alias="en-us" intName="English (US)" localName="English (US)" lcid="1033">
+  <area alias="dashboardTabs">
+    <key alias="redirectManagerDashboard">Redirect Manager</key>
+  </area>
+</language>
+

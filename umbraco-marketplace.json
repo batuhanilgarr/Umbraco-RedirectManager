@@ -1,6 +1,6 @@
 {
   "name": "Bitiz Redirect Manager",
-  "version": "1.2.21",
+  "version": "1.2.22",
   "description": "Modern URL redirect manager for Umbraco 13 and 17. Manage 301, 302, 404, and 410 redirects from a clean backoffice dashboard with regex support, CSV import/export, and a built‑in test tool.",
   "categories": [
     "Editor Tools",
