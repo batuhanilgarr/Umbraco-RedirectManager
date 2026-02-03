@@ -26,12 +26,10 @@
             exportUrl: function () {
                 return baseUrl + "export";
             },
-            importCsv: function (file) {
-                var formData = new FormData();
-                formData.append("file", file);
-                return $http.post(baseUrl + "import", formData, {
-                    transformRequest: angular.identity,
-                    headers: { "Content-Type": undefined }
+            importCsvContent: function (content) {
+                // Send raw CSV content; backend will parse Request.Body
+                return $http.post(baseUrl + "import", content, {
+                    headers: { "Content-Type": "text/plain; charset=utf-8" }
                 });
             }
         };

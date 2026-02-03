@@ -1,6 +1,6 @@
 {
   "name": "Redirect Manager",
-  "version": "1.2.28",
+  "version": "1.2.30",
   "allowPackageTelemetry": false,
   "dashboards": [
     {

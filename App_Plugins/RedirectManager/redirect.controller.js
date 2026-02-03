@@ -181,24 +181,34 @@
             var file = files && files.length ? files[0] : null;
             if (!file) return;
 
-            vm.importInProgress = true;
+            var reader = new FileReader();
 
-            redirectResource.importCsv(file).then(function (response) {
-                var result = response.data || {};
-                notificationsService.success(
-                    "Import CSV",
-                    "Imported. Created: " + (result.created || 0) + ", Updated: " + (result.updated || 0) + ", Skipped: " + (result.skipped || 0)
-                );
-                vm.loadRedirects();
-            }, function (error) {
-                var message = (error && error.data) ? error.data : "Import failed";
-                notificationsService.error("Import CSV", message);
-            }).finally(function () {
-                vm.importInProgress = false;
-                // reset input so same file can be selected again
-                var input = document.getElementById("redirectManagerImportFileInput");
-                if (input) input.value = "";
-            });
+            reader.onload = function (e) {
+                var content = e.target.result || "";
+
+                $scope.$apply(function () {
+                    vm.importInProgress = true;
+
+                    redirectResource.importCsvContent(content).then(function (response) {
+                        var result = response.data || {};
+                        notificationsService.success(
+                            "Import CSV",
+                            "Imported. Created: " + (result.created || 0) + ", Updated: " + (result.updated || 0) + ", Skipped: " + (result.skipped || 0)
+                        );
+                        vm.loadRedirects();
+                    }, function (error) {
+                        var message = (error && error.data) ? error.data : "Import failed";
+                        notificationsService.error("Import CSV", message);
+                    }).finally(function () {
+                        vm.importInProgress = false;
+                        // reset input so same file can be selected again
+                        var input = document.getElementById("redirectManagerImportFileInput");
+                        if (input) input.value = "";
+                    });
+                });
+            };
+
+            reader.readAsText(file);
         };
     }
 
