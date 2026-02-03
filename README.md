@@ -2,6 +2,14 @@
 
 A URL redirect manager plugin for Umbraco CMS 17 LTS. Manage 301, 302, 404, and 410 redirects directly from the Umbraco backoffice with a modern dashboard, CSV import/export, regex support, and a built-in test tool.
 
+## Screenshots
+
+![Bitiz Redirect Manager – Dashboard](https://raw.githubusercontent.com/8Bitiz/RedirectManager/main/assets/1.png)
+
+![Bitiz Redirect Manager – Add New Redirect](https://raw.githubusercontent.com/8Bitiz/RedirectManager/main/assets/2.png)
+
+![Bitiz Redirect Manager – Edit Redirect](https://raw.githubusercontent.com/8Bitiz/RedirectManager/main/assets/3.png)
+
 ## Features
 
 - **Multiple status codes**: 301 (Permanent), 302 (Temporary), 404 (Not Found), and 410 (Gone).
