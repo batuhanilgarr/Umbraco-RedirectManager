@@ -1,6 +1,6 @@
 {
   "$schema": "https://marketplace.umbraco.com/umbraco-marketplace-schema.json",
-  "Title": "Bitiz Redirect Manager",
+  "Title": "BT Redirect Manager",
   "Description": "Modern URL redirect manager for Umbraco 13 and 17. Manage 301, 302, 404, and 410 redirects from a clean backoffice dashboard with regex support, CSV import/export, and a built‑in test tool.",
   "Category": "Editor Tools",
   "AlternateCategory": "Developer Tools",
@@ -16,8 +16,8 @@
     "editor tools"
   ],
   "AuthorDetails": {
-    "Name": "8Bitiz",
-    "Url": "https://github.com/8bitiz"
+    "Name": "BT",
+    "Url": "https://github.com/batuhanilgarr"
   },
   "Screenshots": [
     {
