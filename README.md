@@ -25,24 +25,24 @@ A URL redirect manager plugin for Umbraco CMS **13 and 17**. Manage 301, 302, 40
 
 ### Docker ile kendi NuGet sunucunuz (önerilen)
 
-Kendi NuGet sunucunuzu Docker’da çalıştırıp plugini oraya atar, istediğiniz projede `dotnet add package 8Bitiz.RedirectManager` ile kurarsınız.
+Kendi NuGet sunucunuzu Docker’da çalıştırıp plugini oraya atar, istediğiniz projede `dotnet add package BT.RedirectManager` ile kurarsınız.
 
 1. **NuGet sunucusunu başlatın:** `docker compose -f docker/docker-compose.yml up -d`
 2. **Plugini sunucuya gönderin:** `./scripts/push-to-feed.sh` (Windows: `.\scripts\push-to-feed.ps1`)
 3. **Kurulum yapacağınız projenin solution klasörüne** `nuget.config` ekleyin (`nuget.config.example` örneğine bakın; feed: `http://localhost:5555/v3/index.json`)
-4. **Projede:** `dotnet add package 8Bitiz.RedirectManager` → `dotnet build`
+4. **Projede:** `dotnet add package BT.RedirectManager` → `dotnet build`
 
 Detaylı adımlar: [docs/NUGET-SUNUCU-VE-KURULUM.md](docs/NUGET-SUNUCU-VE-KURULUM.md)
 
 ### From NuGet.org
 
 ```bash
-dotnet add package 8Bitiz.RedirectManager
+dotnet add package BT.RedirectManager
 ```
 
 Or via NuGet Package Manager:
 ```
-Install-Package 8Bitiz.RedirectManager
+Install-Package BT.RedirectManager
 ```
 
 **NuGet sunucusu / yerel feed:** Paketi kendi projelerinize `dotnet add package` ile kurma seçenekleri (yerel klasör, nuget.org, özel BaGet sunucusu) için bkz. [docs/NUGET-SUNUCU-VE-KURULUM.md](docs/NUGET-SUNUCU-VE-KURULUM.md).
@@ -73,7 +73,7 @@ dotnet build
 
 4. Add the package to your project:
 ```bash
-dotnet add package 8Bitiz.RedirectManager
+dotnet add package BT.RedirectManager
 ```
 
 5. Build your project (App_Plugins files will be copied automatically):

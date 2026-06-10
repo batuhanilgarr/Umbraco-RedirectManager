@@ -7,7 +7,7 @@
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
     
     <!-- Package Info -->
-    <PackageId>8Bitiz.RedirectManager</PackageId>
+    <PackageId>BT.RedirectManager</PackageId>
     <Version>1.2.31</Version>
     <Authors>8Bitiz</Authors>
     <Company>8Bitiz</Company>
@@ -57,7 +57,7 @@
 
   <!-- Include .targets file for auto-copy App_Plugins -->
   <ItemGroup>
-    <None Include="build\8Bitiz.RedirectManager.targets" Pack="true" PackagePath="build\" />
+    <None Include="build\BT.RedirectManager.targets" Pack="true" PackagePath="build\" />
   </ItemGroup>
 
   <!-- Sync Version from csproj to umbraco-package.json (version + element ?v=) before Build -->

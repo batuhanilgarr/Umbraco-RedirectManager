@@ -11,6 +11,6 @@
     <Copy SourceFiles="@(RedirectManagerFiles)" 
           DestinationFiles="@(RedirectManagerFiles->'$(ProjectDir)App_Plugins\RedirectManager\%(RecursiveDir)%(Filename)%(Extension)')" 
           SkipUnchangedFiles="true" />
-    <Message Text="8Bitiz.RedirectManager: Copied App_Plugins files to $(ProjectDir)App_Plugins\RedirectManager\" Importance="high" />
+    <Message Text="BT.RedirectManager: Copied App_Plugins files to $(ProjectDir)App_Plugins\RedirectManager\" Importance="high" />
   </Target>
 </Project>

@@ -6,7 +6,7 @@ namespace Umbraco.RedirectManager.Migrations;
 
 public class RedirectManagerPackageMigrationPlan : PackageMigrationPlan
 {
-    public RedirectManagerPackageMigrationPlan() : base("8Bitiz.RedirectManager")
+    public RedirectManagerPackageMigrationPlan() : base("BT.RedirectManager")
     {
     }
 

@@ -1,6 +1,6 @@
 # NuGet ile Dağıtım ve Kurulum
 
-İstediğiniz projede `dotnet add package 8Bitiz.RedirectManager` ile kurulum yapabilirsiniz. Aşağıda **Docker ile kendi NuGet sunucunuzu** kurma (önerilen) ve diğer seçenekler anlatılıyor.
+İstediğiniz projede `dotnet add package BT.RedirectManager` ile kurulum yapabilirsiniz. Aşağıda **Docker ile kendi NuGet sunucunuzu** kurma (önerilen) ve diğer seçenekler anlatılıyor.
 
 ---
 
@@ -60,11 +60,11 @@ Sunucu başka makinedeyse `localhost` yerine o makinenin IP/host adresini yazın
 
 ```bash
 cd /path/to/your-umbraco-project
-dotnet add package 8Bitiz.RedirectManager
+dotnet add package BT.RedirectManager
 dotnet build
 ```
 
-Bundan sonra istediğiniz projede aynı şekilde `dotnet add package 8Bitiz.RedirectManager` kullanabilirsiniz.
+Bundan sonra istediğiniz projede aynı şekilde `dotnet add package BT.RedirectManager` kullanabilirsiniz.
 
 **Paket adını değiştirmek:** Kurulum komutunda farklı bir isim (örn. `Umbraco.Engage`) kullanmak isterseniz, bu projenin `Umbraco.RedirectManager.csproj` dosyasında `<PackageId>` değerini değiştirip paketi yeniden build edip push etmeniz yeterli. O zaman `dotnet add package Umbraco.Engage` çalışır.
 
@@ -76,13 +76,13 @@ Bundan sonra istediğiniz projede aynı şekilde `dotnet add package 8Bitiz.Redi
 
 1. Bu repoda: `dotnet build` → paket `bin/Debug/net10.0/` altında oluşur.
 2. Hedef projenin solution klasörüne `nuget.config` ekleyin; feed olarak bu klasörün **absolute path**’ini verin (örnek: `nuget.config.example` içindeki “Seçenek C”).
-3. Hedef projede: `dotnet add package 8Bitiz.RedirectManager`
+3. Hedef projede: `dotnet add package BT.RedirectManager`
 
 ### Seçenek B: nuget.org (herkese açık)
 
 1. nuget.org hesabı + API Key.
 2. `dotnet pack -c Release` ve `dotnet nuget push ... --source https://api.nuget.org/v3/index.json`
-3. Hedef projede ek feed gerekmez; `dotnet add package 8Bitiz.RedirectManager` yeterli.
+3. Hedef projede ek feed gerekmez; `dotnet add package BT.RedirectManager` yeterli.
 
 ### Seçenek C: BaGet’i elle çalıştırma (Docker Compose kullanmadan)
 

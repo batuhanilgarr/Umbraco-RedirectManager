@@ -1,6 +1,6 @@
 {
   "$schema": "../../umbraco-package-schema.json",
-  "name": "8Bitiz.RedirectManager",
+  "name": "BT.RedirectManager",
   "version": "1.2.31",
   "extensions": [
     {
