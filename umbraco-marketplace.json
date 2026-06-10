@@ -21,20 +21,20 @@
   },
   "Screenshots": [
     {
-      "ImageUrl": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/1.png",
+      "ImageUrl": "https://raw.githubusercontent.com/batuhanilgarr/Umbraco-RedirectManager/main/assets/1.png",
       "Caption": "Dashboard – Bitiz Redirect Manager overview with status code legend, filters, and redirect list."
     },
     {
-      "ImageUrl": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/2.png",
+      "ImageUrl": "https://raw.githubusercontent.com/batuhanilgarr/Umbraco-RedirectManager/main/assets/2.png",
       "Caption": "Add New Redirect – clean modal with status code, Old/New URL, notes, Active and Regex match toggles."
     },
     {
-      "ImageUrl": "https://raw.githubusercontent.com/8bitiz/RedirectManager/main/assets/3.png",
+      "ImageUrl": "https://raw.githubusercontent.com/batuhanilgarr/Umbraco-RedirectManager/main/assets/3.png",
       "Caption": "Edit Redirect – update existing rules with the same modern form and toggles."
     }
   ],
   "LicenseTypes": ["Free"],
-  "DocumentationUrl": "https://github.com/8bitiz/RedirectManager#readme",
-  "IssueTrackerUrl": "https://github.com/8bitiz/RedirectManager/issues",
+  "DocumentationUrl": "https://github.com/batuhanilgarr/Umbraco-RedirectManager#readme",
+  "IssueTrackerUrl": "https://github.com/batuhanilgarr/Umbraco-RedirectManager/issues",
   "PackageType": "Package"
 }

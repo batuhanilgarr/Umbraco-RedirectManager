@@ -14,8 +14,8 @@
     <Description>A URL redirect manager plugin for Umbraco CMS 13 and 17. Supports 301, 302, 404, and 410 status codes with backoffice management.</Description>
     <PackageTags>umbraco;umbraco-marketplace;plugin;redirect;seo;301;302;404;410</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/8bitiz/RedirectManager</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/8bitiz/RedirectManager</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/batuhanilgarr/Umbraco-RedirectManager</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/batuhanilgarr/Umbraco-RedirectManager</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>assets/bitiz_redirect_logo.png</PackageIcon>
     

@@ -4,11 +4,11 @@ A URL redirect manager plugin for Umbraco CMS **13 and 17**. Manage 301, 302, 40
 
 ## Screenshots
 
-![Bitiz Redirect Manager – Dashboard](https://raw.githubusercontent.com/8Bitiz/RedirectManager/refs/heads/main/assets/1.png)
+![Bitiz Redirect Manager – Dashboard](https://raw.githubusercontent.com/batuhanilgarr/Umbraco-RedirectManager/refs/heads/main/assets/1.png)
 
-![Bitiz Redirect Manager – Add New Redirect](https://raw.githubusercontent.com/8Bitiz/RedirectManager/refs/heads/main/assets/2.png)
+![Bitiz Redirect Manager – Add New Redirect](https://raw.githubusercontent.com/batuhanilgarr/Umbraco-RedirectManager/refs/heads/main/assets/2.png)
 
-![Bitiz Redirect Manager – Edit Redirect](https://raw.githubusercontent.com/8Bitiz/RedirectManager/refs/heads/main/assets/3.png)
+![Bitiz Redirect Manager – Edit Redirect](https://raw.githubusercontent.com/batuhanilgarr/Umbraco-RedirectManager/refs/heads/main/assets/3.png)
 
 ## Features
 
@@ -51,12 +51,12 @@ Install-Package 8Bitiz.RedirectManager
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/8Bitiz/RedirectManager.git
+git clone https://github.com/batuhanilgarr/Umbraco-RedirectManager.git
 ```
 
 2. Build the package:
 ```bash
-cd RedirectManager
+cd Umbraco-RedirectManager
 dotnet build
 ```
 
@@ -66,7 +66,7 @@ dotnet build
 <configuration>
   <packageSources>
     <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-    <add key="LocalFeed" value="/path/to/RedirectManager/bin/Debug/" />
+    <add key="LocalFeed" value="/path/to/Umbraco-RedirectManager/bin/Debug/" />
   </packageSources>
 </configuration>
 ```
