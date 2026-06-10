@@ -24,8 +24,14 @@ jobs:
             8.0.x
             10.0.x
 
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build -c Release --no-restore
+
       - name: Pack
-        run: dotnet pack -c Release -o ./nupkg
+        run: dotnet pack -c Release --no-build -o ./nupkg
 
       - name: NuGet login (OIDC -> temporary API key)
         uses: NuGet/login@v1
