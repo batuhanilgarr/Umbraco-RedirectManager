@@ -1,14 +1,14 @@
-# Bitiz Redirect Manager
+# BT Redirect Manager
 
 A URL redirect manager plugin for Umbraco CMS **13 and 17**. Manage 301, 302, 404, and 410 redirects directly from the Umbraco backoffice with a modern dashboard, CSV import/export, regex support, and a built-in test tool.
 
 ## Screenshots
 
-![Bitiz Redirect Manager – Dashboard](https://raw.githubusercontent.com/batuhanilgarr/Umbraco-RedirectManager/refs/heads/main/assets/1.png)
+![BT Redirect Manager – Dashboard](https://raw.githubusercontent.com/batuhanilgarr/Umbraco-RedirectManager/refs/heads/main/assets/1.png)
 
-![Bitiz Redirect Manager – Add New Redirect](https://raw.githubusercontent.com/batuhanilgarr/Umbraco-RedirectManager/refs/heads/main/assets/2.png)
+![BT Redirect Manager – Add New Redirect](https://raw.githubusercontent.com/batuhanilgarr/Umbraco-RedirectManager/refs/heads/main/assets/2.png)
 
-![Bitiz Redirect Manager – Edit Redirect](https://raw.githubusercontent.com/batuhanilgarr/Umbraco-RedirectManager/refs/heads/main/assets/3.png)
+![BT Redirect Manager – Edit Redirect](https://raw.githubusercontent.com/batuhanilgarr/Umbraco-RedirectManager/refs/heads/main/assets/3.png)
 
 ## Features
 
@@ -23,29 +23,25 @@ A URL redirect manager plugin for Umbraco CMS **13 and 17**. Manage 301, 302, 40
 
 ## Installation
 
-### Docker ile kendi NuGet sunucunuz (önerilen)
-
-Kendi NuGet sunucunuzu Docker’da çalıştırıp plugini oraya atar, istediğiniz projede `dotnet add package BT.RedirectManager` ile kurarsınız.
-
-1. **NuGet sunucusunu başlatın:** `docker compose -f docker/docker-compose.yml up -d`
-2. **Plugini sunucuya gönderin:** `./scripts/push-to-feed.sh` (Windows: `.\scripts\push-to-feed.ps1`)
-3. **Kurulum yapacağınız projenin solution klasörüne** `nuget.config` ekleyin (`nuget.config.example` örneğine bakın; feed: `http://localhost:5555/v3/index.json`)
-4. **Projede:** `dotnet add package BT.RedirectManager` → `dotnet build`
-
-Detaylı adımlar: [docs/NUGET-SUNUCU-VE-KURULUM.md](docs/NUGET-SUNUCU-VE-KURULUM.md)
-
 ### From NuGet.org
 
 ```bash
 dotnet add package BT.RedirectManager
 ```
 
-Or via NuGet Package Manager:
+Or via the NuGet Package Manager:
 ```
 Install-Package BT.RedirectManager
 ```
 
-**NuGet sunucusu / yerel feed:** Paketi kendi projelerinize `dotnet add package` ile kurma seçenekleri (yerel klasör, nuget.org, özel BaGet sunucusu) için bkz. [docs/NUGET-SUNUCU-VE-KURULUM.md](docs/NUGET-SUNUCU-VE-KURULUM.md).
+### Self-hosted NuGet feed (Docker, optional)
+
+If you'd rather run your own feed instead of nuget.org, this repo includes a Docker Compose setup for [BaGet](https://github.com/loic-sharma/BaGet):
+
+1. **Start the feed:** `docker compose -f docker/docker-compose.yml up -d`
+2. **Push this package to it:** `./scripts/push-to-feed.sh` (Windows: `.\scripts\push-to-feed.ps1`)
+3. **Add the feed** to the `nuget.config` of the solution where you want to install the package (feed: `http://localhost:5555/v3/index.json`)
+4. **Install:** `dotnet add package BT.RedirectManager` then `dotnet build`
 
 ### Local Installation (Development)
 
