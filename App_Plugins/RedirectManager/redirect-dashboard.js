@@ -64,11 +64,6 @@ class RedirectManagerDashboard extends UmbLitElement {
             color: white;
         }
 
-        .btn-danger {
-            background-color: green;
-            color: white;
-        }
-
         .btn-secondary {
             background-color: #6c757d;
             color: white;

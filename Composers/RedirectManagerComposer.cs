@@ -2,10 +2,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
-using Umbraco.Cms.Core.Notifications;
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
 using Umbraco.RedirectManager.Middleware;
-using Umbraco.RedirectManager.Migrations;
 using Umbraco.RedirectManager.Services;
 
 namespace Umbraco.RedirectManager.Composers;
@@ -16,8 +14,6 @@ public class RedirectManagerComposer : IComposer
     {
         builder.Services.AddMemoryCache();
         builder.Services.AddScoped<IRedirectService, RedirectService>();
-        
-        builder.AddNotificationAsyncHandler<UmbracoApplicationStartedNotification, RedirectManagerMigrationNotificationHandler>();
 
         builder.Services.Configure<UmbracoPipelineOptions>(options =>
         {

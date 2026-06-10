@@ -1,86 +1,108 @@
-using Microsoft.Extensions.Logging;
-using Umbraco.Cms.Core.Events;
-using Umbraco.Cms.Core.Notifications;
-using Umbraco.Cms.Infrastructure.Scoping;
+using Umbraco.Cms.Core.Packaging;
+using Umbraco.Cms.Infrastructure.Migrations;
 using Umbraco.RedirectManager.Models;
 
 namespace Umbraco.RedirectManager.Migrations;
 
-public class RedirectManagerMigrationNotificationHandler : INotificationAsyncHandler<UmbracoApplicationStartedNotification>
+public class RedirectManagerPackageMigrationPlan : PackageMigrationPlan
 {
-    private readonly IScopeProvider _scopeProvider;
-    private readonly ILogger<RedirectManagerMigrationNotificationHandler> _logger;
-
-    public RedirectManagerMigrationNotificationHandler(
-        IScopeProvider scopeProvider,
-        ILogger<RedirectManagerMigrationNotificationHandler> logger)
+    public RedirectManagerPackageMigrationPlan() : base("8Bitiz.RedirectManager")
     {
-        _scopeProvider = scopeProvider;
-        _logger = logger;
     }
 
-    public Task HandleAsync(UmbracoApplicationStartedNotification notification, CancellationToken cancellationToken)
+    protected override void DefinePlan()
     {
-        try
+        To<CreateRedirectManagerTable>(new Guid("C1686EA6-A8CF-4B7E-B91F-D4519EB17FDA"));
+        To<AddIsRegexAndDescriptionColumns>(new Guid("EE2670E3-75C8-4BF6-8D70-36B10D5ECC65"));
+    }
+}
+
+#if NET10_0_OR_GREATER
+
+public class CreateRedirectManagerTable : AsyncMigrationBase
+{
+    public CreateRedirectManagerTable(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override Task MigrateAsync()
+    {
+        if (TableExists(RedirectEntry.TableName) == false)
         {
-            using var scope = _scopeProvider.CreateScope();
-            
-            var tableExists = scope.Database.ExecuteScalar<int>(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = @0", 
-                RedirectEntry.TableName) > 0;
-
-            if (!tableExists)
-            {
-                _logger.LogInformation("Creating RedirectManager table: {TableName}", RedirectEntry.TableName);
-                
-                scope.Database.Execute($@"
-                    CREATE TABLE [{RedirectEntry.TableName}] (
-                        [Id] INT IDENTITY(1,1) NOT NULL,
-                        [OldUrl] NVARCHAR(2048) NOT NULL,
-                        [NewUrl] NVARCHAR(2048) NULL,
-                        [Description] NVARCHAR(2048) NULL,
-                        [StatusCode] INT NOT NULL DEFAULT 301,
-                        [CreatedDate] DATETIME NOT NULL DEFAULT GETUTCDATE(),
-                        [UpdatedDate] DATETIME NOT NULL DEFAULT GETUTCDATE(),
-                        [IsActive] BIT NOT NULL DEFAULT 1,
-                        [IsRegex] BIT NOT NULL DEFAULT 0,
-                        CONSTRAINT [PK_{RedirectEntry.TableName}] PRIMARY KEY ([Id])
-                    )");
-                
-                _logger.LogInformation("RedirectManager table created successfully");
-            }
-            else
-            {
-                var isRegexColumnExists = scope.Database.ExecuteScalar<int>(
-                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @0 AND COLUMN_NAME = @1",
-                    RedirectEntry.TableName,
-                    "IsRegex") > 0;
-
-                if (!isRegexColumnExists)
-                {
-                    _logger.LogInformation("Adding missing column IsRegex to table: {TableName}", RedirectEntry.TableName);
-                    scope.Database.Execute($"ALTER TABLE [{RedirectEntry.TableName}] ADD [IsRegex] BIT NOT NULL CONSTRAINT [DF_{RedirectEntry.TableName}_IsRegex] DEFAULT 0");
-                }
-
-                var descriptionColumnExists = scope.Database.ExecuteScalar<int>(
-                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @0 AND COLUMN_NAME = @1",
-                    RedirectEntry.TableName,
-                    "Description") > 0;
-
-                if (!descriptionColumnExists)
-                {
-                    _logger.LogInformation("Adding missing column Description to table: {TableName}", RedirectEntry.TableName);
-                    scope.Database.Execute($"ALTER TABLE [{RedirectEntry.TableName}] ADD [Description] NVARCHAR(2048) NULL");
-                }
-            }
-            
-            scope.Complete();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating RedirectManager table");
+            Create.Table<RedirectEntry>().Do();
         }
 
         return Task.CompletedTask;
     }
 }
+
+public class AddIsRegexAndDescriptionColumns : AsyncMigrationBase
+{
+    public AddIsRegexAndDescriptionColumns(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override Task MigrateAsync()
+    {
+        if (TableExists(RedirectEntry.TableName) == false)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "IsRegex") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "IsRegex");
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "Description") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "Description");
+        }
+
+        return Task.CompletedTask;
+    }
+}
+
+#else
+
+public class CreateRedirectManagerTable : MigrationBase
+{
+    public CreateRedirectManagerTable(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override void Migrate()
+    {
+        if (TableExists(RedirectEntry.TableName) == false)
+        {
+            Create.Table<RedirectEntry>().Do();
+        }
+    }
+}
+
+public class AddIsRegexAndDescriptionColumns : MigrationBase
+{
+    public AddIsRegexAndDescriptionColumns(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override void Migrate()
+    {
+        if (TableExists(RedirectEntry.TableName) == false)
+        {
+            return;
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "IsRegex") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "IsRegex");
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "Description") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "Description");
+        }
+    }
+}
+
+#endif

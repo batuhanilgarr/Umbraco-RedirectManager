@@ -8,7 +8,7 @@
     
     <!-- Package Info -->
     <PackageId>8Bitiz.RedirectManager</PackageId>
-    <Version>1.2.30</Version>
+    <Version>1.2.31</Version>
     <Authors>8Bitiz</Authors>
     <Company>8Bitiz</Company>
     <Description>A URL redirect manager plugin for Umbraco CMS 13 and 17. Supports 301, 302, 404, and 410 status codes with backoffice management.</Description>
@@ -45,6 +45,7 @@
       <PackageCopyToOutput>true</PackageCopyToOutput>
     </Content>
     <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="umbraco-marketplace.json" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -52,10 +53,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <TargetPath>App_Plugins\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
     </ContentWithTargetPath>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="package.xml" />
   </ItemGroup>
 
   <!-- Include .targets file for auto-copy App_Plugins -->
