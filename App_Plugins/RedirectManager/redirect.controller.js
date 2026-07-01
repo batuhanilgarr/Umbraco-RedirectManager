@@ -71,6 +71,7 @@
                 redirect: {
                     oldUrl: prefillOldUrl || "",
                     newUrl: "",
+                    domain: "",
                     description: "",
                     statusCode: "301",
                     isActive: true,
@@ -93,6 +94,7 @@
                     id: redirect.id,
                     oldUrl: redirect.oldUrl,
                     newUrl: redirect.newUrl || "",
+                    domain: redirect.domain || "",
                     description: redirect.description || "",
                     statusCode: redirect.statusCode.toString(),
                     isActive: redirect.isActive,
