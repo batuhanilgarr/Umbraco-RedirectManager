@@ -172,7 +172,9 @@ public class RedirectApiController : Controller
                     Description = exact.Description,
                     StatusCode = exact.StatusCode,
                     IsActive = exact.IsActive,
-                    IsRegex = exact.IsRegex
+                    IsRegex = exact.IsRegex,
+                    HitCount = exact.HitCount,
+                    LastHitDate = exact.LastHitDate
                 },
                 computedNewUrl = exact.NewUrl
             });
@@ -231,7 +233,9 @@ public class RedirectApiController : Controller
                     Description = r.Description,
                     StatusCode = r.StatusCode,
                     IsActive = r.IsActive,
-                    IsRegex = r.IsRegex
+                    IsRegex = r.IsRegex,
+                    HitCount = r.HitCount,
+                    LastHitDate = r.LastHitDate
                 },
                 computedNewUrl
             });
