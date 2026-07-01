@@ -15,6 +15,7 @@ public class RedirectManagerPackageMigrationPlan : PackageMigrationPlan
         To<CreateRedirectManagerTable>(new Guid("C1686EA6-A8CF-4B7E-B91F-D4519EB17FDA"));
         To<AddIsRegexAndDescriptionColumns>(new Guid("EE2670E3-75C8-4BF6-8D70-36B10D5ECC65"));
         To<AddHitCountColumns>(new Guid("4F2A8B31-6C7C-4A8E-9E22-2D4D6D9CDDF1"));
+        To<CreateMissedRequestsTable>(new Guid("7A1E9C42-3B5D-4F6A-8E11-9C2D5A7B3F04"));
     }
 }
 
@@ -91,6 +92,23 @@ public class AddHitCountColumns : AsyncMigrationBase
     }
 }
 
+public class CreateMissedRequestsTable : AsyncMigrationBase
+{
+    public CreateMissedRequestsTable(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override Task MigrateAsync()
+    {
+        if (TableExists(MissedRequest.TableName) == false)
+        {
+            Create.Table<MissedRequest>().Do();
+        }
+
+        return Task.CompletedTask;
+    }
+}
+
 #else
 
 public class CreateRedirectManagerTable : MigrationBase
@@ -154,6 +172,21 @@ public class AddHitCountColumns : MigrationBase
         if (ColumnExists(RedirectEntry.TableName, "LastHitDate") == false)
         {
             AddColumn<RedirectEntry>(RedirectEntry.TableName, "LastHitDate");
+        }
+    }
+}
+
+public class CreateMissedRequestsTable : MigrationBase
+{
+    public CreateMissedRequestsTable(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override void Migrate()
+    {
+        if (TableExists(MissedRequest.TableName) == false)
+        {
+            Create.Table<MissedRequest>().Do();
         }
     }
 }
