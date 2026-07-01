@@ -29,6 +29,14 @@
                        placeholder="/new-page">
             </umb-control-group>
 
+            <umb-control-group label="Domain"
+                               description="Leave blank to apply this redirect to all domains. If both a domain-specific and an all-domains redirect exist for the same Old URL, the domain-specific one wins.">
+                <input type="text"
+                       ng-model="model.redirect.domain"
+                       class="umb-property-editor umb-textstring"
+                       placeholder="example.com">
+            </umb-control-group>
+
             <umb-control-group label="Notes"
                                description="Optional description to help identify the purpose of this redirect">
                 <textarea ng-model="model.redirect.description"

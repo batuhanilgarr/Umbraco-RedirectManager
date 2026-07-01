@@ -81,6 +81,7 @@
                         <th>Status</th>
                         <th>Old URL</th>
                         <th>New URL</th>
+                        <th>Domain</th>
                         <th>Notes</th>
                         <th>Type</th>
                         <th>Match</th>
@@ -98,6 +99,7 @@
                         </td>
                         <td class="redirect-url">{{redirect.oldUrl}}</td>
                         <td class="redirect-url">{{redirect.newUrl || '-'}}</td>
+                        <td>{{redirect.domain || 'All domains'}}</td>
                         <td class="redirect-notes">{{redirect.description || '-'}}</td>
                         <td>{{vm.getStatusCodeLabel(redirect.statusCode)}}</td>
                         <td>{{redirect.isRegex ? 'Regex' : 'Exact'}}</td>
