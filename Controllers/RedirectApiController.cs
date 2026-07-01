@@ -109,15 +109,7 @@ public class RedirectApiController : Controller
     public IActionResult GetMissed()
     {
         var missed = _missedRequestService.GetAll();
-        return Ok(missed.Select(m => new MissedRequestDto
-        {
-            Id = m.Id,
-            Path = m.Path,
-            Domain = m.Domain,
-            HitCount = m.HitCount,
-            FirstSeenDate = m.FirstSeenDate,
-            LastSeenDate = m.LastSeenDate
-        }));
+        return Ok(missed.Select(ToDto));
     }
 
     [HttpDelete("missed/{id:int}")]
@@ -441,6 +433,19 @@ public class RedirectApiController : Controller
             IsRegex = r.IsRegex,
             HitCount = r.HitCount,
             LastHitDate = r.LastHitDate
+        };
+    }
+
+    private static MissedRequestDto ToDto(MissedRequest m)
+    {
+        return new MissedRequestDto
+        {
+            Id = m.Id,
+            Path = m.Path,
+            Domain = m.Domain,
+            HitCount = m.HitCount,
+            FirstSeenDate = m.FirstSeenDate,
+            LastSeenDate = m.LastSeenDate
         };
     }
 

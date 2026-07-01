@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Umbraco.Cms.Infrastructure.Scoping;
@@ -53,42 +55,87 @@ public class MissedRequestFlushService : BackgroundService
             return;
         }
 
-        try
+        // Each path gets its own scope/transaction rather than one shared scope for
+        // the whole batch: an upsert race on one path (see UpsertOne) can throw and
+        // needs to retry in a fresh scope, and isolating scopes also means a failure
+        // on one path can't roll back or swallow every other path in the same window.
+        foreach (var (path, miss) in drained)
         {
-            using var scope = _scopeProvider.CreateScope();
-
-            foreach (var (path, miss) in drained)
+            try
             {
-                var truncatedPath = path.Length > MaxPathLength ? path.Substring(0, MaxPathLength) : path;
-
-                var rowsAffected = scope.Database.Execute(
-                    $@"UPDATE {MissedRequest.TableName}
-                       SET HitCount = HitCount + @0, LastSeenDate = @1
-                       WHERE Path = @2",
-                    miss.Count, miss.LastSeenUtc, truncatedPath);
-
-                if (rowsAffected == 0)
-                {
-                    scope.Database.Execute(
-                        $@"INSERT INTO {MissedRequest.TableName} (Path, HitCount, FirstSeenDate, LastSeenDate)
-                           VALUES (@0, @1, @2, @3)",
-                        truncatedPath, miss.Count, miss.FirstSeenUtc, miss.LastSeenUtc);
-                }
+                UpsertOne(path, miss);
             }
-
-            if (cleanupDue)
+            catch (Exception ex)
             {
+                _logger.LogWarning(ex, "Failed to flush missed-request count for {Path}", path);
+            }
+        }
+
+        if (cleanupDue)
+        {
+            try
+            {
+                using var scope = _scopeProvider.CreateScope();
                 scope.Database.Execute(
                     $"DELETE FROM {MissedRequest.TableName} WHERE LastSeenDate < @0",
                     DateTime.UtcNow - RetentionPeriod);
+                scope.Complete();
                 _lastCleanupUtc = DateTime.UtcNow;
             }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to run missed-request retention cleanup");
+            }
+        }
+    }
 
-            scope.Complete();
-        }
-        catch (Exception ex)
+    private void UpsertOne(string path, (int Count, DateTime FirstSeenUtc, DateTime LastSeenUtc) miss)
+    {
+        var truncatedPath = path.Length > MaxPathLength ? path.Substring(0, MaxPathLength) : path;
+        var pathHash = ComputeHash(truncatedPath);
+
+        using var scope = _scopeProvider.CreateScope();
+
+        var rowsAffected = scope.Database.Execute(
+            $@"UPDATE {MissedRequest.TableName}
+               SET HitCount = HitCount + @0, LastSeenDate = @1
+               WHERE PathHash = @2",
+            miss.Count, miss.LastSeenUtc, pathHash);
+
+        if (rowsAffected == 0)
         {
-            _logger.LogWarning(ex, "Failed to flush missed-request log for {Count} path(s)", drained.Count);
+            try
+            {
+                scope.Database.Execute(
+                    $@"INSERT INTO {MissedRequest.TableName} (Path, PathHash, HitCount, FirstSeenDate, LastSeenDate)
+                       VALUES (@0, @1, @2, @3, @4)",
+                    truncatedPath, pathHash, miss.Count, miss.FirstSeenUtc, miss.LastSeenUtc);
+            }
+            catch (Exception)
+            {
+                // Another instance (or another thread's flush) inserted the same new
+                // path between our UPDATE and INSERT. The unique index on PathHash
+                // makes this throw instead of silently creating a duplicate row.
+                // Retry as an update, in a fresh scope since this scope's transaction
+                // may no longer be usable after a failed statement.
+                using var retryScope = _scopeProvider.CreateScope();
+                retryScope.Database.Execute(
+                    $@"UPDATE {MissedRequest.TableName}
+                       SET HitCount = HitCount + @0, LastSeenDate = @1
+                       WHERE PathHash = @2",
+                    miss.Count, miss.LastSeenUtc, pathHash);
+                retryScope.Complete();
+                return;
+            }
         }
+
+        scope.Complete();
+    }
+
+    private static string ComputeHash(string path)
+    {
+        var bytes = Encoding.UTF8.GetBytes(path);
+        var hash = SHA256.HashData(bytes);
+        return Convert.ToHexString(hash);
     }
 }

@@ -18,6 +18,17 @@ public class MissedRequest
     [Length(2048)]
     public string Path { get; set; } = string.Empty;
 
+    // SHA-256 hex digest of the (already-truncated) Path. A unique index on Path
+    // itself isn't viable on SQL Server (its row-size limit for index keys is far
+    // smaller than 2048 nvarchar characters), so this fixed-length column carries
+    // the uniqueness constraint instead, letting the upsert in
+    // MissedRequestFlushService detect and recover from a concurrent-insert race
+    // instead of silently accumulating duplicate rows for the same path.
+    [Column("PathHash")]
+    [Length(64)]
+    [Index(IndexTypes.UniqueNonClustered, Name = "IX_RedirectManagerMissedRequests_PathHash")]
+    public string PathHash { get; set; } = string.Empty;
+
     [Column("Domain")]
     [NullSetting(NullSetting = NullSettings.Null)]
     [Length(255)]
