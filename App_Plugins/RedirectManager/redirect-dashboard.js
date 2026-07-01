@@ -591,6 +591,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         return {
             oldUrl: '',
             newUrl: '',
+            domain: '',
             description: '',
             statusCode: 301,
             isActive: true,
@@ -676,6 +677,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.formData = {
             oldUrl: redirect.oldUrl,
             newUrl: redirect.newUrl || '',
+            domain: redirect.domain || '',
             description: redirect.description || '',
             statusCode: redirect.statusCode,
             isActive: redirect.isActive,
@@ -1012,6 +1014,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                                 <th style="text-align: center;">Status</th>
                                 <th style="text-align: center;">Old URL</th>
                                 <th style="text-align: center;">New URL</th>
+                                <th style="text-align: center;">Domain</th>
                                 <th style="text-align: center;">Notes</th>
                                 <th style="text-align: center;">Type</th>
                                 <th style="text-align: center;">Match</th>
@@ -1045,6 +1048,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                                             </div>
                                         ` : '-'}
                                     </td>
+                                    <td style="text-align: center;">${redirect.domain || 'All domains'}</td>
                                     <td class="notes-cell" title="${redirect.description || ''}">${redirect.description || '-'}</td>
                                     <td>${this.getStatusLabel(redirect.statusCode)}</td>
                                     <td>${redirect.isRegex ? 'Regex' : 'Exact'}</td>
@@ -1156,6 +1160,16 @@ class RedirectManagerDashboard extends UmbLitElement {
                                     <small>The URL path to redirect to</small>
                                 </div>
                             ` : ''}
+                        </div>
+
+                        <div class="form-group">
+                            <label>Domain (optional)</label>
+                            <input type="text"
+                                   name="domain"
+                                   .value=${this.formData.domain}
+                                   @input=${this.handleInputChange}
+                                   placeholder="example.com">
+                            <small>Leave blank to apply this redirect to all domains. If both a domain-specific and an all-domains redirect exist for the same Old URL, the domain-specific one wins.</small>
                         </div>
 
                         <div class="form-group">
