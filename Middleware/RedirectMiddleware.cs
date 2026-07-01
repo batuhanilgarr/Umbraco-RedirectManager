@@ -11,15 +11,21 @@ public class RedirectMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<RedirectMiddleware> _logger;
     private readonly IRedirectHitTracker _hitTracker;
+    private readonly IMissedRequestTracker _missedRequestTracker;
 
     private static readonly ConcurrentDictionary<string, Regex> RegexCache = new();
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(100);
 
-    public RedirectMiddleware(RequestDelegate next, ILogger<RedirectMiddleware> logger, IRedirectHitTracker hitTracker)
+    public RedirectMiddleware(
+        RequestDelegate next,
+        ILogger<RedirectMiddleware> logger,
+        IRedirectHitTracker hitTracker,
+        IMissedRequestTracker missedRequestTracker)
     {
         _next = next;
         _logger = logger;
         _hitTracker = hitTracker;
+        _missedRequestTracker = missedRequestTracker;
     }
 
     public async Task InvokeAsync(HttpContext context, IRedirectService redirectService)
@@ -106,6 +112,11 @@ public class RedirectMiddleware
         }
 
         await _next(context);
+
+        if (context.Response.StatusCode == StatusCodes.Status404NotFound)
+        {
+            _missedRequestTracker.RecordMiss(path);
+        }
     }
 
     private RedirectMatch? FindRegexRedirect(string path, IRedirectService redirectService)
