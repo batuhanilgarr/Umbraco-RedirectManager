@@ -859,6 +859,12 @@ class RedirectManagerDashboard extends UmbLitElement {
         return labels[code] || code;
     }
 
+    getLastHitTitle(redirect) {
+        return redirect.lastHitDate
+            ? `Last hit: ${new Date(redirect.lastHitDate).toLocaleString()}`
+            : 'Never hit';
+    }
+
     render() {
         return html`
             <div class="header">
@@ -962,6 +968,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                                 <th style="text-align: center;">Type</th>
                                 <th style="text-align: center;">Match</th>
                                 <th style="text-align: center;">Active</th>
+                                <th style="text-align: center;">Hits</th>
                                 <th style="text-align: center;">Actions</th>
                             </tr>
                         </thead>
@@ -997,6 +1004,9 @@ class RedirectManagerDashboard extends UmbLitElement {
                                         <span class="${redirect.isActive ? 'active-yes' : 'active-no'}">
                                             ${redirect.isActive ? 'Yes' : 'No'}
                                         </span>
+                                    </td>
+                                    <td style="text-align: center;" title="${this.getLastHitTitle(redirect)}">
+                                        ${redirect.hitCount || 0}
                                     </td>
                                     <td class="actions actions-cell">
                                         <button class="btn btn-secondary btn-sm" @click=${() => this.testRedirect(redirect.oldUrl)}>

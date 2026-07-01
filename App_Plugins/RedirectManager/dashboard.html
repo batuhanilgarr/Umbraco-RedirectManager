@@ -71,6 +71,7 @@
                         <th>Type</th>
                         <th>Match</th>
                         <th>Active</th>
+                        <th>Hits</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -90,6 +91,9 @@
                             <span ng-class="{'redirect-active': redirect.isActive, 'redirect-inactive': !redirect.isActive}">
                                 {{redirect.isActive ? 'Yes' : 'No'}}
                             </span>
+                        </td>
+                        <td title="{{redirect.lastHitDate ? ('Last hit: ' + (redirect.lastHitDate | date:'medium')) : 'Never hit'}}">
+                            {{redirect.hitCount || 0}}
                         </td>
                         <td class="redirect-actions">
                             <umb-button type="button"
