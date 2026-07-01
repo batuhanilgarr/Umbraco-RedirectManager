@@ -9,6 +9,36 @@
         vm.showModal = false;
         vm.modalModel = null;
         vm.importInProgress = false;
+        vm.activeTab = 'redirects';
+        vm.missedRequests = [];
+        vm.missedLoading = false;
+
+        vm.setActiveTab = function (tab) {
+            vm.activeTab = tab;
+        };
+
+        vm.loadMissedRequests = function () {
+            vm.missedLoading = true;
+            redirectResource.getMissed().then(function (response) {
+                vm.missedRequests = response.data;
+                vm.missedLoading = false;
+            }, function () {
+                notificationsService.error("Error", "Failed to load 404 log");
+                vm.missedLoading = false;
+            });
+        };
+
+        vm.dismissMissedRequest = function (item) {
+            redirectResource.dismissMissed(item.id).then(function () {
+                vm.missedRequests = vm.missedRequests.filter(function (m) { return m.id !== item.id; });
+            }, function () {
+                notificationsService.error("Error", "Failed to dismiss entry");
+            });
+        };
+
+        vm.createRedirectFromMissed = function (item) {
+            vm.openAddModal(item.path);
+        };
 
         vm.statusCodes = [
             { value: 301, label: "301 - Permanent Redirect" },
@@ -35,11 +65,11 @@
             });
         };
 
-        vm.openAddModal = function () {
+        vm.openAddModal = function (prefillOldUrl) {
             vm.modalModel = {
                 title: "Add New Redirect",
                 redirect: {
-                    oldUrl: "",
+                    oldUrl: prefillOldUrl || "",
                     newUrl: "",
                     description: "",
                     statusCode: "301",
@@ -164,6 +194,7 @@
         };
 
         vm.loadRedirects();
+        vm.loadMissedRequests();
 
         vm.exportCsv = function () {
             var url = redirectResource.exportUrl();

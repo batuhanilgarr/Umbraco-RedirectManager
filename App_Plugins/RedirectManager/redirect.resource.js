@@ -31,6 +31,12 @@
                 return $http.post(baseUrl + "import", content, {
                     headers: { "Content-Type": "text/plain; charset=utf-8" }
                 });
+            },
+            getMissed: function () {
+                return $http.get(baseUrl + "missed");
+            },
+            dismissMissed: function (id) {
+                return $http.delete(baseUrl + "missed/" + id);
             }
         };
     }
