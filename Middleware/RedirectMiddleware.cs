@@ -10,14 +10,16 @@ public class RedirectMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<RedirectMiddleware> _logger;
+    private readonly IRedirectHitTracker _hitTracker;
 
     private static readonly ConcurrentDictionary<string, Regex> RegexCache = new();
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(100);
 
-    public RedirectMiddleware(RequestDelegate next, ILogger<RedirectMiddleware> logger)
+    public RedirectMiddleware(RequestDelegate next, ILogger<RedirectMiddleware> logger, IRedirectHitTracker hitTracker)
     {
         _next = next;
         _logger = logger;
+        _hitTracker = hitTracker;
     }
 
     public async Task InvokeAsync(HttpContext context, IRedirectService redirectService)
@@ -44,8 +46,9 @@ public class RedirectMiddleware
 
         if (redirect != null && redirect.IsActive)
         {
-            _logger.LogDebug("Redirect found for {OldUrl} -> {NewUrl} ({StatusCode})", 
+            _logger.LogDebug("Redirect found for {OldUrl} -> {NewUrl} ({StatusCode})",
                 redirect.OldUrl, redirect.NewUrl, redirect.StatusCode);
+            _hitTracker.RecordHit(redirect.Id);
 
             switch (redirect.StatusCode)
             {
@@ -76,6 +79,7 @@ public class RedirectMiddleware
         {
             _logger.LogDebug("Regex redirect found for {OldUrl} -> {NewUrl} ({StatusCode})",
                 regexRedirect.Entry.OldUrl, regexRedirect.ComputedNewUrl, regexRedirect.Entry.StatusCode);
+            _hitTracker.RecordHit(regexRedirect.Entry.Id);
 
             switch (regexRedirect.Entry.StatusCode)
             {
