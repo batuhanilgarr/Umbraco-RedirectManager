@@ -14,6 +14,7 @@ public class RedirectManagerPackageMigrationPlan : PackageMigrationPlan
     {
         To<CreateRedirectManagerTable>(new Guid("C1686EA6-A8CF-4B7E-B91F-D4519EB17FDA"));
         To<AddIsRegexAndDescriptionColumns>(new Guid("EE2670E3-75C8-4BF6-8D70-36B10D5ECC65"));
+        To<AddHitCountColumns>(new Guid("4F2A8B31-6C7C-4A8E-9E22-2D4D6D9CDDF1"));
     }
 }
 
@@ -63,6 +64,33 @@ public class AddIsRegexAndDescriptionColumns : AsyncMigrationBase
     }
 }
 
+public class AddHitCountColumns : AsyncMigrationBase
+{
+    public AddHitCountColumns(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override Task MigrateAsync()
+    {
+        if (TableExists(RedirectEntry.TableName) == false)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "HitCount") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "HitCount");
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "LastHitDate") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "LastHitDate");
+        }
+
+        return Task.CompletedTask;
+    }
+}
+
 #else
 
 public class CreateRedirectManagerTable : MigrationBase
@@ -101,6 +129,31 @@ public class AddIsRegexAndDescriptionColumns : MigrationBase
         if (ColumnExists(RedirectEntry.TableName, "Description") == false)
         {
             AddColumn<RedirectEntry>(RedirectEntry.TableName, "Description");
+        }
+    }
+}
+
+public class AddHitCountColumns : MigrationBase
+{
+    public AddHitCountColumns(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override void Migrate()
+    {
+        if (TableExists(RedirectEntry.TableName) == false)
+        {
+            return;
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "HitCount") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "HitCount");
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "LastHitDate") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "LastHitDate");
         }
     }
 }
