@@ -98,13 +98,19 @@ EOF
 
 ---
 
-### Task 2: Manual verification against a real backoffice session
+### Task 2: Manual verification against a real backoffice session — DEFERRED
 
 There is no automated test project in this repo and no runnable Umbraco host
 inside it (the `docker/` folder only runs a local BaGet NuGet feed for
-package distribution, not a website). Verification therefore happens by
-pushing the package to that local feed and installing it into an existing
-Umbraco site the engineer already has for manual testing.
+package distribution, not a website). The user confirmed on 2026-07-01 that
+no local Umbraco test site currently exists to run this against.
+
+**This task is not executed as part of this implementation pass.** The steps
+below are documented so the user (or a future pass, once a test site exists)
+can run them before this change ships in the batched `1.3.0` release. Build
+correctness for this change is instead covered by Task 1 Step 2
+(`dotnet build` across both target frameworks) and by the spec/code review
+gates in this task's execution.
 
 **Files:** none (verification only, no code changes)
 
