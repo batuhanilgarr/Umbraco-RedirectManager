@@ -9,6 +9,8 @@ public class RedirectEntryDto
     public int StatusCode { get; set; } = 301;
     public bool IsActive { get; set; } = true;
     public bool IsRegex { get; set; } = false;
+    public int HitCount { get; set; } = 0;
+    public DateTime? LastHitDate { get; set; }
 }
 
 public class CreateRedirectEntryDto
