@@ -53,6 +53,20 @@
                 </div>
             </div>
 
+            <div class="redirect-tabs" style="display:flex; gap:8px; margin-bottom: 16px;">
+                <umb-button type="button"
+                            button-style="{{vm.activeTab === 'redirects' ? 'primary' : 'secondary'}}"
+                            label="Redirects"
+                            action="vm.setActiveTab('redirects')">
+                </umb-button>
+                <umb-button type="button"
+                            button-style="{{vm.activeTab === 'missed' ? 'primary' : 'secondary'}}"
+                            label="404 Log"
+                            action="vm.setActiveTab('missed')">
+                </umb-button>
+            </div>
+
+            <div ng-if="vm.activeTab === 'redirects'">
             <div ng-if="vm.loading" class="redirect-loading">
                 <umb-load-indicator></umb-load-indicator>
             </div>
@@ -118,6 +132,51 @@
                     </tr>
                 </tbody>
             </table>
+            </div>
+
+            <div ng-if="vm.activeTab === 'missed'">
+                <div ng-if="vm.missedLoading" class="redirect-loading">
+                    <umb-load-indicator></umb-load-indicator>
+                </div>
+
+                <div ng-if="!vm.missedLoading && vm.missedRequests.length === 0" class="redirect-empty">
+                    <p>No missed requests logged yet.</p>
+                </div>
+
+                <table ng-if="!vm.missedLoading && vm.missedRequests.length > 0" class="redirect-table">
+                    <thead>
+                        <tr>
+                            <th>Path</th>
+                            <th>Hits</th>
+                            <th>First Seen</th>
+                            <th>Last Seen</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="item in vm.missedRequests">
+                            <td class="redirect-url">{{item.path}}</td>
+                            <td>{{item.hitCount}}</td>
+                            <td>{{item.firstSeenDate | date:'medium'}}</td>
+                            <td>{{item.lastSeenDate | date:'medium'}}</td>
+                            <td class="redirect-actions">
+                                <umb-button type="button"
+                                            button-style="success"
+                                            size="xs"
+                                            label="Create Redirect"
+                                            action="vm.createRedirectFromMissed(item)">
+                                </umb-button>
+                                <umb-button type="button"
+                                            button-style="danger"
+                                            size="xs"
+                                            label="Dismiss"
+                                            action="vm.dismissMissedRequest(item)">
+                                </umb-button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </umb-box-content>
     </umb-box>
 
