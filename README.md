@@ -15,10 +15,14 @@ A URL redirect manager plugin for Umbraco CMS **13, 17, and 18**. Manage 301, 30
 - **Multiple status codes**: 301 (Permanent), 302 (Temporary), 404 (Not Found), and 410 (Gone).
 - **Modern backoffice dashboard**: Clean Umbraco 17 dashboard built with Lit; search, filter, and bulk actions.
 - **Regex and exact match**: Support for both exact path redirects and regex rules with capture groups.
+- **Domain-scoped redirects**: Optionally scope a redirect to a specific hostname for multi-site installs — the same Old URL can point to a different New URL per domain, with domain-specific rules taking precedence over "all domains" ones. Leave the Domain field blank to apply a redirect everywhere.
+- **Hit-count analytics**: Every redirect tracks how many times it's fired and when it was last hit, visible right in the dashboard.
+- **404 log with one-click redirect creation**: Genuine 404s are logged automatically (not just unmatched lookups), with a "Create Redirect" action to turn a frequent 404 into a redirect in one click.
 - **CSV import/export**: Quickly migrate or bulk edit redirects via CSV.
 - **Test tool**: Test a path before saving to see which redirect will match.
+- **Backoffice-secured API**: All redirect-management endpoints require an authenticated Umbraco backoffice session.
 - **Database storage**: Redirects stored in a dedicated table, fully controlled from the backoffice.
-- **Automatic migration**: Database table created/updated automatically on installation.
+- **Automatic migration**: Database tables created/updated automatically on installation.
 - **Auto-update App_Plugins**: App_Plugins assets are copied on build via the included MSBuild targets.
 
 ## Installation
@@ -105,10 +109,20 @@ The plugin creates a table called `RedirectManagerEntries` with the following st
 - `Id` (int, PK)
 - `OldUrl` (nvarchar)
 - `NewUrl` (nvarchar, nullable)
+- `Domain` (nvarchar, nullable — blank/null means the redirect applies to all domains)
+- `Description` (nvarchar, nullable)
 - `StatusCode` (int)
 - `CreatedDate` (datetime)
 - `UpdatedDate` (datetime)
 - `IsActive` (bit)
+- `IsRegex` (bit)
+- `HitCount` (int)
+- `LastHitDate` (datetime, nullable)
+
+It also creates a `RedirectManagerMissedRequests` table that logs genuine
+404 responses (path, hit count, first/last seen) so they can be turned into
+redirects from the dashboard's "404 Log" tab. Entries older than 90 days are
+cleaned up automatically.
 
 ## License
 
