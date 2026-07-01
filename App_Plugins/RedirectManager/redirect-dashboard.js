@@ -1,5 +1,6 @@
 import { LitElement, html, css } from '@umbraco-cms/backoffice/external/lit';
 import { UmbLitElement } from '@umbraco-cms/backoffice/lit-element';
+import { UMB_AUTH_CONTEXT } from '@umbraco-cms/backoffice/auth';
 
 class RedirectManagerDashboard extends UmbLitElement {
     static properties = {
@@ -546,9 +547,27 @@ class RedirectManagerDashboard extends UmbLitElement {
         }
     }
 
+    /**
+     * Wraps the platform fetch() to attach the current backoffice user's
+     * bearer token. Umbraco 17+/18's backoffice API controllers (including
+     * custom ones secured with AuthorizationPolicies.BackOfficeAccess) are
+     * authenticated via OpenIddict, not the classic backoffice cookie, so a
+     * same-origin fetch() with no Authorization header is rejected with 401
+     * even when the user has an active backoffice session in the browser.
+     */
+    async authFetch(url, options = {}) {
+        const authContext = await this.getContext(UMB_AUTH_CONTEXT);
+        const token = await authContext?.getLatestToken();
+        const headers = new Headers(options.headers || {});
+        if (token) {
+            headers.set('Authorization', `Bearer ${token}`);
+        }
+        return fetch(url, { ...options, headers, credentials: 'include' });
+    }
+
     async testRedirect(path) {
         try {
-            const response = await fetch(`/umbraco/api/redirectmanager/test?path=${encodeURIComponent(path)}`);
+            const response = await this.authFetch(`/umbraco/api/redirectmanager/test?path=${encodeURIComponent(path)}`);
             if (!response.ok) {
                 const error = await response.text();
                 this.showMessage(error || 'Test failed', 'error');
@@ -612,7 +631,7 @@ class RedirectManagerDashboard extends UmbLitElement {
     async loadRedirects() {
         this.loading = true;
         try {
-            const response = await fetch(`/umbraco/api/redirectmanager/getall${this.buildQueryParams()}`);
+            const response = await this.authFetch(`/umbraco/api/redirectmanager/getall${this.buildQueryParams()}`);
             if (response.ok) {
                 this.redirects = await response.json();
                 this.selectedIds = [];
@@ -626,7 +645,7 @@ class RedirectManagerDashboard extends UmbLitElement {
     async loadMissedRequests() {
         this.missedLoading = true;
         try {
-            const response = await fetch('/umbraco/api/redirectmanager/missed');
+            const response = await this.authFetch('/umbraco/api/redirectmanager/missed');
             if (response.ok) {
                 this.missedRequests = await response.json();
             }
@@ -638,7 +657,7 @@ class RedirectManagerDashboard extends UmbLitElement {
 
     async dismissMissedRequest(item) {
         try {
-            const response = await fetch(`/umbraco/api/redirectmanager/missed/${item.id}`, { method: 'DELETE' });
+            const response = await this.authFetch(`/umbraco/api/redirectmanager/missed/${item.id}`, { method: 'DELETE' });
             if (response.ok) {
                 this.missedRequests = this.missedRequests.filter(m => m.id !== item.id);
             } else {
@@ -732,7 +751,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         if (!confirm(`Delete ${this.selectedIds.length} redirect(s)?`)) return;
 
         try {
-            const response = await fetch('/umbraco/api/redirectmanager/bulk/delete', {
+            const response = await this.authFetch('/umbraco/api/redirectmanager/bulk/delete', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ids: this.selectedIds })
@@ -756,7 +775,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         if (!this.anySelected) return;
 
         try {
-            const response = await fetch(isActive ? '/umbraco/api/redirectmanager/bulk/activate' : '/umbraco/api/redirectmanager/bulk/deactivate', {
+            const response = await this.authFetch(isActive ? '/umbraco/api/redirectmanager/bulk/activate' : '/umbraco/api/redirectmanager/bulk/deactivate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ids: this.selectedIds })
@@ -775,9 +794,31 @@ class RedirectManagerDashboard extends UmbLitElement {
         }
     }
 
-    exportCsv() {
+    async exportCsv() {
+        // A plain navigation (window.location.href) can't carry an Authorization
+        // header, so the file has to be fetched (with the bearer token attached
+        // via authFetch) and then handed to the browser as a Blob download.
         const url = `/umbraco/api/redirectmanager/export${this.buildQueryParams()}`;
-        window.location.href = url;
+        try {
+            const response = await this.authFetch(url);
+            if (!response.ok) {
+                this.showMessage('Failed to export CSV', 'error');
+                return;
+            }
+
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = objectUrl;
+            link.download = 'redirects.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(objectUrl);
+        } catch (error) {
+            console.error('Failed to export CSV:', error);
+            this.showMessage('Failed to export CSV', 'error');
+        }
     }
 
     triggerImport() {
@@ -794,7 +835,7 @@ class RedirectManagerDashboard extends UmbLitElement {
             const formData = new FormData();
             formData.append('file', file);
 
-            const response = await fetch('/umbraco/api/redirectmanager/import', {
+            const response = await this.authFetch('/umbraco/api/redirectmanager/import', {
                 method: 'POST',
                 body: formData
             });
@@ -830,13 +871,13 @@ class RedirectManagerDashboard extends UmbLitElement {
         try {
             let response;
             if (this.editingRedirect) {
-                response = await fetch(`/umbraco/api/redirectmanager/update/${this.editingRedirect.id}`, {
+                response = await this.authFetch(`/umbraco/api/redirectmanager/update/${this.editingRedirect.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(this.formData)
                 });
             } else {
-                response = await fetch('/umbraco/api/redirectmanager/create', {
+                response = await this.authFetch('/umbraco/api/redirectmanager/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(this.formData)
@@ -871,7 +912,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         }
 
         try {
-            const response = await fetch(`/umbraco/api/redirectmanager/delete/${redirect.id}`, {
+            const response = await this.authFetch(`/umbraco/api/redirectmanager/delete/${redirect.id}`, {
                 method: 'DELETE'
             });
 
