@@ -165,66 +165,30 @@ behave identically on both.
 
 ---
 
-### Task 3: Bump package version and update roadmap tracking
+### Task 3: Push the fix commit (no release yet)
 
-**Files:**
-- Modify: `Umbraco.RedirectManager.csproj:11`
+The user has decided to batch all 4 roadmap sub-projects into a single
+`1.3.0` release published after the last one lands, rather than publishing
+after each fix. This plan therefore stops at pushing the commit — no version
+bump, no tag, no NuGet publish here.
 
-- [ ] **Step 1: Bump the version**
+**Files:** none
 
-In `Umbraco.RedirectManager.csproj`, change:
-
-```xml
-<Version>1.2.33</Version>
-```
-
-to:
-
-```xml
-<Version>1.2.34</Version>
-```
-
-- [ ] **Step 2: Rebuild to sync the version into `umbraco-package.json`**
-
-```bash
-dotnet build Umbraco.RedirectManager.csproj -c Release
-git diff --stat
-```
-
-Expected: `App_Plugins/RedirectManager/umbraco-package.json` shows the
-version bumped to `1.2.34` (the `UpdateUmbracoPackageVersion` MSBuild target
-does this automatically on build, as seen in `Umbraco.RedirectManager.csproj`).
-
-- [ ] **Step 3: Commit the version bump**
-
-```bash
-git add Umbraco.RedirectManager.csproj App_Plugins/RedirectManager/umbraco-package.json
-git commit -m "$(cat <<'EOF'
-chore: bump to 1.2.34 for API authorization fix
-
-Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
-EOF
-)"
-```
-
-- [ ] **Step 4: Push and tag the release**
+- [ ] **Step 1: Push the Task 1 commit to `main`**
 
 ```bash
 git push origin main
-git tag v1.2.34
-git push origin v1.2.34
 ```
 
-This triggers `.github/workflows/publish-nuget.yml`, which builds, packs,
-and pushes `BT.RedirectManager` 1.2.34 to NuGet.org.
-
-- [ ] **Step 5: Confirm the publish workflow succeeded**
+- [ ] **Step 2: Confirm CI (if any) is green**
 
 ```bash
-gh run list --workflow=publish-nuget.yml --limit 1
+gh run list --limit 3
 ```
 
-Expected: `completed  success` for the `v1.2.34` tag run.
+Expected: no failing runs triggered by this push. (`publish-nuget.yml` only
+triggers on `v*.*.*` tags or manual dispatch, so this push alone will not
+publish anything — confirmed by design in this cycle.)
 
 ---
 
@@ -232,6 +196,9 @@ Expected: `completed  success` for the `v1.2.34` tag run.
 
 - Redirect hit-count analytics, 404 auto-log, and domain-scoped redirects —
   each is a separate sub-project with its own spec + plan, to follow this one.
+- Version bump, git tag, and NuGet publish — deferred until all 4 sub-projects
+  are complete, then released together as `1.3.0` (per user decision on
+  2026-07-01, superseding the per-fix release pattern used for 1.2.33).
 - Adding an automated test project to the repo — noted as a gap in the spec,
   not addressed here.
 - Restricting access to a specific role/section beyond "any authenticated
