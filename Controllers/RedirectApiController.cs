@@ -16,12 +16,14 @@ namespace Umbraco.RedirectManager.Controllers;
 public class RedirectApiController : Controller
 {
     private readonly IRedirectService _redirectService;
+    private readonly IMissedRequestService _missedRequestService;
 
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(100);
 
-    public RedirectApiController(IRedirectService redirectService)
+    public RedirectApiController(IRedirectService redirectService, IMissedRequestService missedRequestService)
     {
         _redirectService = redirectService;
+        _missedRequestService = missedRequestService;
     }
 
     [HttpGet("getall")]
@@ -97,6 +99,31 @@ public class RedirectApiController : Controller
     public IActionResult Delete(int id)
     {
         var result = _redirectService.Delete(id);
+        if (!result)
+            return NotFound();
+
+        return Ok();
+    }
+
+    [HttpGet("missed")]
+    public IActionResult GetMissed()
+    {
+        var missed = _missedRequestService.GetAll();
+        return Ok(missed.Select(m => new MissedRequestDto
+        {
+            Id = m.Id,
+            Path = m.Path,
+            Domain = m.Domain,
+            HitCount = m.HitCount,
+            FirstSeenDate = m.FirstSeenDate,
+            LastSeenDate = m.LastSeenDate
+        }));
+    }
+
+    [HttpDelete("missed/{id:int}")]
+    public IActionResult DismissMissed(int id)
+    {
+        var result = _missedRequestService.Delete(id);
         if (!result)
             return NotFound();
 
