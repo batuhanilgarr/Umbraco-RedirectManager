@@ -43,4 +43,12 @@ public class RedirectEntry
     [Column("IsRegex")]
     [Constraint(Default = false)]
     public bool IsRegex { get; set; } = false;
+
+    [Column("HitCount")]
+    [Constraint(Default = 0)]
+    public int HitCount { get; set; } = 0;
+
+    [Column("LastHitDate")]
+    [NullSetting(NullSetting = NullSettings.Null)]
+    public DateTime? LastHitDate { get; set; }
 }
