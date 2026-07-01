@@ -31,7 +31,8 @@ public class RedirectMiddleware
     public async Task InvokeAsync(HttpContext context, IRedirectService redirectService)
     {
         var path = context.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
-        
+        var domain = DomainNormalizer.Normalize(context.Request.Host.Value);
+
         if (ShouldSkipRedirect(path))
         {
             await _next(context);
@@ -46,9 +47,9 @@ public class RedirectMiddleware
             pathAndQuery = path + (query!.StartsWith("?", StringComparison.Ordinal) ? query : "?" + query);
         }
 
-        var redirect = redirectService.GetByOldUrl(pathAndQuery);
+        var redirect = redirectService.GetByOldUrl(pathAndQuery, domain);
         if (redirect == null && pathAndQuery != path)
-            redirect = redirectService.GetByOldUrl(path);
+            redirect = redirectService.GetByOldUrl(path, domain);
 
         if (redirect != null && redirect.IsActive)
         {
@@ -80,7 +81,7 @@ public class RedirectMiddleware
             }
         }
 
-        var regexRedirect = FindRegexRedirect(path, redirectService);
+        var regexRedirect = FindRegexRedirect(path, domain, redirectService);
         if (regexRedirect != null)
         {
             _logger.LogDebug("Regex redirect found for {OldUrl} -> {NewUrl} ({StatusCode})",
@@ -119,37 +120,20 @@ public class RedirectMiddleware
         }
     }
 
-    private RedirectMatch? FindRegexRedirect(string path, IRedirectService redirectService)
+    private RedirectMatch? FindRegexRedirect(string path, string? domain, IRedirectService redirectService)
     {
         try
         {
-            foreach (var r in redirectService.GetActiveRegexEntries())
+            var entries = redirectService.GetActiveRegexEntries().ToList();
+
+            if (domain != null)
             {
-                if (string.IsNullOrWhiteSpace(r.OldUrl))
-                    continue;
-
-                var regex = RegexCache.GetOrAdd(r.OldUrl, pattern =>
-                    new Regex(pattern, RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, RegexTimeout));
-
-                if (!regex.IsMatch(path))
-                    continue;
-
-                var newUrl = r.NewUrl;
-
-                if ((r.StatusCode == 301 || r.StatusCode == 302) && !string.IsNullOrWhiteSpace(newUrl))
-                {
-                    try
-                    {
-                        newUrl = regex.Replace(path, newUrl);
-                    }
-                    catch
-                    {
-                        // If replace fails, fall back to original NewUrl
-                    }
-                }
-
-                return new RedirectMatch(r, newUrl);
+                var domainMatch = FindRegexMatchIn(entries.Where(r => r.Domain == domain), path);
+                if (domainMatch != null)
+                    return domainMatch;
             }
+
+            return FindRegexMatchIn(entries.Where(r => string.IsNullOrEmpty(r.Domain)), path);
         }
         catch (RegexMatchTimeoutException ex)
         {
@@ -158,6 +142,39 @@ public class RedirectMiddleware
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error evaluating regex redirects");
+        }
+
+        return null;
+    }
+
+    private RedirectMatch? FindRegexMatchIn(IEnumerable<Umbraco.RedirectManager.Models.RedirectEntry> candidates, string path)
+    {
+        foreach (var r in candidates)
+        {
+            if (string.IsNullOrWhiteSpace(r.OldUrl))
+                continue;
+
+            var regex = RegexCache.GetOrAdd(r.OldUrl, pattern =>
+                new Regex(pattern, RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, RegexTimeout));
+
+            if (!regex.IsMatch(path))
+                continue;
+
+            var newUrl = r.NewUrl;
+
+            if ((r.StatusCode == 301 || r.StatusCode == 302) && !string.IsNullOrWhiteSpace(newUrl))
+            {
+                try
+                {
+                    newUrl = regex.Replace(path, newUrl);
+                }
+                catch
+                {
+                    // If replace fails, fall back to original NewUrl
+                }
+            }
+
+            return new RedirectMatch(r, newUrl);
         }
 
         return null;
