@@ -14,6 +14,8 @@ public class RedirectManagerComposer : IComposer
     {
         builder.Services.AddMemoryCache();
         builder.Services.AddScoped<IRedirectService, RedirectService>();
+        builder.Services.AddSingleton<IRedirectHitTracker, RedirectHitTracker>();
+        builder.Services.AddHostedService<RedirectHitFlushService>();
 
         builder.Services.Configure<UmbracoPipelineOptions>(options =>
         {
