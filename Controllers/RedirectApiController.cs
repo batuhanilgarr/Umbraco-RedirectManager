@@ -3,14 +3,14 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Umbraco.Cms.Web.Common.Controllers;
 using Umbraco.RedirectManager.Models;
 using Umbraco.RedirectManager.Services;
 
 namespace Umbraco.RedirectManager.Controllers;
 
+[ApiController]
 [Route("umbraco/api/redirectmanager")]
-public class RedirectApiController : UmbracoApiController
+public class RedirectApiController : Controller
 {
     private readonly IRedirectService _redirectService;
 
