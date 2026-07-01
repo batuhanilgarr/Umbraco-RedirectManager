@@ -23,6 +23,11 @@ public class RedirectEntry
     [Length(2048)]
     public string? NewUrl { get; set; }
 
+    [Column("Domain")]
+    [NullSetting(NullSetting = NullSettings.Null)]
+    [Length(255)]
+    public string? Domain { get; set; }
+
     [Column("Description")]
     [NullSetting(NullSetting = NullSettings.Null)]
     [Length(2048)]
