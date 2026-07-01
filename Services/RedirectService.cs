@@ -73,22 +73,51 @@ public class RedirectService : IRedirectService
         return result;
     }
 
-    public RedirectEntry? GetByOldUrl(string oldUrl)
+    public RedirectEntry? GetByOldUrl(string oldUrl, string? domain = null)
     {
         using var scope = _scopeProvider.CreateScope();
         var normalizedUrl = NormalizeUrl(oldUrl);
-        var result = scope.Database.SingleOrDefault<RedirectEntry>(
-            $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND IsActive = 1 AND IsRegex = 0", normalizedUrl);
+        var normalizedDomain = DomainNormalizer.Normalize(domain);
+
+        RedirectEntry? result = null;
+        if (normalizedDomain != null)
+        {
+            result = scope.Database.SingleOrDefault<RedirectEntry>(
+                $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND Domain = @1 AND IsActive = 1 AND IsRegex = 0",
+                normalizedUrl, normalizedDomain);
+        }
+
+        if (result == null)
+        {
+            result = scope.Database.SingleOrDefault<RedirectEntry>(
+                $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND (Domain IS NULL OR Domain = '') AND IsActive = 1 AND IsRegex = 0",
+                normalizedUrl);
+        }
+
         scope.Complete();
         return result;
     }
 
-    public RedirectEntry? GetByOldUrlAndIsRegex(string oldUrl, bool isRegex)
+    public RedirectEntry? GetByOldUrlAndIsRegex(string oldUrl, bool isRegex, string? domain = null)
     {
         using var scope = _scopeProvider.CreateScope();
         var value = NormalizeOldUrl(oldUrl, isRegex);
-        var result = scope.Database.SingleOrDefault<RedirectEntry>(
-            $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND IsRegex = @1", value, isRegex ? 1 : 0);
+        var normalizedDomain = DomainNormalizer.Normalize(domain);
+
+        RedirectEntry? result;
+        if (normalizedDomain != null)
+        {
+            result = scope.Database.SingleOrDefault<RedirectEntry>(
+                $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND IsRegex = @1 AND Domain = @2",
+                value, isRegex ? 1 : 0, normalizedDomain);
+        }
+        else
+        {
+            result = scope.Database.SingleOrDefault<RedirectEntry>(
+                $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND IsRegex = @1 AND (Domain IS NULL OR Domain = '')",
+                value, isRegex ? 1 : 0);
+        }
+
         scope.Complete();
         return result;
     }
@@ -114,6 +143,7 @@ public class RedirectService : IRedirectService
         {
             OldUrl = NormalizeOldUrl(dto.OldUrl, isRegex),
             NewUrl = string.IsNullOrWhiteSpace(dto.NewUrl) ? null : NormalizeNewUrl(dto.NewUrl, isRegex),
+            Domain = DomainNormalizer.Normalize(dto.Domain),
             Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim(),
             StatusCode = ValidateStatusCode(dto.StatusCode),
             IsActive = dto.IsActive,
@@ -146,6 +176,7 @@ public class RedirectService : IRedirectService
         existing.IsRegex = dto.IsRegex;
         existing.OldUrl = NormalizeOldUrl(dto.OldUrl, existing.IsRegex);
         existing.NewUrl = string.IsNullOrWhiteSpace(dto.NewUrl) ? null : NormalizeNewUrl(dto.NewUrl, existing.IsRegex);
+        existing.Domain = DomainNormalizer.Normalize(dto.Domain);
         existing.Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim();
         existing.StatusCode = ValidateStatusCode(dto.StatusCode);
         existing.IsActive = dto.IsActive;

@@ -7,8 +7,8 @@ public interface IRedirectService
     IEnumerable<RedirectEntry> GetAll();
     IEnumerable<RedirectEntry> GetAllFiltered(string? query, int? statusCode, bool? isActive, bool? isRegex);
     RedirectEntry? GetById(int id);
-    RedirectEntry? GetByOldUrl(string oldUrl);
-    RedirectEntry? GetByOldUrlAndIsRegex(string oldUrl, bool isRegex);
+    RedirectEntry? GetByOldUrl(string oldUrl, string? domain = null);
+    RedirectEntry? GetByOldUrlAndIsRegex(string oldUrl, bool isRegex, string? domain = null);
     IEnumerable<RedirectEntry> GetActiveRegexEntries();
     RedirectEntry Create(CreateRedirectEntryDto dto);
     RedirectEntry? Update(int id, UpdateRedirectEntryDto dto);
