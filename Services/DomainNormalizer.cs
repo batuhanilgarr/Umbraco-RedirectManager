@@ -18,15 +18,18 @@ public static class DomainNormalizer
 
         var value = domain.Trim().ToLowerInvariant();
 
-        // Strip a trailing ":port" (e.g. "example.com:8080" -> "example.com").
-        // Guard against IPv6 literals in brackets (e.g. "[::1]:8080"), where
-        // taking the substring after the last colon would cut into the
-        // address itself rather than removing a port.
+        // Strip a trailing ":port" (e.g. "example.com:8080" -> "example.com"),
+        // including a bare trailing colon with no digits after it (e.g.
+        // "example.com:") -- never a valid hostname component, so there's no
+        // legitimate value it could be part of. Guard against IPv6 literals in
+        // brackets (e.g. "[::1]:8080"), where taking the substring after the
+        // last colon would cut into the address itself rather than removing a
+        // port.
         var lastColon = value.LastIndexOf(':');
         if (lastColon > 0 && value.IndexOf(']', lastColon) == -1)
         {
             var portPart = value[(lastColon + 1)..];
-            if (portPart.Length > 0 && portPart.All(char.IsDigit))
+            if (portPart.Length == 0 || portPart.All(char.IsDigit))
             {
                 value = value[..lastColon];
             }

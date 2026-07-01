@@ -124,7 +124,11 @@ public class RedirectMiddleware
     {
         try
         {
-            var entries = redirectService.GetActiveRegexEntries().ToList();
+            // GetActiveRegexEntries() returns the same cached list object on every
+            // call within the cache's TTL (invalidation swaps the cache entry
+            // rather than mutating it in place), so it's safe to enumerate twice
+            // below without an extra .ToList() copy on this hot path.
+            var entries = redirectService.GetActiveRegexEntries();
 
             if (domain != null)
             {
