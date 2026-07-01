@@ -15,7 +15,10 @@ class RedirectManagerDashboard extends UmbLitElement {
         selectedIds: { type: Array },
         importInProgress: { type: Boolean },
         messageText: { type: String },
-        messageType: { type: String }
+        messageType: { type: String },
+        activeTab: { type: String },
+        missedRequests: { type: Array },
+        missedLoading: { type: Boolean }
     };
 
     static styles = css`
@@ -510,6 +513,9 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.importInProgress = false;
         this.messageText = '';
         this.messageType = 'info';
+        this.activeTab = 'redirects';
+        this.missedRequests = [];
+        this.missedLoading = false;
     }
 
     showMessage(text, type = 'info') {
@@ -567,6 +573,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         super.connectedCallback();
         this.ensureModalStylesLoaded();
         this.loadRedirects();
+        this.loadMissedRequests();
     }
 
     /** Ensure redirect.css is in document so modal styles apply if modal is in light DOM */
@@ -615,6 +622,37 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.loading = false;
     }
 
+    async loadMissedRequests() {
+        this.missedLoading = true;
+        try {
+            const response = await fetch('/umbraco/api/redirectmanager/missed');
+            if (response.ok) {
+                this.missedRequests = await response.json();
+            }
+        } catch (error) {
+            console.error('Failed to load missed requests:', error);
+        }
+        this.missedLoading = false;
+    }
+
+    async dismissMissedRequest(item) {
+        try {
+            const response = await fetch(`/umbraco/api/redirectmanager/missed/${item.id}`, { method: 'DELETE' });
+            if (response.ok) {
+                this.missedRequests = this.missedRequests.filter(m => m.id !== item.id);
+            } else {
+                this.showMessage('Failed to dismiss entry', 'error');
+            }
+        } catch (error) {
+            console.error('Failed to dismiss missed request:', error);
+            this.showMessage('Failed to dismiss entry', 'error');
+        }
+    }
+
+    createRedirectFromMissed(item) {
+        this.openAddModal(item.path);
+    }
+
     applyFilters() {
         this.loadRedirects();
     }
@@ -627,9 +665,9 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.loadRedirects();
     }
 
-    openAddModal() {
+    openAddModal(prefillOldUrl = '') {
         this.editingRedirect = null;
-        this.formData = this.getEmptyFormData();
+        this.formData = { ...this.getEmptyFormData(), oldUrl: prefillOldUrl };
         this.showModal = true;
     }
 
@@ -865,6 +903,10 @@ class RedirectManagerDashboard extends UmbLitElement {
             : 'Never hit';
     }
 
+    getMissedRequestTitle(item) {
+        return `First seen: ${new Date(item.firstSeenDate).toLocaleString()}`;
+    }
+
     render() {
         return html`
             <div class="header">
@@ -933,7 +975,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                             ${this.importInProgress ? 'Importing...' : 'Import CSV'}
                         </button>
                         <input id="importFileInput" type="file" accept=".csv,text/csv" style="display:none" @change=${this.handleImportFile} />
-                        <button class="btn btn-primary" style="margin-left: auto;" @click=${this.openAddModal}>
+                        <button class="btn btn-primary" style="margin-left: auto;" @click=${() => this.openAddModal()}>
                             Add New Redirect
                         </button>
                     </div>
@@ -949,6 +991,12 @@ class RedirectManagerDashboard extends UmbLitElement {
                 </div>
             </div>
 
+            <div style="margin-top: 20px; margin-bottom: 4px; display:flex; gap: 8px; border-bottom: 1px solid #e9e9e9; padding-bottom: 12px;">
+                <button class="btn ${this.activeTab === 'redirects' ? 'btn-primary' : 'btn-secondary'}" @click=${() => { this.activeTab = 'redirects'; }}>Redirects</button>
+                <button class="btn ${this.activeTab === 'missed' ? 'btn-primary' : 'btn-secondary'}" @click=${() => { this.activeTab = 'missed'; }}>404 Log</button>
+            </div>
+
+            ${this.activeTab === 'redirects' ? html`
             ${this.loading ? html`
                 <div class="loading">Loading redirects...</div>
             ` : this.redirects.length === 0 ? html`
@@ -1025,6 +1073,43 @@ class RedirectManagerDashboard extends UmbLitElement {
                     </table>
                 </div>
             `}
+            ` : ''}
+
+            ${this.activeTab === 'missed' ? html`
+                ${this.missedLoading ? html`
+                    <div class="loading">Loading 404 log...</div>
+                ` : this.missedRequests.length === 0 ? html`
+                    <div class="empty">No missed requests logged yet.</div>
+                ` : html`
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="text-align: center;">Path</th>
+                                    <th style="text-align: center;">Hits</th>
+                                    <th style="text-align: center;">First Seen</th>
+                                    <th style="text-align: center;">Last Seen</th>
+                                    <th style="text-align: center;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${this.missedRequests.map(item => html`
+                                    <tr>
+                                        <td class="url-cell" title="${this.getMissedRequestTitle(item)}">${item.path}</td>
+                                        <td style="text-align:center;">${item.hitCount}</td>
+                                        <td style="text-align:center;">${new Date(item.firstSeenDate).toLocaleDateString()}</td>
+                                        <td style="text-align:center;">${new Date(item.lastSeenDate).toLocaleDateString()}</td>
+                                        <td class="actions actions-cell">
+                                            <button class="btn btn-primary btn-sm" @click=${() => this.createRedirectFromMissed(item)}>Create Redirect</button>
+                                            <button class="btn btn-danger btn-sm" @click=${() => this.dismissMissedRequest(item)}>Dismiss</button>
+                                        </td>
+                                    </tr>
+                                `)}
+                            </tbody>
+                        </table>
+                    </div>
+                `}
+            ` : ''}
 
             ${this.showModal ? html`
                 <div class="redirect-manager-modal-root">
