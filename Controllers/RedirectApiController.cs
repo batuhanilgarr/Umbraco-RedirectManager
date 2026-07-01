@@ -1,14 +1,17 @@
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Umbraco.Cms.Web.Common.Authorization;
 using Umbraco.RedirectManager.Models;
 using Umbraco.RedirectManager.Services;
 
 namespace Umbraco.RedirectManager.Controllers;
 
 [ApiController]
+[Authorize(Policy = AuthorizationPolicies.BackOfficeAccess)]
 [Route("umbraco/api/redirectmanager")]
 public class RedirectApiController : Controller
 {
