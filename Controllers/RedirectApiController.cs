@@ -35,18 +35,7 @@ public class RedirectApiController : Controller
             ? _redirectService.GetAll()
             : _redirectService.GetAllFiltered(q, statusCode, isActive, isRegex);
 
-        return Ok(redirects.Select(r => new RedirectEntryDto
-        {
-            Id = r.Id,
-            OldUrl = r.OldUrl,
-            NewUrl = r.NewUrl,
-            Description = r.Description,
-            StatusCode = r.StatusCode,
-            IsActive = r.IsActive,
-            IsRegex = r.IsRegex,
-            HitCount = r.HitCount,
-            LastHitDate = r.LastHitDate
-        }));
+        return Ok(redirects.Select(ToDto));
     }
 
     [HttpGet("get/{id:int}")]
@@ -56,18 +45,7 @@ public class RedirectApiController : Controller
         if (redirect == null)
             return NotFound();
 
-        return Ok(new RedirectEntryDto
-        {
-            Id = redirect.Id,
-            OldUrl = redirect.OldUrl,
-            NewUrl = redirect.NewUrl,
-            Description = redirect.Description,
-            StatusCode = redirect.StatusCode,
-            IsActive = redirect.IsActive,
-            IsRegex = redirect.IsRegex,
-            HitCount = redirect.HitCount,
-            LastHitDate = redirect.LastHitDate
-        });
+        return Ok(ToDto(redirect));
     }
 
     [HttpPost("create")]
@@ -88,18 +66,7 @@ public class RedirectApiController : Controller
             return Conflict("A redirect with the same Old URL and Match type already exists");
 
         var redirect = _redirectService.Create(dto);
-        return Ok(new RedirectEntryDto
-        {
-            Id = redirect.Id,
-            OldUrl = redirect.OldUrl,
-            NewUrl = redirect.NewUrl,
-            Description = redirect.Description,
-            StatusCode = redirect.StatusCode,
-            IsActive = redirect.IsActive,
-            IsRegex = redirect.IsRegex,
-            HitCount = redirect.HitCount,
-            LastHitDate = redirect.LastHitDate
-        });
+        return Ok(ToDto(redirect));
     }
 
     [HttpPut("update/{id:int}")]
@@ -123,18 +90,7 @@ public class RedirectApiController : Controller
         if (redirect == null)
             return NotFound();
 
-        return Ok(new RedirectEntryDto
-        {
-            Id = redirect.Id,
-            OldUrl = redirect.OldUrl,
-            NewUrl = redirect.NewUrl,
-            Description = redirect.Description,
-            StatusCode = redirect.StatusCode,
-            IsActive = redirect.IsActive,
-            IsRegex = redirect.IsRegex,
-            HitCount = redirect.HitCount,
-            LastHitDate = redirect.LastHitDate
-        });
+        return Ok(ToDto(redirect));
     }
 
     [HttpDelete("delete/{id:int}")]
@@ -164,18 +120,7 @@ public class RedirectApiController : Controller
             {
                 matched = true,
                 matchType = "Exact",
-                redirect = new RedirectEntryDto
-                {
-                    Id = exact.Id,
-                    OldUrl = exact.OldUrl,
-                    NewUrl = exact.NewUrl,
-                    Description = exact.Description,
-                    StatusCode = exact.StatusCode,
-                    IsActive = exact.IsActive,
-                    IsRegex = exact.IsRegex,
-                    HitCount = exact.HitCount,
-                    LastHitDate = exact.LastHitDate
-                },
+                redirect = ToDto(exact),
                 computedNewUrl = exact.NewUrl
             });
         }
@@ -225,18 +170,7 @@ public class RedirectApiController : Controller
             {
                 matched = true,
                 matchType = "Regex",
-                redirect = new RedirectEntryDto
-                {
-                    Id = r.Id,
-                    OldUrl = r.OldUrl,
-                    NewUrl = r.NewUrl,
-                    Description = r.Description,
-                    StatusCode = r.StatusCode,
-                    IsActive = r.IsActive,
-                    IsRegex = r.IsRegex,
-                    HitCount = r.HitCount,
-                    LastHitDate = r.LastHitDate
-                },
+                redirect = ToDto(r),
                 computedNewUrl
             });
         }
@@ -465,6 +399,22 @@ public class RedirectApiController : Controller
     public class BulkIdsDto
     {
         public List<int> Ids { get; set; } = new();
+    }
+
+    private static RedirectEntryDto ToDto(RedirectEntry r)
+    {
+        return new RedirectEntryDto
+        {
+            Id = r.Id,
+            OldUrl = r.OldUrl,
+            NewUrl = r.NewUrl,
+            Description = r.Description,
+            StatusCode = r.StatusCode,
+            IsActive = r.IsActive,
+            IsRegex = r.IsRegex,
+            HitCount = r.HitCount,
+            LastHitDate = r.LastHitDate
+        };
     }
 
     private static string? ValidateRedirect(string oldUrl, string? newUrl, int statusCode, bool isRegex)

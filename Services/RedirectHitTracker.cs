@@ -11,7 +11,7 @@ public interface IRedirectHitTracker
 
 public class RedirectHitTracker : IRedirectHitTracker
 {
-    private readonly ConcurrentDictionary<int, HitAccumulator> _accumulators = new();
+    private ConcurrentDictionary<int, HitAccumulator> _accumulators = new();
 
     public void RecordHit(int redirectId)
     {
@@ -27,14 +27,16 @@ public class RedirectHitTracker : IRedirectHitTracker
 
     public IReadOnlyDictionary<int, (int Count, DateTime LastHitUtc)> DrainAll()
     {
-        var drained = new Dictionary<int, (int Count, DateTime LastHitUtc)>();
+        // Swap the whole dictionary reference atomically rather than removing
+        // keys one at a time: a concurrent RecordHit landing mid-drain lands in
+        // the fresh dictionary instead of racing AddOrUpdate against TryRemove
+        // on the same key (which could otherwise lose or double-count a hit).
+        var drainedDictionary = Interlocked.Exchange(ref _accumulators, new ConcurrentDictionary<int, HitAccumulator>());
 
-        foreach (var key in _accumulators.Keys.ToArray())
+        var drained = new Dictionary<int, (int Count, DateTime LastHitUtc)>();
+        foreach (var (key, accumulator) in drainedDictionary)
         {
-            if (_accumulators.TryRemove(key, out var accumulator))
-            {
-                drained[key] = (accumulator.Count, accumulator.LastHitUtc);
-            }
+            drained[key] = (accumulator.Count, accumulator.LastHitUtc);
         }
 
         return drained;
