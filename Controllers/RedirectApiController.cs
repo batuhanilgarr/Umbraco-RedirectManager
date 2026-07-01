@@ -63,9 +63,9 @@ public class RedirectApiController : Controller
         if (validationError != null)
             return BadRequest(validationError);
 
-        var duplicate = _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex);
+        var duplicate = _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain);
         if (duplicate != null)
-            return Conflict("A redirect with the same Old URL and Match type already exists");
+            return Conflict("A redirect with the same Old URL and Match type already exists for that domain");
 
         var redirect = _redirectService.Create(dto);
         return Ok(ToDto(redirect));
@@ -84,9 +84,9 @@ public class RedirectApiController : Controller
         if (validationError != null)
             return BadRequest(validationError);
 
-        var duplicate = _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex);
+        var duplicate = _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain);
         if (duplicate != null && duplicate.Id != id)
-            return Conflict("A redirect with the same Old URL and Match type already exists");
+            return Conflict("A redirect with the same Old URL and Match type already exists for that domain");
 
         var redirect = _redirectService.Update(id, dto);
         if (redirect == null)
@@ -334,13 +334,14 @@ public class RedirectApiController : Controller
                 IsRegex = isRegexVal
             };
 
-            var existing = _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex);
+            var existing = _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain);
             if (existing == null)
             {
                 _redirectService.Create(new CreateRedirectEntryDto
                 {
                     OldUrl = dto.OldUrl,
                     NewUrl = dto.NewUrl,
+                    Domain = dto.Domain,
                     Description = dto.Description,
                     StatusCode = dto.StatusCode,
                     IsActive = dto.IsActive,
@@ -427,6 +428,7 @@ public class RedirectApiController : Controller
             Id = r.Id,
             OldUrl = r.OldUrl,
             NewUrl = r.NewUrl,
+            Domain = r.Domain,
             Description = r.Description,
             StatusCode = r.StatusCode,
             IsActive = r.IsActive,
