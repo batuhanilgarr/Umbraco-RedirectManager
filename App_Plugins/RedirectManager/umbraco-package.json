@@ -1,13 +1,13 @@
 {
   "$schema": "../../umbraco-package-schema.json",
   "name": "BT.RedirectManager",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "extensions": [
     {
       "type": "dashboard",
       "alias": "redirectManager.dashboard",
       "name": "Redirect Manager Dashboard",
-      "element": "/App_Plugins/RedirectManager/redirect-dashboard.js?v=1.3.0",
+      "element": "/App_Plugins/RedirectManager/redirect-dashboard.js?v=1.3.1",
       "elementName": "redirect-manager-dashboard",
       "weight": 10,
       "meta": {

@@ -1,312 +1,162 @@
+/* ── Redirect Manager – shared styles (AngularJS dashboard + light-DOM modal) ── */
+
+/* ── Status badges ── */
+.redirect-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.redirect-status-301 { background: #d1fae5; color: #065f46; }
+.redirect-status-302 { background: #fef3c7; color: #92400e; }
+.redirect-status-404 { background: #fee2e2; color: #991b1b; }
+.redirect-status-410 { background: #e5e7eb; color: #374151; }
+
+/* ── Table ── */
 .redirect-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
+    margin-top: 1px;
 }
 
 .redirect-table th,
 .redirect-table td {
-    padding: 12px 15px;
+    padding: 10px 14px;
     text-align: left;
-    border-bottom: 1px solid #e9e9e9;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
 }
 
 .redirect-table th {
-    background-color: #f5f5f5;
+    background-color: #fafafa;
+    font-size: 11px;
     font-weight: 600;
-    color: #333;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid #e9e9e9;
+    white-space: nowrap;
 }
 
-.redirect-table tbody tr:hover {
-    background-color: #f9f9f9;
-}
+.redirect-table tbody tr:hover { background-color: #fafbff; }
+.redirect-table tbody tr:last-child td { border-bottom: none; }
 
+/* ── URL cells ── */
 .redirect-url {
-    font-family: monospace;
-    font-size: 13px;
-    max-width: 300px;
+    font-family: 'Monaco', 'Courier New', monospace;
+    font-size: 11px;
+    max-width: 220px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.redirect-status {
-    display: inline-block;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-weight: 600;
-    font-size: 12px;
-    color: #fff;
-}
+/* ── Active indicators ── */
+.redirect-active   { color: #2bc37b; font-weight: 600; }
+.redirect-inactive { color: #d42054; font-weight: 600; }
 
-.redirect-status-301 {
-    background-color: #2bc37b;
-}
+/* ── Action buttons ── */
+.redirect-actions { white-space: nowrap; }
+.redirect-actions .umb-button { margin-right: 4px; }
 
-.redirect-status-302 {
-    background-color: #f5c520;
-    color: #333;
-}
-
-.redirect-status-404 {
-    background-color: #d42054;
-}
-
-.redirect-status-410 {
-    background-color: #6c757d;
-}
-
-.redirect-active {
-    color: #2bc37b;
-    font-weight: 600;
-}
-
-.redirect-inactive {
-    color: #d42054;
-    font-weight: 600;
-}
-
-.redirect-actions {
-    white-space: nowrap;
-}
-
-.redirect-actions .umb-button {
-    margin-right: 5px;
-}
-
-.redirect-loading {
-    padding: 40px;
-    text-align: center;
-}
-
+/* ── Loading / empty states ── */
+.redirect-loading,
 .redirect-empty {
-    padding: 40px;
+    padding: 48px 20px;
     text-align: center;
-    color: #666;
+    color: #aaa;
+    font-size: 13px;
 }
 
-/* Status Code Legend */
+/* ── Status legend (compact) ── */
 .redirect-status-legend {
-    background: #f8f9fa;
-    border: 1px solid #e9e9e9;
-    border-radius: 8px;
-    padding: 16px 20px;
-    margin: 20px 0 30px 0;
-}
-
-.redirect-status-legend h3 {
-    margin: 0 0 12px 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: #333;
-}
-
-.legend-items {
     display: flex;
+    gap: 14px;
     flex-wrap: wrap;
-    gap: 16px;
+    align-items: center;
+    padding: 10px 0 14px;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 12px;
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex: 1 1 calc(50% - 8px);
-    min-width: 250px;
+    gap: 6px;
 }
 
 .legend-label {
-    font-weight: 600;
-    color: #333;
-    font-size: 13px;
-}
-
-.legend-description {
-    color: #666;
     font-size: 12px;
+    color: #777;
 }
 
-/* Modal Styles - Enhanced */
-.redirect-modal {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-}
-
-.redirect-modal .umb-editor-view {
-    background: #fff;
-}
-
-.redirect-modal .umb-editor-header {
-    border-bottom: 2px solid #f0f0f0;
-    padding-bottom: 16px;
-    margin-bottom: 24px;
-}
-
-.redirect-modal .umb-editor-header-name {
-    font-size: 20px;
-    font-weight: 600;
-    color: #1b264f;
-}
-
-.redirect-modal .umb-box {
-    background: transparent;
-    border: none;
-    box-shadow: none;
-}
-
-.redirect-modal .umb-box-content {
-    padding: 0;
-}
-
-.redirect-modal .umb-control-group {
-    margin-bottom: 24px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.redirect-modal .umb-control-group:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
-    padding-bottom: 0;
-}
-
-.redirect-modal .umb-control-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 600;
-    font-size: 14px;
-    color: #1b264f;
-    letter-spacing: 0.01em;
-}
-
-.redirect-modal .umb-control-group .control-description {
-    display: block;
-    margin-top: 4px;
-    margin-bottom: 10px;
-    font-size: 12px;
-    color: #666;
-    line-height: 1.5;
-}
-
-.redirect-modal .umb-property-editor {
-    width: 100%;
-    transition: all 0.2s ease;
-}
-
-.redirect-modal .umb-dropdown,
-.redirect-modal .umb-textstring {
-    width: 100%;
-    padding: 10px 12px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
-    background-color: #fff;
-    font-size: 14px;
-    font-family: inherit;
-    color: #333;
-    transition: all 0.2s ease;
-    box-sizing: border-box;
-}
-
-.redirect-modal .umb-dropdown:hover,
-.redirect-modal .umb-textstring:hover {
-    border-color: #c0c0c0;
-}
-
-.redirect-modal .umb-dropdown:focus,
-.redirect-modal .umb-textstring:focus {
-    outline: none;
-    border-color: #3544b1;
-    box-shadow: 0 0 0 4px rgba(53, 68, 177, 0.1);
-    background-color: #fafbff;
-}
-
-.redirect-modal .umb-dropdown {
-    cursor: pointer;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 14px center;
-    background-size: 12px;
-    padding-right: 36px;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-}
-
-.redirect-modal .umb-textstring::placeholder {
-    color: #999;
-    opacity: 1;
-}
-
-.redirect-modal .umb-toggle {
-    margin-top: 4px;
-}
-
-.redirect-modal .umb-editor-footer {
-    margin-top: 32px;
-    padding-top: 20px;
-    border-top: 2px solid #f0f0f0;
-}
-
-.redirect-modal .umb-editor-footer-content-right {
+/* ── Tabs ── */
+.redirect-tabs {
     display: flex;
-    gap: 12px;
-    justify-content: flex-end;
+    border-bottom: 1px solid #e9e9e9;
+    margin-bottom: 0 !important;
 }
 
-.redirect-modal .umb-button {
-    min-width: 100px;
-    padding: 10px 24px;
-    font-weight: 600;
-    font-size: 14px;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-}
-
-.redirect-modal .umb-button[button-style="link"] {
-    color: #666;
-    background: transparent;
-}
-
-.redirect-modal .umb-button[button-style="link"]:hover {
-    color: #333;
+/* ── Domain pill ── */
+.domain-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 10px;
     background: #f5f5f5;
+    border: 1px solid #e8e8e8;
+    font-size: 11px;
+    color: #555;
+    white-space: nowrap;
 }
 
-.redirect-modal .umb-button[button-style="success"] {
-    background: #2bc37b;
-    color: #fff;
+.domain-pill.all-domains {
+    background: transparent;
     border: none;
+    color: #bbb;
+    font-style: italic;
+    padding-left: 0;
 }
 
-.redirect-modal .umb-button[button-style="success"]:hover {
-    background: #25a866;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(43, 195, 123, 0.3);
+/* ── Type pill ── */
+.type-pill {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    background: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    color: #666;
 }
 
-.redirect-modal .umb-button[button-style="success"]:active {
-    transform: translateY(0);
+.type-pill.regex {
+    background: #f3f0fe;
+    border-color: #d0c8f7;
+    color: #5b21b6;
 }
 
-/* Responsive adjustments for modal */
-@media (max-width: 768px) {
-    .redirect-status-legend .legend-items {
-        flex-direction: column;
-    }
-    
-    .legend-item {
-        flex: 1 1 100%;
-    }
-}
+/* ── Hit count ── */
+.hit-count       { font-size: 12px; color: #ccc; }
+.hit-count.live  { color: #333; font-weight: 600; }
 
-/* Add New Redirect / Edit Redirect modal (Lit dashboard – styles apply when modal is in light DOM) */
+/* ═══════════════════════════════════════════════
+   Modal styles (used when modal is in light DOM —
+   AngularJS umb-overlay or the Lit component's
+   redirect-manager-modal-root wrapper)
+   ═══════════════════════════════════════════════ */
+
 .redirect-manager-dashboard .modal-overlay,
 .modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.45);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -319,160 +169,342 @@
 .modal {
     background: #fff;
     border-radius: 12px;
-    padding: 28px 32px;
-    width: 520px;
+    padding: 0;
+    width: 560px;
     max-width: calc(100vw - 40px);
     max-height: calc(100vh - 40px);
     overflow-y: auto;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.14);
     margin: auto;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.redirect-manager-dashboard .modal h2,
-.modal h2 {
-    margin: 0 0 24px 0;
-    font-size: 1.35rem;
+.modal .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.modal .modal-header h2 {
+    margin: 0;
+    font-size: 15px;
     font-weight: 600;
     color: #1b264f;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #e9e9e9;
+    letter-spacing: -0.01em;
 }
 
-.redirect-manager-dashboard .modal .form-group,
+.modal .form-body {
+    padding: 20px 22px;
+}
+
 .modal .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
-.redirect-manager-dashboard .modal .form-group:last-of-type,
-.modal .form-group:last-of-type {
-    margin-bottom: 0;
-}
+.modal .form-group:last-child { margin-bottom: 0; }
 
-.redirect-manager-dashboard .modal .form-group label,
 .modal .form-group label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+    font-size: 10px;
     font-weight: 600;
-    font-size: 14px;
-    color: #333;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
 }
 
-.redirect-manager-dashboard .modal .form-group input[type="text"],
-.redirect-manager-dashboard .modal .form-group select,
-.redirect-manager-dashboard .modal .form-group textarea,
+.modal .form-group .lbl-opt {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #bbb;
+    font-size: 10px;
+}
+
+.modal .form-group .req { color: #d42054; }
+
 .modal .form-group input[type="text"],
 .modal .form-group select,
 .modal .form-group textarea {
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #d8d7d9;
+    padding: 9px 11px;
+    border: 1px solid #e0e0e0;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 13px;
     font-family: inherit;
     box-sizing: border-box;
+    color: #333;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    background: #fff;
 }
 
-.redirect-manager-dashboard .modal .form-group input[type="text"]:focus,
-.redirect-manager-dashboard .modal .form-group select:focus,
-.redirect-manager-dashboard .modal .form-group textarea:focus,
 .modal .form-group input[type="text"]:focus,
 .modal .form-group select:focus,
 .modal .form-group textarea:focus {
     outline: none;
     border-color: #3544b1;
-    box-shadow: 0 0 0 3px rgba(53, 68, 177, 0.15);
+    box-shadow: 0 0 0 3px rgba(53,68,177,0.12);
+    background: #fafbff;
 }
 
-.redirect-manager-dashboard .modal .form-group input[type="text"]::placeholder,
-.redirect-manager-dashboard .modal .form-group textarea::placeholder,
 .modal .form-group input[type="text"]::placeholder,
-.modal .form-group textarea::placeholder {
-    color: #999;
-}
+.modal .form-group textarea::placeholder { color: #bbb; }
 
-.redirect-manager-dashboard .modal .form-group select,
-.modal .form-group select {
-    cursor: pointer;
-}
+.modal .form-group select { cursor: pointer; }
+.modal .form-group textarea { resize: vertical; min-height: 72px; }
 
-.redirect-manager-dashboard .modal .form-group textarea,
-.modal .form-group textarea {
-    resize: vertical;
-    min-height: 80px;
-}
-
-.redirect-manager-dashboard .modal .form-group small,
 .modal .form-group small {
     display: block;
-    margin-top: 6px;
-    color: #666;
-    font-size: 12px;
-    line-height: 1.4;
+    margin-top: 5px;
+    color: #999;
+    font-size: 11px;
+    line-height: 1.5;
 }
 
-.redirect-manager-dashboard .modal .form-group small code,
 .modal .form-group small code {
-    padding: 2px 6px;
-    background: #f0f0f0;
+    padding: 1px 5px;
+    background: #f3f4f6;
+    border-radius: 3px;
+    font-size: 10px;
+    color: #374151;
+    font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.modal .form-row {
+    display: flex;
+    gap: 14px;
+}
+
+.modal .form-row .form-group { flex: 1; }
+
+@media (max-width: 540px) {
+    .modal .form-row { flex-direction: column; }
+}
+
+/* Status select with floating badge */
+.modal .status-select-wrap { position: relative; }
+.modal .status-select-wrap select { padding-right: 90px; }
+
+.modal .status-float-badge {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 2px 8px;
     border-radius: 4px;
     font-size: 11px;
-    color: #333;
+    font-weight: 600;
+    pointer-events: none;
 }
 
-.redirect-manager-dashboard .modal .checkbox-group,
-.modal .checkbox-group {
+.modal .status-float-badge.status-301 { background: #d1fae5; color: #065f46; }
+.modal .status-float-badge.status-302 { background: #fef3c7; color: #92400e; }
+.modal .status-float-badge.status-404 { background: #fee2e2; color: #991b1b; }
+.modal .status-float-badge.status-410 { background: #e5e7eb; color: #374151; }
+
+/* Toggle rows */
+.modal .toggle-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 12px;
+    background: #fafafa;
+    border-radius: 8px;
+    border: 1px solid #efefef;
 }
 
-.redirect-manager-dashboard .modal .checkbox-group input[type="checkbox"],
-.modal .checkbox-group input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
+.modal .toggle-label {
+    flex: 1;
     margin: 0;
     cursor: pointer;
-    accent-color: #3544b1;
-}
-
-.redirect-manager-dashboard .modal .checkbox-group label,
-.modal .checkbox-group label {
-    margin-bottom: 0;
-    cursor: pointer;
+    font-size: 12px;
     font-weight: 500;
+    color: #333;
+    text-transform: none;
+    letter-spacing: 0;
 }
 
-.redirect-manager-dashboard .modal .modal-actions,
-.modal .modal-actions {
+.modal .toggle-hint {
+    font-weight: 400;
+    color: #999;
+    font-size: 11px;
+}
+
+.modal .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+}
+
+.modal .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+.modal .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #d1d5db;
+    transition: 0.25s;
+    border-radius: 22px;
+}
+
+.modal .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.25s;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+
+.modal .toggle-switch input:checked + .toggle-slider { background-color: #2bc37b; }
+.modal .toggle-switch input:checked + .toggle-slider:before { transform: translateX(18px); }
+
+/* Modal footer */
+.modal .modal-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
-    margin-top: 24px;
-    padding-top: 20px;
-    border-top: 1px solid #e9e9e9;
+    gap: 8px;
+    padding: 14px 22px;
+    border-top: 1px solid #f0f0f0;
 }
 
-.redirect-manager-dashboard .modal .modal-actions .btn,
-.modal .modal-actions .btn {
-    min-width: 100px;
-    padding: 10px 20px;
+.modal .btn-cancel {
+    padding: 8px 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fff;
+    color: #666;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.modal .btn-cancel:hover { background: #f5f5f5; }
+
+.modal .btn-save {
+    padding: 8px 20px;
     border: none;
     border-radius: 6px;
-    font-size: 14px;
+    background: #2bc37b;
+    color: #fff;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
 }
 
-.redirect-manager-dashboard .modal .modal-actions .btn.btn-primary,
-.modal .modal-actions .btn.btn-primary {
-    background: #3544b1;
-    color: #fff;
+.modal .btn-save:hover { background: #25a866; }
+
+/* ── AngularJS modal (umb-overlay) ── */
+.redirect-modal .umb-editor-view { background: #fff; }
+
+.redirect-modal .umb-editor-header {
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 14px;
+    margin-bottom: 20px;
 }
 
-.redirect-manager-dashboard .modal .modal-actions .btn.btn-secondary,
-.modal .modal-actions .btn.btn-secondary {
-    background: #e9e9e9;
+.redirect-modal .umb-editor-header-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1b264f;
+}
+
+.redirect-modal .umb-box {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.redirect-modal .umb-box-content { padding: 0; }
+
+.redirect-modal .umb-control-group {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.redirect-modal .umb-control-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.redirect-modal .umb-control-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.redirect-modal .umb-control-group .control-description {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: #999;
+    line-height: 1.5;
+}
+
+.redirect-modal .umb-property-editor { width: 100%; }
+
+.redirect-modal .umb-dropdown,
+.redirect-modal .umb-textstring {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background-color: #fff;
+    font-size: 13px;
+    font-family: inherit;
     color: #333;
-    border: 1px solid #d8d7d9;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-sizing: border-box;
+}
+
+.redirect-modal .umb-dropdown:focus,
+.redirect-modal .umb-textstring:focus {
+    outline: none;
+    border-color: #3544b1;
+    box-shadow: 0 0 0 3px rgba(53,68,177,0.12);
+    background-color: #fafbff;
+}
+
+.redirect-modal .umb-dropdown {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 11px;
+    padding-right: 32px;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.redirect-modal .umb-textstring::placeholder { color: #bbb; }
+
+.redirect-modal .umb-editor-footer {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.redirect-modal .umb-editor-footer-content-right {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+    .redirect-status-legend { flex-direction: column; gap: 8px; }
 }

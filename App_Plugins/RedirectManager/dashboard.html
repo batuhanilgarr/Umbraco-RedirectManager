@@ -1,9 +1,10 @@
 <div ng-controller="RedirectManager.DashboardController as vm">
     <umb-box>
+        <!-- Page header -->
         <umb-box-header title="Redirect Manager">
             <umb-button type="button"
                         button-style="success"
-                        label="Add New Redirect"
+                        label="+ Add redirect"
                         action="vm.openAddModal()">
             </umb-button>
             <umb-button type="button"
@@ -22,38 +23,33 @@
                    style="display:none"
                    onchange="angular.element(this).scope().vm.handleImportFile(this.files)" />
         </umb-box-header>
+
         <umb-box-content>
-            <h1>Bitiz Redirect Manager</h1>
-            <p>This panel lets you centrally manage URL redirects for your site. You can add new redirects, update existing ones, or remove rules that are no longer needed.</p>
-            
-            <!-- Status Code Legend -->
+            <h1 style="margin:0 0 4px;font-size:20px;font-weight:600;color:#1b264f;letter-spacing:-0.01em;">Bitiz Redirect Manager</h1>
+            <p style="margin:0 0 16px;font-size:13px;color:#888;line-height:1.5;">Centrally manage URL redirects for your site.</p>
+
+            <!-- Status legend (compact) -->
             <div class="redirect-status-legend">
-                <h3>Status Code Descriptions:</h3>
-                <div class="legend-items">
-                    <div class="legend-item">
-                        <span class="redirect-status redirect-status-301">301</span>
-                        <span class="legend-label">Permanent Redirect</span>
-                        <span class="legend-description">- Tells browsers and search engines to always use the new URL</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="redirect-status redirect-status-302">302</span>
-                        <span class="legend-label">Temporary Redirect</span>
-                        <span class="legend-description">- Temporarily redirects traffic to another URL</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="redirect-status redirect-status-404">404</span>
-                        <span class="legend-label">Not Found</span>
-                        <span class="legend-description">- Returns a standard 404 &quot;Page not found&quot; response</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="redirect-status redirect-status-410">410</span>
-                        <span class="legend-label">Gone</span>
-                        <span class="legend-description">- Indicates the page has been permanently removed</span>
-                    </div>
+                <div class="legend-item">
+                    <span class="redirect-status redirect-status-301">301</span>
+                    <span class="legend-label">Permanent</span>
+                </div>
+                <div class="legend-item">
+                    <span class="redirect-status redirect-status-302">302</span>
+                    <span class="legend-label">Temporary</span>
+                </div>
+                <div class="legend-item">
+                    <span class="redirect-status redirect-status-404">404</span>
+                    <span class="legend-label">Not found</span>
+                </div>
+                <div class="legend-item">
+                    <span class="redirect-status redirect-status-410">410</span>
+                    <span class="legend-label">Gone</span>
                 </div>
             </div>
 
-            <div class="redirect-tabs" style="display:flex; gap:8px; margin-bottom: 16px;">
+            <!-- Tabs -->
+            <div class="redirect-tabs">
                 <umb-button type="button"
                             button-style="{{vm.activeTab === 'redirects' ? 'primary' : 'secondary'}}"
                             label="Redirects"
@@ -66,76 +62,91 @@
                 </umb-button>
             </div>
 
+            <!-- Redirects tab -->
             <div ng-if="vm.activeTab === 'redirects'">
-            <div ng-if="vm.loading" class="redirect-loading">
-                <umb-load-indicator></umb-load-indicator>
+                <div ng-if="vm.loading" class="redirect-loading">
+                    <umb-load-indicator></umb-load-indicator>
+                </div>
+
+                <div ng-if="!vm.loading && vm.redirects.length === 0" class="redirect-empty">
+                    <p>No redirects found. Click "+ Add redirect" to create one.</p>
+                </div>
+
+                <table ng-if="!vm.loading && vm.redirects.length > 0" class="redirect-table">
+                    <thead>
+                        <tr>
+                            <th style="width:60px;text-align:center;">Status</th>
+                            <th>Old URL</th>
+                            <th>New URL</th>
+                            <th>Domain</th>
+                            <th>Notes</th>
+                            <th style="text-align:center;">Match</th>
+                            <th style="text-align:center;">Active</th>
+                            <th style="text-align:center;" title="Hit count">Hits</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="redirect in vm.redirects">
+                            <td style="text-align:center;">
+                                <span class="redirect-status redirect-status-{{redirect.statusCode}}">
+                                    {{redirect.statusCode}}
+                                </span>
+                            </td>
+                            <td class="redirect-url">{{redirect.oldUrl}}</td>
+                            <td class="redirect-url">{{redirect.newUrl || '—'}}</td>
+                            <td>
+                                <span ng-if="redirect.domain"
+                                      class="domain-pill">{{redirect.domain}}</span>
+                                <span ng-if="!redirect.domain"
+                                      class="domain-pill all-domains">All domains</span>
+                            </td>
+                            <td class="redirect-notes" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#888;">
+                                {{redirect.description || '—'}}
+                            </td>
+                            <td style="text-align:center;">
+                                <span class="type-pill" ng-class="{'regex': redirect.isRegex}">
+                                    {{redirect.isRegex ? 'Regex' : 'Exact'}}
+                                </span>
+                            </td>
+                            <td style="text-align:center;">
+                                <span ng-class="{'redirect-active': redirect.isActive, 'redirect-inactive': !redirect.isActive}">
+                                    {{redirect.isActive ? 'Yes' : 'No'}}
+                                </span>
+                            </td>
+                            <td style="text-align:center;"
+                                title="{{redirect.lastHitDate ? ('Last hit: ' + (redirect.lastHitDate | date:'medium')) : 'Never hit'}}">
+                                <span class="hit-count"
+                                      ng-class="{'live': (redirect.hitCount || 0) > 0}">
+                                    {{redirect.hitCount || 0}}
+                                </span>
+                            </td>
+                            <td class="redirect-actions">
+                                <umb-button type="button"
+                                            button-style="secondary"
+                                            size="xs"
+                                            label="Test"
+                                            action="vm.testRedirect(redirect)">
+                                </umb-button>
+                                <umb-button type="button"
+                                            button-style="info"
+                                            size="xs"
+                                            label="Edit"
+                                            action="vm.openEditModal(redirect)">
+                                </umb-button>
+                                <umb-button type="button"
+                                            button-style="danger"
+                                            size="xs"
+                                            label="Delete"
+                                            action="vm.deleteRedirect(redirect)">
+                                </umb-button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
-            <div ng-if="!vm.loading && vm.redirects.length === 0" class="redirect-empty">
-                <p>No redirects found. Click "Add New Redirect" to create one.</p>
-            </div>
-
-            <table ng-if="!vm.loading && vm.redirects.length > 0" class="redirect-table">
-                <thead>
-                    <tr>
-                        <th>Status</th>
-                        <th>Old URL</th>
-                        <th>New URL</th>
-                        <th>Domain</th>
-                        <th>Notes</th>
-                        <th>Type</th>
-                        <th>Match</th>
-                        <th>Active</th>
-                        <th>Hits</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr ng-repeat="redirect in vm.redirects">
-                        <td>
-                            <span class="redirect-status redirect-status-{{redirect.statusCode}}">
-                                {{redirect.statusCode}}
-                            </span>
-                        </td>
-                        <td class="redirect-url">{{redirect.oldUrl}}</td>
-                        <td class="redirect-url">{{redirect.newUrl || '-'}}</td>
-                        <td>{{redirect.domain || 'All domains'}}</td>
-                        <td class="redirect-notes">{{redirect.description || '-'}}</td>
-                        <td>{{vm.getStatusCodeLabel(redirect.statusCode)}}</td>
-                        <td>{{redirect.isRegex ? 'Regex' : 'Exact'}}</td>
-                        <td>
-                            <span ng-class="{'redirect-active': redirect.isActive, 'redirect-inactive': !redirect.isActive}">
-                                {{redirect.isActive ? 'Yes' : 'No'}}
-                            </span>
-                        </td>
-                        <td title="{{redirect.lastHitDate ? ('Last hit: ' + (redirect.lastHitDate | date:'medium')) : 'Never hit'}}">
-                            {{redirect.hitCount || 0}}
-                        </td>
-                        <td class="redirect-actions">
-                            <umb-button type="button"
-                                        button-style="secondary"
-                                        size="xs"
-                                        label="Test"
-                                        action="vm.testRedirect(redirect)">
-                            </umb-button>
-                            <umb-button type="button"
-                                        button-style="info"
-                                        size="xs"
-                                        label="Edit"
-                                        action="vm.openEditModal(redirect)">
-                            </umb-button>
-                            <umb-button type="button"
-                                        button-style="danger"
-                                        size="xs"
-                                        label="Delete"
-                                        action="vm.deleteRedirect(redirect)">
-                            </umb-button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-            </div>
-
+            <!-- 404 log tab -->
             <div ng-if="vm.activeTab === 'missed'">
                 <div ng-if="vm.missedLoading" class="redirect-loading">
                     <umb-load-indicator></umb-load-indicator>
@@ -149,23 +160,29 @@
                     <thead>
                         <tr>
                             <th>Path</th>
-                            <th>Hits</th>
-                            <th>First Seen</th>
-                            <th>Last Seen</th>
-                            <th>Actions</th>
+                            <th style="text-align:center;">Hits</th>
+                            <th style="text-align:center;">First seen</th>
+                            <th style="text-align:center;">Last seen</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr ng-repeat="item in vm.missedRequests">
                             <td class="redirect-url">{{item.path}}</td>
-                            <td>{{item.hitCount}}</td>
-                            <td>{{item.firstSeenDate | date:'medium'}}</td>
-                            <td>{{item.lastSeenDate | date:'medium'}}</td>
+                            <td style="text-align:center;">
+                                <span class="hit-count live">{{item.hitCount}}</span>
+                            </td>
+                            <td style="text-align:center;font-size:11px;color:#888;">
+                                {{item.firstSeenDate | date:'mediumDate'}}
+                            </td>
+                            <td style="text-align:center;font-size:11px;color:#888;">
+                                {{item.lastSeenDate | date:'mediumDate'}}
+                            </td>
                             <td class="redirect-actions">
                                 <umb-button type="button"
                                             button-style="success"
                                             size="xs"
-                                            label="Create Redirect"
+                                            label="Create redirect"
                                             action="vm.createRedirectFromMissed(item)">
                                 </umb-button>
                                 <umb-button type="button"

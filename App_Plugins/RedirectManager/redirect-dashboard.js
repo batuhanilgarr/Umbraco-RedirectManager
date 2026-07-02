@@ -26,476 +26,551 @@ class RedirectManagerDashboard extends UmbLitElement {
         :host {
             display: block;
             padding: 20px;
-            /* Umbraco backoffice flex container içinde scroll'un tabloda olması için */
             min-width: 0;
             max-width: 100%;
             overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        .header {
+        /* ── page header ── */
+        .page-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
+            align-items: flex-start;
+            margin-bottom: 14px;
+            gap: 16px;
         }
 
-        h1 {
+        .page-header h1 {
             margin: 0;
-            font-size: 24px;
+            font-size: 20px;
+            font-weight: 600;
             color: #1b264f;
+            letter-spacing: -0.01em;
         }
 
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
+        .page-header p {
+            margin: 3px 0 0;
+            font-size: 13px;
+            color: #888;
+            line-height: 1.5;
         }
+
+        /* ── buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 7px 13px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            background: #fff;
+            color: #555;
+            white-space: nowrap;
+            transition: background 0.1s, border-color 0.1s;
+            line-height: 1.4;
+        }
+
+        .btn:hover { background: #f5f5f5; border-color: #ccc; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .btn-primary {
-            background-color: #3544b1;
-            color: white;
+            background: #2bc37b;
+            color: #fff;
+            border-color: transparent;
+            padding: 8px 16px;
+            font-weight: 600;
         }
 
-        .btn-primary:hover {
-            background-color: #2d3a9e;
+        .btn-primary:hover { background: #25a866; border-color: transparent; }
+
+        .btn-apply {
+            background: #3544b1;
+            color: #fff;
+            border-color: transparent;
         }
 
-        .btn-danger {
-            background-color: #d42054;
-            color: white;
+        .btn-apply:hover { background: #2d3a9e; border-color: transparent; }
+
+        .btn-sm { padding: 4px 9px; font-size: 11px; border-radius: 5px; }
+
+        .btn-danger { color: #d42054; border-color: #f5c0cc; background: #fff; }
+        .btn-danger:hover { background: #fef0f3; border-color: #e8a0b0; }
+
+        .btn-info { color: #3544b1; border-color: #c5caee; background: #fff; }
+        .btn-info:hover { background: #eef0fb; border-color: #aab0e0; }
+
+        .btn-success-sm { color: #065f46; border-color: #a7f3d0; background: #f0fdf4; }
+        .btn-success-sm:hover { background: #dcfce7; }
+
+        /* ── status legend ── */
+        .status-legend {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            align-items: center;
+            padding: 10px 0 14px;
+            border-bottom: 1px solid #f0f0f0;
+            margin-bottom: 12px;
         }
 
-        .btn-secondary {
-            background-color: #6c757d;
-            color: white;
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .btn-sm {
-            padding: 6px 12px;
+        .legend-lbl {
             font-size: 12px;
+            color: #777;
         }
 
+        /* ── status badges ── */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .status-301 { background: #d1fae5; color: #065f46; }
+        .status-302 { background: #fef3c7; color: #92400e; }
+        .status-404 { background: #fee2e2; color: #991b1b; }
+        .status-410 { background: #e5e7eb; color: #374151; }
+
+        /* ── toolbar ── */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-wrap: wrap;
+            padding: 10px 12px;
+            background: #fafafa;
+            border: 1px solid #efefef;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .search-wrap {
+            position: relative;
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #bbb;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .toolbar input[type="text"] {
+            width: 100%;
+            padding: 7px 10px 7px 28px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 12px;
+            background: #fff;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .toolbar input[type="text"]:focus {
+            outline: none;
+            border-color: #3544b1;
+            box-shadow: 0 0 0 3px rgba(53,68,177,0.1);
+        }
+
+        .toolbar select {
+            padding: 7px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: #fff;
+            font-size: 12px;
+            color: #555;
+            cursor: pointer;
+            line-height: 1.4;
+        }
+
+        .toolbar select:focus { outline: none; border-color: #3544b1; }
+
+        .toolbar-sep {
+            width: 1px;
+            height: 20px;
+            background: #e0e0e0;
+            margin: 0 2px;
+            flex-shrink: 0;
+        }
+
+        /* ── notification ── */
+        .notif {
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-bottom: 10px;
+            border: 1px solid;
+        }
+
+        .notif-success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+        .notif-error   { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+        .notif-info    { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+
+        /* ── bulk bar ── */
+        .bulk-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 8px 12px;
+            background: #eef0fb;
+            border: 1px solid #c5caee;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .bulk-bar strong {
+            font-size: 12px;
+            color: #3544b1;
+            margin-right: 4px;
+        }
+
+        /* ── tabs ── */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #e9e9e9;
+        }
+
+        .tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #888;
+            cursor: pointer;
+            border: none;
+            background: none;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: color 0.1s;
+        }
+
+        .tab-btn.active {
+            color: #3544b1;
+            border-bottom-color: #3544b1;
+        }
+
+        .tab-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 16px;
+            padding: 0 5px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 600;
+            background: #eef0fb;
+            color: #3544b1;
+        }
+
+        .tab-count.danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* ── table ── */
         .table-wrapper {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
-            margin-top: 10px;
+            border: 1px solid #e9e9e9;
             border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            /* Flex içinde scroll için wrapper'ın genişliği sınırlı olmalı */
-            min-width: 0;
-            width: 100%;
+            margin-top: 1px;
         }
 
         table {
             width: 100%;
-            min-width: 1280px;
+            min-width: 900px;
             border-collapse: collapse;
             background: white;
         }
 
-        th, td {
-            padding: 12px 16px;
+        th {
+            padding: 9px 14px;
             text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            color: #888;
+            background: #fafafa;
             border-bottom: 1px solid #e9e9e9;
-            vertical-align: middle;
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
-        th {
-            background-color: #f5f5f5;
-            font-weight: 600;
+        th.center, td.center { text-align: center; }
+
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+            font-size: 12px;
+            color: #333;
+        }
+
+        tbody tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: #fafbff; }
+        tbody tr.row-selected { background: #f0f2fc; }
+
+        .url-cell { max-width: 200px; }
+
+        .url-val {
+            display: block;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 11px;
             color: #333;
             white-space: nowrap;
-        }
-
-        tbody tr:hover {
-            background-color: #f9f9f9;
-        }
-
-        .url-cell {
-            font-family: monospace;
-            font-size: 13px;
-            min-width: 200px;
-            max-width: 250px;
             overflow: hidden;
             text-overflow: ellipsis;
-            white-space: nowrap;
+            max-width: 200px;
         }
 
-        .url-cell > div {
-            min-width: 0;
-        }
-
-        .url-cell span {
-            display: inline-block;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            vertical-align: middle;
-        }
-
-        .url-cell > div span {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .notes-cell {
-            min-width: 140px;
-            max-width: 280px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        td.actions-cell {
-            min-width: 140px;
-            white-space: nowrap;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: 600;
-            font-size: 12px;
-            color: white;
-        }
-
-        .status-301 { background-color: #2bc37b; }
-        .status-302 { background-color: #f5c520; color: #333; }
-        .status-404 { background-color: #d42054; }
-        .status-410 { background-color: #6c757d; }
-
-        .active-yes { color: #2bc37b; font-weight: 600; }
-        .active-no { color: #d42054; font-weight: 600; }
-
-        .actions {
+        .url-copy-wrap {
             display: flex;
-            flex-wrap: nowrap;
-            gap: 8px;
             flex-direction: column;
+            align-items: flex-start;
+            gap: 3px;
         }
 
-        .actions .btn {
+        .notes-val {
+            display: block;
+            max-width: 160px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 11px;
+            color: #888;
+        }
+
+        .domain-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: #f5f5f5;
+            border: 1px solid #e8e8e8;
+            font-size: 11px;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        .domain-pill.all-domains {
+            background: transparent;
+            border: none;
+            color: #bbb;
+            font-style: italic;
+            padding-left: 0;
+        }
+
+        .type-pill {
+            display: inline-block;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            color: #666;
+        }
+
+        .type-pill.regex {
+            background: #f3f0fe;
+            border-color: #d0c8f7;
+            color: #5b21b6;
+        }
+
+        .active-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
             flex-shrink: 0;
         }
 
-        .loading, .empty {
-            padding: 40px;
-            text-align: center;
-            color: #666;
-        }
+        .status-dot.active   { background: #2bc37b; }
+        .status-dot.inactive { background: #d42054; }
 
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .modal {
-            background: white;
-            border-radius: 12px;
-            padding: 28px 32px;
-            width: 520px;
-            max-width: calc(100vw - 40px);
-            max-height: calc(100vh - 40px);
-            overflow-y: auto;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-            margin: auto;
-        }
-
-        .modal h2 {
-            margin: 0 0 24px 0;
-            font-size: 1.35rem;
-            font-weight: 600;
-            color: #1b264f;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #e9e9e9;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group:last-of-type {
-            margin-bottom: 0;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            font-size: 14px;
-            color: #333;
-        }
-
-        .form-group input[type="text"],
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 10px 12px;
-            border: 1px solid #d8d7d9;
-            border-radius: 6px;
-            font-size: 14px;
-            font-family: inherit;
-            box-sizing: border-box;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        .form-group input[type="text"]:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #3544b1;
-            box-shadow: 0 0 0 3px rgba(53, 68, 177, 0.15);
-        }
-
-        .form-group input[type="text"]::placeholder,
-        .form-group textarea::placeholder {
-            color: #999;
-        }
-
-        .form-group select {
-            cursor: pointer;
-            appearance: auto;
-        }
-
-        .form-group textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .form-group small {
-            display: block;
-            margin-top: 6px;
-            color: #666;
+        .hit-count {
             font-size: 12px;
-            line-height: 1.4;
+            color: #ccc;
         }
 
-        .form-group small code {
-            padding: 2px 6px;
-            background: #f0f0f0;
-            border-radius: 4px;
-            font-size: 11px;
+        .hit-count.has-hits {
             color: #333;
+            font-weight: 600;
         }
 
-        .checkbox-group {
+        .act-group {
             display: flex;
             align-items: center;
-            gap: 10px;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            margin: 0;
-            cursor: pointer;
-            accent-color: #3544b1;
-        }
-
-        .checkbox-group label {
-            margin-bottom: 0;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .modal-actions {
-            display: flex;
+            gap: 4px;
             justify-content: flex-end;
-            gap: 12px;
-            margin-top: 24px;
-            padding-top: 20px;
-            border-top: 1px solid #e9e9e9;
         }
 
-        .modal-actions .btn {
-            min-width: 100px;
+        /* ── empty / loading ── */
+        .empty, .loading {
+            padding: 48px 20px;
+            text-align: center;
+            color: #aaa;
+            font-size: 13px;
+        }
+
+        input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            accent-color: #3544b1;
+            cursor: pointer;
         }
     `;
 
-    /** Inline modal styles so they apply even when global redirect.css is not loaded or modal is in shadow DOM */
     static get modalInlineStyles() {
         return `
             .redirect-manager-modal-root .modal-overlay {
                 position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
+                background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center;
                 z-index: 1000; padding: 20px; overflow-y: auto;
             }
             .redirect-manager-modal-root .modal {
-                background: #fff; border-radius: 16px; padding: 36px 40px; width: 600px;
+                background: #fff; border-radius: 12px; width: 560px;
                 max-width: calc(100vw - 40px); max-height: calc(100vh - 40px); overflow-y: auto;
-                box-shadow: 0 20px 60px rgba(0,0,0,0.15); margin: auto;
+                box-shadow: 0 16px 48px rgba(0,0,0,0.14); margin: auto;
                 display: flex; flex-direction: column;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             }
-            .redirect-manager-modal-root .modal h2 {
-                margin: 0 0 32px 0; font-size: 1.5rem; font-weight: 700; color: #1b264f;
-                padding-bottom: 16px; border-bottom: 2px solid #f0f0f0; letter-spacing: -0.01em;
+            .redirect-manager-modal-root .modal-header {
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 18px 22px 16px; border-bottom: 1px solid #f0f0f0;
             }
-            .redirect-manager-modal-root .modal .form-group { 
-                margin-bottom: 32px; 
+            .redirect-manager-modal-root .modal-header h2 {
+                margin: 0; font-size: 15px; font-weight: 600; color: #1b264f; letter-spacing: -0.01em;
             }
-            .redirect-manager-modal-root .modal .form-group:last-of-type {
-                margin-bottom: 0; 
+            .redirect-manager-modal-root .btn-close {
+                background: none; border: none; color: #aaa; cursor: pointer; font-size: 15px;
+                padding: 4px 6px; border-radius: 4px; line-height: 1; display: flex; align-items: center;
             }
-            .redirect-manager-modal-root .modal .form-group label {
-                display: block; margin-bottom: 10px; font-weight: 600; font-size: 14px; color: #1b264f; letter-spacing: 0.01em;
+            .redirect-manager-modal-root .btn-close:hover { background: #f5f5f5; color: #555; }
+            .redirect-manager-modal-root .form-body {
+                padding: 20px 22px; display: flex; flex-direction: column; gap: 0;
             }
-            .redirect-manager-modal-root .modal .form-group input[type="text"],
-            .redirect-manager-modal-root .modal .form-group select,
-            .redirect-manager-modal-root .modal .form-group textarea {
-                width: 100%; padding: 14px 16px; border: 2px solid #e5e7eb; border-radius: 10px;
-                font-size: 14px; font-family: inherit; box-sizing: border-box; color: #1f2937;
-                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); background-color: #fff;
+            .redirect-manager-modal-root .form-group { margin-bottom: 16px; }
+            .redirect-manager-modal-root .form-group:last-child { margin-bottom: 0; }
+            .redirect-manager-modal-root .form-group label {
+                display: block; margin-bottom: 6px; font-size: 10px; font-weight: 600;
+                color: #888; text-transform: uppercase; letter-spacing: 0.06em;
             }
-            .redirect-manager-modal-root .modal .form-group input[type="text"]:hover,
-            .redirect-manager-modal-root .modal .form-group select:hover,
-            .redirect-manager-modal-root .modal .form-group textarea:hover {
-                border-color: #d1d5db;
+            .redirect-manager-modal-root .form-group .lbl-opt {
+                font-weight: 400; text-transform: none; letter-spacing: 0; color: #bbb; font-size: 10px;
             }
-            .redirect-manager-modal-root .modal .form-group input[type="text"]:focus,
-            .redirect-manager-modal-root .modal .form-group select:focus,
-            .redirect-manager-modal-root .modal .form-group textarea:focus {
-                outline: none; border-color: #3544b1; box-shadow: 0 0 0 4px rgba(53,68,177,0.12); background-color: #fafbff;
+            .redirect-manager-modal-root .form-group .req { color: #d42054; }
+            .redirect-manager-modal-root .form-group input[type="text"],
+            .redirect-manager-modal-root .form-group select,
+            .redirect-manager-modal-root .form-group textarea {
+                width: 100%; padding: 9px 11px; border: 1px solid #e0e0e0; border-radius: 6px;
+                font-size: 13px; font-family: inherit; box-sizing: border-box; color: #333;
+                transition: border-color 0.15s ease, box-shadow 0.15s ease; background: #fff;
             }
-            .redirect-manager-modal-root .modal .form-group select {
-                cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-                background-repeat: no-repeat; background-position: right 16px center; background-size: 12px;
-                padding-right: 40px; appearance: none; -webkit-appearance: none; -moz-appearance: none;
+            .redirect-manager-modal-root .form-group input[type="text"]:focus,
+            .redirect-manager-modal-root .form-group select:focus,
+            .redirect-manager-modal-root .form-group textarea:focus {
+                outline: none; border-color: #3544b1; box-shadow: 0 0 0 3px rgba(53,68,177,0.12); background: #fafbff;
             }
-            .redirect-manager-modal-root .modal .form-group input[type="text"]::placeholder,
-            .redirect-manager-modal-root .modal .form-group textarea::placeholder {
-                color: #9ca3af; opacity: 1;
+            .redirect-manager-modal-root .form-group input[type="text"]::placeholder,
+            .redirect-manager-modal-root .form-group textarea::placeholder { color: #bbb; }
+            .redirect-manager-modal-root .form-group select { cursor: pointer; }
+            .redirect-manager-modal-root .form-group textarea { resize: vertical; min-height: 72px; }
+            .redirect-manager-modal-root .form-group small {
+                display: block; margin-top: 5px; color: #999; font-size: 11px; line-height: 1.5;
             }
-            .redirect-manager-modal-root .modal .form-group textarea { resize: vertical; min-height: 100px; }
-            .redirect-manager-modal-root .modal .form-group small {
-                display: block; margin-top: 8px; color: #6b7280; font-size: 12px; line-height: 1.5;
+            .redirect-manager-modal-root .form-group small code {
+                padding: 1px 5px; background: #f3f4f6; border-radius: 3px;
+                font-size: 10px; color: #374151; font-family: 'Monaco','Courier New',monospace;
             }
-            .redirect-manager-modal-root .modal .form-group small code {
-                padding: 2px 6px; background: #f3f4f6; border-radius: 4px; font-size: 11px; color: #374151; font-family: 'Monaco', 'Courier New', monospace;
+            .redirect-manager-modal-root .form-row {
+                display: flex; gap: 14px;
             }
-            .redirect-manager-modal-root .modal .status-code-select-wrapper {
-                position: relative;
+            .redirect-manager-modal-root .form-row .form-group { flex: 1; }
+            @media (max-width: 540px) {
+                .redirect-manager-modal-root .form-row { flex-direction: column; }
             }
-            .redirect-manager-modal-root .modal .status-code-badge {
-                position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
-                padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
-                pointer-events: none; margin-top: 0;
+            .redirect-manager-modal-root .status-select-wrap { position: relative; }
+            .redirect-manager-modal-root .status-select-wrap select { padding-right: 90px; }
+            .redirect-manager-modal-root .status-float-badge {
+                position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+                padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;
+                pointer-events: none;
             }
-            .redirect-manager-modal-root .modal .status-code-badge.status-301 {
-                background: #d1fae5; color: #065f46;
-            }
-            .redirect-manager-modal-root .modal .status-code-badge.status-302 {
-                background: #fef3c7; color: #92400e;
-            }
-            .redirect-manager-modal-root .modal .status-code-badge.status-404 {
-                background: #fee2e2; color: #991b1b;
-            }
-            .redirect-manager-modal-root .modal .status-code-badge.status-410 {
-                background: #e5e7eb; color: #374151;
-            }
-            .redirect-manager-modal-root .modal .status-code-select-wrapper select {
-                padding-right: 100px;
-            }
-            .redirect-manager-modal-root .modal .form-row {
-                display: flex; gap: 16px; justify-content: space-between;
-            }
-            .redirect-manager-modal-root .modal .form-row .form-group {
-                flex: 1;
-            }
-            .redirect-manager-modal-root .modal .form-row .form-group + .form-group {
-                margin-left: 8px;
-            }
-            @media (max-width: 768px) {
-                .redirect-manager-modal-root .modal {
-                    width: 100%;
-                    padding: 24px 20px;
-                }
-                .redirect-manager-modal-root .modal h2 {
-                    font-size: 1.3rem; margin-bottom: 24px;
-                }
-                .redirect-manager-modal-root .modal .form-group {
-                    margin-bottom: 24px;
-                }
-                .redirect-manager-modal-root .modal .form-row {
-                    flex-direction: column;
-                }
-                .redirect-manager-modal-root .modal .form-row .form-group + .form-group {
-                    margin-left: 0;
-                }
-                .redirect-manager-modal-root .modal .status-code-badge {
-                    display: none;
-                }
-                .redirect-manager-modal-root .modal .status-code-select-wrapper select {
-                    padding-right: 40px;
-                }
-            }
-            .redirect-manager-modal-root .modal .toggle-group {
+            .redirect-manager-modal-root .status-float-badge.status-301 { background: #d1fae5; color: #065f46; }
+            .redirect-manager-modal-root .status-float-badge.status-302 { background: #fef3c7; color: #92400e; }
+            .redirect-manager-modal-root .status-float-badge.status-404 { background: #fee2e2; color: #991b1b; }
+            .redirect-manager-modal-root .status-float-badge.status-410 { background: #e5e7eb; color: #374151; }
+            .redirect-manager-modal-root .toggle-row {
                 display: flex; align-items: center; justify-content: space-between; gap: 16px;
-                padding: 16px; background: #f9fafb; border-radius: 10px; border: 1px solid #e5e7eb;
+                padding: 10px 12px; background: #fafafa; border-radius: 8px; border: 1px solid #efefef;
             }
-            .redirect-manager-modal-root .modal .toggle-group .toggle-label {
-                flex: 1; margin-bottom: 0; cursor: pointer; font-weight: 500; color: #374151;
+            .redirect-manager-modal-root .toggle-label {
+                flex: 1; margin: 0; cursor: pointer; font-size: 12px; font-weight: 500; color: #333;
+                text-transform: none; letter-spacing: 0;
             }
-            .redirect-manager-modal-root .modal .toggle-switch {
-                position: relative; display: inline-block; width: 52px; height: 28px;
-                flex-shrink: 0;
+            .redirect-manager-modal-root .toggle-hint {
+                font-weight: 400; color: #999; font-size: 11px;
             }
-            .redirect-manager-modal-root .modal .toggle-switch input {
-                opacity: 0; width: 0; height: 0;
+            .redirect-manager-modal-root .toggle-switch {
+                position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0;
             }
-            .redirect-manager-modal-root .modal .toggle-slider {
+            .redirect-manager-modal-root .toggle-switch input { opacity: 0; width: 0; height: 0; }
+            .redirect-manager-modal-root .toggle-slider {
                 position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-                background-color: #d1d5db; transition: 0.3s; border-radius: 28px;
+                background-color: #d1d5db; transition: 0.25s; border-radius: 22px;
             }
-            .redirect-manager-modal-root .modal .toggle-slider:before {
-                position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px;
-                background-color: white; transition: 0.3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            .redirect-manager-modal-root .toggle-slider:before {
+                position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
+                background-color: white; transition: 0.25s; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,.2);
             }
-            .redirect-manager-modal-root .modal .toggle-switch input:checked + .toggle-slider {
-                background-color: #2bc37b;
+            .redirect-manager-modal-root .toggle-switch input:checked + .toggle-slider { background-color: #2bc37b; }
+            .redirect-manager-modal-root .toggle-switch input:checked + .toggle-slider:before { transform: translateX(18px); }
+            .redirect-manager-modal-root .modal-footer {
+                display: flex; justify-content: flex-end; gap: 8px;
+                padding: 14px 22px; border-top: 1px solid #f0f0f0;
             }
-            .redirect-manager-modal-root .modal .toggle-switch input:focus + .toggle-slider {
-                box-shadow: 0 0 0 3px rgba(43,195,123,0.2);
+            .redirect-manager-modal-root .btn-cancel {
+                padding: 8px 16px; border: 1px solid #e0e0e0; border-radius: 6px;
+                background: #fff; color: #666; font-size: 13px; font-weight: 500; cursor: pointer;
             }
-            .redirect-manager-modal-root .modal .toggle-switch input:checked + .toggle-slider:before {
-                transform: translateX(24px);
+            .redirect-manager-modal-root .btn-cancel:hover { background: #f5f5f5; }
+            .redirect-manager-modal-root .btn-save {
+                padding: 8px 20px; border: none; border-radius: 6px;
+                background: #2bc37b; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
             }
-            .redirect-manager-modal-root .modal .modal-actions {
-                display: flex; justify-content: flex-end; gap: 12px; margin-top: 40px;
-                padding-top: 24px; border-top: 2px solid #f0f0f0;
-            }
-            .redirect-manager-modal-root .modal .modal-actions .btn {
-                min-width: 120px; padding: 12px 28px; border: none; border-radius: 10px;
-                font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-            }
-            .redirect-manager-modal-root .modal .modal-actions .btn.btn-primary {
-                background: #2bc37b; color: #fff; box-shadow: 0 2px 8px rgba(43,195,123,0.25);
-            }
-            .redirect-manager-modal-root .modal .modal-actions .btn.btn-primary:hover {
-                background: #25a866; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(43,195,123,0.35);
-            }
-            .redirect-manager-modal-root .modal .modal-actions .btn.btn-primary:active {
-                transform: translateY(0); box-shadow: 0 2px 8px rgba(43,195,123,0.25);
-            }
-            .redirect-manager-modal-root .modal .modal-actions .btn.btn-secondary {
-                background: transparent; color: #6b7280; border: 2px solid #e5e7eb;
-            }
-            .redirect-manager-modal-root .modal .modal-actions .btn.btn-secondary:hover {
-                background: #f9fafb; color: #374151; border-color: #d1d5db;
-            }
+            .redirect-manager-modal-root .btn-save:hover { background: #25a866; }
         `;
     }
 
@@ -940,6 +1015,11 @@ class RedirectManagerDashboard extends UmbLitElement {
         return labels[code] || code;
     }
 
+    getStatusBadgeLabel(code) {
+        const map = { 301: 'Permanent', 302: 'Temporary', 404: 'Not found', 410: 'Gone' };
+        return map[code] || String(code);
+    }
+
     getLastHitTitle(redirect) {
         return redirect.lastHitDate
             ? `Last hit: ${new Date(redirect.lastHitDate).toLocaleString()}`
@@ -952,174 +1032,206 @@ class RedirectManagerDashboard extends UmbLitElement {
 
     render() {
         return html`
-            <div class="header">
+            <!-- Page header -->
+            <div class="page-header">
                 <div>
-                    <h1>Bitiz Redirect Manager</h1>
-                    <p style="margin-top: 8px; margin-bottom: 16px; color: #666; font-size: 14px; line-height: 1.5;">
-                        This panel lets you centrally manage URL redirects for your site. You can add new redirects, update existing ones, or remove rules that are no longer needed.
-                    </p>
+                    <h1>Redirect Manager</h1>
+                    <p>Centrally manage URL redirects for your site.</p>
+                </div>
+                <button class="btn btn-primary" @click=${() => this.openAddModal()}>
+                    + Add redirect
+                </button>
+            </div>
 
-                    <!-- Status Code Legend -->
-                    <div class="redirect-status-legend" style="background: #f8f9fa; border: 1px solid #e9e9e9; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
-                        <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: #333;">Status Code Descriptions:</h3>
-                        <div style="display: flex; flex-wrap: wrap; gap: 16px;">
-                            <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 calc(50% - 8px); min-width: 250px;">
-                                <span class="redirect-status redirect-status-301" style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; color: #fff; background-color: #2bc37b;">301</span>
-                                <span style="font-weight: 600; color: #333; font-size: 13px;">Permanent Redirect</span>
-                                <span style="color: #666; font-size: 12px;">- Tells browsers and search engines to always use the new URL</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 calc(50% - 8px); min-width: 250px;">
-                                <span class="redirect-status redirect-status-302" style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; color: #333; background-color: #f5c520;">302</span>
-                                <span style="font-weight: 600; color: #333; font-size: 13px;">Temporary Redirect</span>
-                                <span style="color: #666; font-size: 12px;">- Temporarily redirects traffic to another URL</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 calc(50% - 8px); min-width: 250px;">
-                                <span class="redirect-status redirect-status-404" style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; color: #fff; background-color: #d42054;">404</span>
-                                <span style="font-weight: 600; color: #333; font-size: 13px;">Not Found</span>
-                                <span style="color: #666; font-size: 12px;">- Returns a standard 404 \"Page not found\" response</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 8px; flex: 1 1 calc(50% - 8px); min-width: 250px;">
-                                <span class="redirect-status redirect-status-410" style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 12px; color: #fff; background-color: #6c757d;">410</span>
-                                <span style="font-weight: 600; color: #333; font-size: 13px;">Gone</span>
-                                <span style="color: #666; font-size: 12px;">- Indicates the page has been permanently removed</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    ${this.messageText ? html`
-                        <div style="margin-top: 10px; padding: 10px 12px; border-radius: 6px; border: 1px solid #e9e9e9; background: ${this.messageType === 'success' ? '#e8f5e9' : this.messageType === 'error' ? '#fdecea' : '#eef2ff'}; color: #1b264f;">
-                            ${this.messageText}
-                        </div>
-                    ` : ''}
-
-                    <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                        <input type="text" placeholder="Search old/new URL" style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; min-width: 220px;" .value=${this.query} @input=${(e) => { this.query = e.target.value; }} />
-                        <select style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px;" .value=${this.statusFilter} @change=${(e) => { this.statusFilter = e.target.value; }}>
-                            <option value="">All Status</option>
-                            <option value="301">301</option>
-                            <option value="302">302</option>
-                            <option value="404">404</option>
-                            <option value="410">410</option>
-                        </select>
-                        <select style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px;" .value=${this.activeFilter} @change=${(e) => { this.activeFilter = e.target.value; }}>
-                            <option value="">All</option>
-                            <option value="true">Active</option>
-                            <option value="false">Inactive</option>
-                        </select>
-                        <select style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px;" .value=${this.regexFilter} @change=${(e) => { this.regexFilter = e.target.value; }}>
-                            <option value="">All Types</option>
-                            <option value="false">Exact</option>
-                            <option value="true">Regex</option>
-                        </select>
-                        <button class="btn btn-secondary" @click=${this.applyFilters}>Apply</button>
-                        <button class="btn btn-secondary" @click=${this.clearFilters}>Clear</button>
-                        <button class="btn btn-secondary" @click=${this.exportCsv}>Export CSV</button>
-                        <button class="btn btn-secondary" ?disabled=${this.importInProgress} @click=${this.triggerImport}>
-                            ${this.importInProgress ? 'Importing...' : 'Import CSV'}
-                        </button>
-                        <input id="importFileInput" type="file" accept=".csv,text/csv" style="display:none" @change=${this.handleImportFile} />
-                        <button class="btn btn-primary" style="margin-left: auto;" @click=${() => this.openAddModal()}>
-                            Add New Redirect
-                        </button>
-                    </div>
-
-                    ${this.anySelected ? html`
-                        <div style="margin-top: 10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                            <strong>${this.selectedIds.length} selected</strong>
-                            <button class="btn btn-secondary btn-sm" @click=${() => this.bulkSetActiveSelected(true)}>Activate</button>
-                            <button class="btn btn-secondary btn-sm" @click=${() => this.bulkSetActiveSelected(false)}>Deactivate</button>
-                            <button class="btn btn-danger btn-sm" @click=${this.bulkDeleteSelected}>Delete Selected</button>
-                        </div>
-                    ` : ''}
+            <!-- Status legend -->
+            <div class="status-legend">
+                <div class="legend-item">
+                    <span class="status-badge status-301">301</span>
+                    <span class="legend-lbl">Permanent</span>
+                </div>
+                <div class="legend-item">
+                    <span class="status-badge status-302">302</span>
+                    <span class="legend-lbl">Temporary</span>
+                </div>
+                <div class="legend-item">
+                    <span class="status-badge status-404">404</span>
+                    <span class="legend-lbl">Not found</span>
+                </div>
+                <div class="legend-item">
+                    <span class="status-badge status-410">410</span>
+                    <span class="legend-lbl">Gone</span>
                 </div>
             </div>
 
-            <div style="margin-top: 20px; margin-bottom: 4px; display:flex; gap: 8px; border-bottom: 1px solid #e9e9e9; padding-bottom: 12px;">
-                <button class="btn ${this.activeTab === 'redirects' ? 'btn-primary' : 'btn-secondary'}" @click=${() => { this.activeTab = 'redirects'; }}>Redirects</button>
-                <button class="btn ${this.activeTab === 'missed' ? 'btn-primary' : 'btn-secondary'}" @click=${() => { this.activeTab = 'missed'; }}>404 Log</button>
-            </div>
-
-            ${this.activeTab === 'redirects' ? html`
-            ${this.loading ? html`
-                <div class="loading">Loading redirects...</div>
-            ` : this.redirects.length === 0 ? html`
-                <div class="empty">No redirects found. Click "Add New Redirect" to create one.</div>
-            ` : html`
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width: 40px;">
-                                    <input type="checkbox" .checked=${this.allSelected} @change=${this.toggleSelectAll} />
-                                </th>
-                                <th style="text-align: center;">Status</th>
-                                <th style="text-align: center;">Old URL</th>
-                                <th style="text-align: center;">New URL</th>
-                                <th style="text-align: center;">Domain</th>
-                                <th style="text-align: center;">Notes</th>
-                                <th style="text-align: center;">Type</th>
-                                <th style="text-align: center;">Match</th>
-                                <th style="text-align: center;">Active</th>
-                                <th style="text-align: center;">Hits</th>
-                                <th style="text-align: center;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${this.redirects.map(redirect => html`
-                                <tr>
-                                    <td>
-                                        <input type="checkbox" .checked=${this.selectedIds.includes(redirect.id)} @change=${(e) => this.toggleSelectId(redirect.id, e.target.checked)} />
-                                    </td>
-                                    <td>
-                                        <span class="status-badge status-${redirect.statusCode}">
-                                            ${redirect.statusCode}
-                                        </span>
-                                    </td>
-                                    <td class="url-cell" title="${redirect.oldUrl}">
-                                        <div style="display:flex; gap:6px; align-items:center;flex-direction:column;">
-                                            <span>${redirect.oldUrl}</span>
-                                            <button class="btn btn-secondary btn-sm" @click=${() => this.copyToClipboard(redirect.oldUrl)}>Copy</button>
-                                        </div>
-                                    </td>
-                                    <td class="url-cell" title="${redirect.newUrl || ''}">
-                                        ${redirect.newUrl ? html`
-                                            <div style="display:flex; gap:6px; align-items:center;flex-direction:column;">
-                                                <span>${redirect.newUrl}</span>
-                                                <button class="btn btn-secondary btn-sm" @click=${() => this.copyToClipboard(redirect.newUrl)}>Copy</button>
-                                            </div>
-                                        ` : '-'}
-                                    </td>
-                                    <td style="text-align: center;">${redirect.domain || 'All domains'}</td>
-                                    <td class="notes-cell" title="${redirect.description || ''}">${redirect.description || '-'}</td>
-                                    <td>${this.getStatusLabel(redirect.statusCode)}</td>
-                                    <td>${redirect.isRegex ? 'Regex' : 'Exact'}</td>
-                                    <td>
-                                        <span class="${redirect.isActive ? 'active-yes' : 'active-no'}">
-                                            ${redirect.isActive ? 'Yes' : 'No'}
-                                        </span>
-                                    </td>
-                                    <td style="text-align: center;" title="${this.getLastHitTitle(redirect)}">
-                                        ${redirect.hitCount || 0}
-                                    </td>
-                                    <td class="actions actions-cell">
-                                        <button class="btn btn-secondary btn-sm" @click=${() => this.testRedirect(redirect.oldUrl)}>
-                                            Test
-                                        </button>
-                                        <button class="btn btn-info btn-sm" @click=${() => this.openEditModal(redirect)}>
-                                            Edit
-                                        </button>
-                                        <button class="btn btn-danger btn-sm" @click=${() => this.deleteRedirect(redirect)}>
-                                            Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            `)}
-                        </tbody>
-                    </table>
-                </div>
-            `}
+            <!-- Notification -->
+            ${this.messageText ? html`
+                <div class="notif notif-${this.messageType}">${this.messageText}</div>
             ` : ''}
 
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="search-wrap">
+                    <span class="search-icon">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                    </span>
+                    <input type="text"
+                           placeholder="Search old/new URL"
+                           .value=${this.query}
+                           @input=${(e) => { this.query = e.target.value; }} />
+                </div>
+                <select .value=${this.statusFilter} @change=${(e) => { this.statusFilter = e.target.value; }}>
+                    <option value="">All status</option>
+                    <option value="301">301</option>
+                    <option value="302">302</option>
+                    <option value="404">404</option>
+                    <option value="410">410</option>
+                </select>
+                <select .value=${this.activeFilter} @change=${(e) => { this.activeFilter = e.target.value; }}>
+                    <option value="">Active &amp; inactive</option>
+                    <option value="true">Active only</option>
+                    <option value="false">Inactive only</option>
+                </select>
+                <select .value=${this.regexFilter} @change=${(e) => { this.regexFilter = e.target.value; }}>
+                    <option value="">All types</option>
+                    <option value="false">Exact</option>
+                    <option value="true">Regex</option>
+                </select>
+                <button class="btn btn-apply" @click=${this.applyFilters}>Apply</button>
+                <button class="btn" @click=${this.clearFilters}>Clear</button>
+                <span class="toolbar-sep"></span>
+                <button class="btn" @click=${this.exportCsv}>Export CSV</button>
+                <button class="btn" ?disabled=${this.importInProgress} @click=${this.triggerImport}>
+                    ${this.importInProgress ? 'Importing...' : 'Import CSV'}
+                </button>
+                <input id="importFileInput" type="file" accept=".csv,text/csv" style="display:none" @change=${this.handleImportFile} />
+            </div>
+
+            <!-- Bulk action bar (only when items are selected) -->
+            ${this.anySelected ? html`
+                <div class="bulk-bar">
+                    <strong>${this.selectedIds.length} selected</strong>
+                    <button class="btn btn-sm" @click=${() => this.bulkSetActiveSelected(true)}>Activate</button>
+                    <button class="btn btn-sm" @click=${() => this.bulkSetActiveSelected(false)}>Deactivate</button>
+                    <button class="btn btn-sm btn-danger" @click=${this.bulkDeleteSelected}>Delete</button>
+                </div>
+            ` : ''}
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn ${this.activeTab === 'redirects' ? 'active' : ''}"
+                        @click=${() => { this.activeTab = 'redirects'; }}>
+                    Redirects
+                    <span class="tab-count">${this.redirects.length}</span>
+                </button>
+                <button class="tab-btn ${this.activeTab === 'missed' ? 'active' : ''}"
+                        @click=${() => { this.activeTab = 'missed'; }}>
+                    404 log
+                    ${this.missedRequests.length > 0 ? html`
+                        <span class="tab-count danger">${this.missedRequests.length}</span>
+                    ` : ''}
+                </button>
+            </div>
+
+            <!-- Redirects tab -->
+            ${this.activeTab === 'redirects' ? html`
+                ${this.loading ? html`
+                    <div class="loading">Loading redirects...</div>
+                ` : this.redirects.length === 0 ? html`
+                    <div class="empty">No redirects found. Click "Add redirect" to create one.</div>
+                ` : html`
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:36px;">
+                                        <input type="checkbox" .checked=${this.allSelected} @change=${this.toggleSelectAll} />
+                                    </th>
+                                    <th style="width:60px;" class="center">Status</th>
+                                    <th>Old URL</th>
+                                    <th>New URL</th>
+                                    <th>Domain</th>
+                                    <th>Notes</th>
+                                    <th class="center">Match</th>
+                                    <th class="center">Active</th>
+                                    <th class="center" title="Hit count">Hits</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${this.redirects.map(redirect => html`
+                                    <tr class="${this.selectedIds.includes(redirect.id) ? 'row-selected' : ''}">
+                                        <td>
+                                            <input type="checkbox"
+                                                   .checked=${this.selectedIds.includes(redirect.id)}
+                                                   @change=${(e) => this.toggleSelectId(redirect.id, e.target.checked)} />
+                                        </td>
+                                        <td class="center">
+                                            <span class="status-badge status-${redirect.statusCode}">
+                                                ${redirect.statusCode}
+                                            </span>
+                                        </td>
+                                        <td class="url-cell" title="${redirect.oldUrl}">
+                                            <div class="url-copy-wrap">
+                                                <span class="url-val">${redirect.oldUrl}</span>
+                                                <button class="btn btn-sm" @click=${() => this.copyToClipboard(redirect.oldUrl)}>Copy</button>
+                                            </div>
+                                        </td>
+                                        <td class="url-cell" title="${redirect.newUrl || ''}">
+                                            ${redirect.newUrl ? html`
+                                                <div class="url-copy-wrap">
+                                                    <span class="url-val">${redirect.newUrl}</span>
+                                                    <button class="btn btn-sm" @click=${() => this.copyToClipboard(redirect.newUrl)}>Copy</button>
+                                                </div>
+                                            ` : html`<span style="color:#ccc;">—</span>`}
+                                        </td>
+                                        <td>
+                                            ${redirect.domain
+                                                ? html`<span class="domain-pill">${redirect.domain}</span>`
+                                                : html`<span class="domain-pill all-domains">All domains</span>`}
+                                        </td>
+                                        <td title="${redirect.description || ''}">
+                                            <span class="notes-val">${redirect.description || '—'}</span>
+                                        </td>
+                                        <td class="center">
+                                            <span class="type-pill ${redirect.isRegex ? 'regex' : ''}">
+                                                ${redirect.isRegex ? 'Regex' : 'Exact'}
+                                            </span>
+                                        </td>
+                                        <td class="center">
+                                            <span class="active-indicator">
+                                                <span class="status-dot ${redirect.isActive ? 'active' : 'inactive'}"></span>
+                                                ${redirect.isActive ? 'Yes' : 'No'}
+                                            </span>
+                                        </td>
+                                        <td class="center" title="${this.getLastHitTitle(redirect)}">
+                                            <span class="hit-count ${(redirect.hitCount || 0) > 0 ? 'has-hits' : ''}">
+                                                ${(redirect.hitCount || 0).toLocaleString()}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="act-group">
+                                                <button class="btn btn-sm" @click=${() => this.testRedirect(redirect.oldUrl)}>
+                                                    Test
+                                                </button>
+                                                <button class="btn btn-sm btn-info" @click=${() => this.openEditModal(redirect)}>
+                                                    Edit
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" @click=${() => this.deleteRedirect(redirect)}>
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                `)}
+                            </tbody>
+                        </table>
+                    </div>
+                `}
+            ` : ''}
+
+            <!-- 404 log tab -->
             ${this.activeTab === 'missed' ? html`
                 ${this.missedLoading ? html`
                     <div class="loading">Loading 404 log...</div>
@@ -1130,23 +1242,37 @@ class RedirectManagerDashboard extends UmbLitElement {
                         <table>
                             <thead>
                                 <tr>
-                                    <th style="text-align: center;">Path</th>
-                                    <th style="text-align: center;">Hits</th>
-                                    <th style="text-align: center;">First Seen</th>
-                                    <th style="text-align: center;">Last Seen</th>
-                                    <th style="text-align: center;">Actions</th>
+                                    <th>Path</th>
+                                    <th class="center">Hits</th>
+                                    <th class="center">First seen</th>
+                                    <th class="center">Last seen</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${this.missedRequests.map(item => html`
                                     <tr>
-                                        <td class="url-cell" title="${this.getMissedRequestTitle(item)}">${item.path}</td>
-                                        <td style="text-align:center;">${item.hitCount}</td>
-                                        <td style="text-align:center;">${new Date(item.firstSeenDate).toLocaleDateString()}</td>
-                                        <td style="text-align:center;">${new Date(item.lastSeenDate).toLocaleDateString()}</td>
-                                        <td class="actions actions-cell">
-                                            <button class="btn btn-primary btn-sm" @click=${() => this.createRedirectFromMissed(item)}>Create Redirect</button>
-                                            <button class="btn btn-danger btn-sm" @click=${() => this.dismissMissedRequest(item)}>Dismiss</button>
+                                        <td class="url-cell" title="${this.getMissedRequestTitle(item)}">
+                                            <span class="url-val">${item.path}</span>
+                                        </td>
+                                        <td class="center">
+                                            <span class="hit-count ${item.hitCount > 0 ? 'has-hits' : ''}">${item.hitCount}</span>
+                                        </td>
+                                        <td class="center" style="font-size:11px;color:#888;">
+                                            ${new Date(item.firstSeenDate).toLocaleDateString()}
+                                        </td>
+                                        <td class="center" style="font-size:11px;color:#888;">
+                                            ${new Date(item.lastSeenDate).toLocaleDateString()}
+                                        </td>
+                                        <td>
+                                            <div class="act-group">
+                                                <button class="btn btn-sm btn-success-sm" @click=${() => this.createRedirectFromMissed(item)}>
+                                                    Create redirect
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" @click=${() => this.dismissMissedRequest(item)}>
+                                                    Dismiss
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 `)}
@@ -1156,109 +1282,119 @@ class RedirectManagerDashboard extends UmbLitElement {
                 `}
             ` : ''}
 
+            <!-- Modal -->
             ${this.showModal ? html`
                 <div class="redirect-manager-modal-root">
                     <style>${RedirectManagerDashboard.modalInlineStyles}</style>
                     <div class="modal-overlay" @click=${(e) => e.target === e.currentTarget && this.closeModal()}>
                         <div class="modal" @click=${(e) => e.stopPropagation()}>
-                            <h2>${this.editingRedirect ? 'Edit Redirect' : 'Add New Redirect'}</h2>
-                        
-                        <div class="form-group">
-                            <label>Status Code</label>
-                            <div class="status-code-select-wrapper">
-                                <select name="statusCode" .value=${this.formData.statusCode} @change=${this.handleInputChange}>
-                                    <option value="301">301 - Permanent Redirect</option>
-                                    <option value="302">302 - Temporary Redirect</option>
-                                    <option value="404">404 - Not Found</option>
-                                    <option value="410">410 - Gone</option>
-                                </select>
-                                <span class="status-code-badge status-${this.formData.statusCode}">
-                                    ${this.formData.statusCode === 301 ? 'Kalıcı' : this.formData.statusCode === 302 ? 'Geçici' : this.formData.statusCode === 404 ? 'Bulunamadı' : 'Kaldırıldı'}
-                                </span>
-                            </div>
-                            <small>Select the redirect type</small>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Old URL *</label>
-                                <input type="text" 
-                                       name="oldUrl" 
-                                       .value=${this.formData.oldUrl} 
-                                       @input=${this.handleInputChange}
-                                       placeholder="/old-page">
-                                <small>The URL path to redirect from</small>
+                            <div class="modal-header">
+                                <h2>${this.editingRedirect ? 'Edit redirect' : 'Add redirect'}</h2>
+                                <button class="btn-close" @click=${this.closeModal} aria-label="Close">&#x2715;</button>
                             </div>
 
-                            ${this.formData.statusCode === 301 || this.formData.statusCode === 302 ? html`
+                            <div class="form-body">
+                                <!-- Status code -->
                                 <div class="form-group">
-                                    <label>New URL *</label>
-                                    <input type="text" 
-                                           name="newUrl" 
-                                           .value=${this.formData.newUrl} 
-                                           @input=${this.handleInputChange}
-                                           placeholder="/new-page">
-                                    <small>The URL path to redirect to</small>
+                                    <label>Status code</label>
+                                    <div class="status-select-wrap">
+                                        <select name="statusCode" .value=${String(this.formData.statusCode)} @change=${this.handleInputChange}>
+                                            <option value="301">301 — Permanent redirect</option>
+                                            <option value="302">302 — Temporary redirect</option>
+                                            <option value="404">404 — Not found</option>
+                                            <option value="410">410 — Gone</option>
+                                        </select>
+                                        <span class="status-float-badge status-${this.formData.statusCode}">
+                                            ${this.getStatusBadgeLabel(this.formData.statusCode)}
+                                        </span>
+                                    </div>
+                                    <small>Tells browsers and search engines which type of redirect this is.</small>
                                 </div>
-                            ` : ''}
-                        </div>
 
-                        <div class="form-group">
-                            <label>Domain (optional)</label>
-                            <input type="text"
-                                   name="domain"
-                                   .value=${this.formData.domain}
-                                   @input=${this.handleInputChange}
-                                   placeholder="example.com">
-                            <small>Leave blank to apply this redirect to all domains. If both a domain-specific and an all-domains redirect exist for the same Old URL, the domain-specific one wins.</small>
-                        </div>
+                                <!-- Old URL + New URL side by side -->
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Old URL <span class="req">*</span></label>
+                                        <input type="text"
+                                               name="oldUrl"
+                                               .value=${this.formData.oldUrl}
+                                               @input=${this.handleInputChange}
+                                               placeholder="/old-page" />
+                                        <small>The path to redirect from.</small>
+                                    </div>
+                                    ${this.formData.statusCode === 301 || this.formData.statusCode === 302 ? html`
+                                        <div class="form-group">
+                                            <label>New URL <span class="req">*</span></label>
+                                            <input type="text"
+                                                   name="newUrl"
+                                                   .value=${this.formData.newUrl}
+                                                   @input=${this.handleInputChange}
+                                                   placeholder="/new-page" />
+                                            <small>The path to redirect to.</small>
+                                        </div>
+                                    ` : ''}
+                                </div>
 
-                        <div class="form-group">
-                            <label>Notes</label>
-                            <textarea name="description"
-                                      rows="3"
-                                      .value=${this.formData.description}
-                                      @input=${this.handleInputChange}
-                                      placeholder="Optional notes..."></textarea>
-                            <small>Optional description to help identify the purpose of this redirect</small>
-                        </div>
+                                <!-- Domain -->
+                                <div class="form-group">
+                                    <label>Domain <span class="lbl-opt">(optional)</span></label>
+                                    <input type="text"
+                                           name="domain"
+                                           .value=${this.formData.domain}
+                                           @input=${this.handleInputChange}
+                                           placeholder="e.g. shop.example.com" />
+                                    <small>Leave blank to apply to all domains. Domain-specific rules take precedence.</small>
+                                </div>
 
-                        <div class="form-group">
-                            <div class="toggle-group">
-                                <label class="toggle-label" for="isActive">Active</label>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" 
-                                           name="isActive" 
-                                           id="isActive"
-                                           .checked=${this.formData.isActive} 
-                                           @change=${this.handleInputChange}>
-                                    <span class="toggle-slider"></span>
-                                </label>
+                                <!-- Notes -->
+                                <div class="form-group">
+                                    <label>Notes</label>
+                                    <textarea name="description"
+                                              rows="3"
+                                              .value=${this.formData.description}
+                                              @input=${this.handleInputChange}
+                                              placeholder="Optional description…"></textarea>
+                                </div>
+
+                                <!-- Active toggle -->
+                                <div class="form-group">
+                                    <div class="toggle-row">
+                                        <label class="toggle-label" for="modal-isActive">Active</label>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox"
+                                                   name="isActive"
+                                                   id="modal-isActive"
+                                                   .checked=${this.formData.isActive}
+                                                   @change=${this.handleInputChange} />
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                    <small>Enable or disable this redirect.</small>
+                                </div>
+
+                                <!-- Regex toggle -->
+                                <div class="form-group">
+                                    <div class="toggle-row">
+                                        <label class="toggle-label" for="modal-isRegex">
+                                            Regex match
+                                            <span class="toggle-hint"> — use <code>$1</code> capture groups in new URL</span>
+                                        </label>
+                                        <label class="toggle-switch">
+                                            <input type="checkbox"
+                                                   name="isRegex"
+                                                   id="modal-isRegex"
+                                                   .checked=${this.formData.isRegex}
+                                                   @change=${this.handleInputChange} />
+                                            <span class="toggle-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
-                            <small>Enable or disable this redirect</small>
-                        </div>
 
-                        <div class="form-group">
-                            <div class="toggle-group">
-                                <label class="toggle-label" for="isRegex">Regex match</label>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" 
-                                           name="isRegex" 
-                                           id="isRegex"
-                                           .checked=${this.formData.isRegex} 
-                                           @change=${this.handleInputChange}>
-                                    <span class="toggle-slider"></span>
-                                </label>
+                            <div class="modal-footer">
+                                <button class="btn-cancel" @click=${this.closeModal}>Cancel</button>
+                                <button class="btn-save" @click=${this.saveRedirect}>Save redirect</button>
                             </div>
-                            <small>
-                                If enabled, Old URL is treated as a regex pattern. For 301/302 you can use capture groups in New URL (e.g. <code>$1</code>).
-                            </small>
-                        </div>
-
-                        <div class="modal-actions">
-                            <button class="btn btn-secondary" @click=${this.closeModal}>Cancel</button>
-                            <button class="btn btn-primary" @click=${this.saveRedirect}>Save</button>
-                        </div>
                         </div>
                     </div>
                 </div>
