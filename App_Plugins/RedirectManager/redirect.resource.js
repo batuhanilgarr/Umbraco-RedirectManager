@@ -8,6 +8,9 @@
             getAll: function () {
                 return $http.get(baseUrl + "getall");
             },
+            getStats: function () {
+                return $http.get(baseUrl + "stats");
+            },
             get: function (id) {
                 return $http.get(baseUrl + "get/" + id);
             },

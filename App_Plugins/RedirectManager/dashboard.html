@@ -60,6 +60,11 @@
                             label="404 Log"
                             action="vm.setActiveTab('missed')">
                 </umb-button>
+                <umb-button type="button"
+                            button-style="{{vm.activeTab === 'stats' ? 'primary' : 'secondary'}}"
+                            label="Overview"
+                            action="vm.setActiveTab('stats')">
+                </umb-button>
             </div>
 
             <!-- Redirects tab -->
@@ -209,6 +214,89 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Overview tab -->
+            <div ng-if="vm.activeTab === 'stats'">
+                <div ng-if="vm.statsLoading || !vm.stats" class="redirect-loading">
+                    <umb-load-indicator></umb-load-indicator>
+                </div>
+
+                <div ng-if="!vm.statsLoading && vm.stats">
+                    <div class="stat-cards">
+                        <div class="stat-card">
+                            <span class="stat-value">{{vm.stats.total}}</span>
+                            <span class="stat-label">Total redirects</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value">{{vm.stats.active}}</span>
+                            <span class="stat-label">Active</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value">{{vm.stats.inactive}}</span>
+                            <span class="stat-label">Inactive</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value">{{vm.stats.staleRedirects.length}}</span>
+                            <span class="stat-label">0 hits in last 30d</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-section">
+                        <h3>Top 10 most-used redirects</h3>
+                        <div ng-if="vm.stats.topRedirects.length === 0" class="redirect-empty">
+                            <p>No redirects have any hits yet.</p>
+                        </div>
+                        <table ng-if="vm.stats.topRedirects.length > 0" class="redirect-table">
+                            <thead>
+                                <tr>
+                                    <th>Old URL</th>
+                                    <th>New URL</th>
+                                    <th style="text-align:center;">Hits</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="r in vm.stats.topRedirects">
+                                    <td class="redirect-url">{{r.oldUrl}}</td>
+                                    <td class="redirect-url">{{r.newUrl || '—'}}</td>
+                                    <td style="text-align:center;">
+                                        <span class="hit-count live">{{r.hitCount}}</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="stat-section">
+                        <h3>Active, but 0 hits in the last 30 days</h3>
+                        <p class="stat-section-hint">Candidates for cleanup — or a sign a rule isn't firing when it should.</p>
+                        <div ng-if="vm.stats.staleRedirects.length === 0" class="redirect-empty">
+                            <p>Every active redirect has been hit in the last 30 days.</p>
+                        </div>
+                        <table ng-if="vm.stats.staleRedirects.length > 0" class="redirect-table">
+                            <thead>
+                                <tr>
+                                    <th>Old URL</th>
+                                    <th>New URL</th>
+                                    <th style="text-align:center;">All-time hits</th>
+                                    <th style="text-align:center;">Last hit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="r in vm.stats.staleRedirects">
+                                    <td class="redirect-url">{{r.oldUrl}}</td>
+                                    <td class="redirect-url">{{r.newUrl || '—'}}</td>
+                                    <td style="text-align:center;">
+                                        <span class="hit-count">{{r.hitCount}}</span>
+                                    </td>
+                                    <td style="text-align:center;font-size:11px;color:#888;">
+                                        {{r.lastHitDate ? (r.lastHitDate | date:'mediumDate') : 'Never'}}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </umb-box-content>
     </umb-box>

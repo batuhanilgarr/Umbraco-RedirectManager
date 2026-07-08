@@ -12,9 +12,22 @@
         vm.activeTab = 'redirects';
         vm.missedRequests = [];
         vm.missedLoading = false;
+        vm.stats = null;
+        vm.statsLoading = false;
 
         vm.setActiveTab = function (tab) {
             vm.activeTab = tab;
+        };
+
+        vm.loadStats = function () {
+            vm.statsLoading = true;
+            redirectResource.getStats().then(function (response) {
+                vm.stats = response.data;
+                vm.statsLoading = false;
+            }, function () {
+                notificationsService.error("Error", "Failed to load overview");
+                vm.statsLoading = false;
+            });
         };
 
         vm.loadMissedRequests = function () {
@@ -197,6 +210,7 @@
 
         vm.loadRedirects();
         vm.loadMissedRequests();
+        vm.loadStats();
 
         vm.exportCsv = function () {
             var url = redirectResource.exportUrl();

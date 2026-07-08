@@ -19,7 +19,9 @@ class RedirectManagerDashboard extends UmbLitElement {
         messageType: { type: String },
         activeTab: { type: String },
         missedRequests: { type: Array },
-        missedLoading: { type: Boolean }
+        missedLoading: { type: Boolean },
+        stats: { type: Object },
+        statsLoading: { type: Boolean }
     };
 
     static styles = css`
@@ -289,6 +291,53 @@ class RedirectManagerDashboard extends UmbLitElement {
         .tab-count.danger {
             background: #fee2e2;
             color: #991b1b;
+        }
+
+        /* ── overview tab ── */
+        .stat-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .stat-card {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 14px 16px;
+            border: 1px solid #e9e9e9;
+            border-radius: 8px;
+            background: #fafbff;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1b264f;
+            line-height: 1.1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .stat-section {
+            margin-bottom: 24px;
+        }
+
+        .stat-section h3 {
+            margin: 0 0 4px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1b264f;
+        }
+
+        .stat-section-hint {
+            margin: 0 0 10px;
+            font-size: 12px;
+            color: #888;
         }
 
         /* ── table ── */
@@ -668,6 +717,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.ensureModalStylesLoaded();
         this.loadRedirects();
         this.loadMissedRequests();
+        this.loadStats();
     }
 
     /** Ensure redirect.css is in document so modal styles apply if modal is in light DOM */
@@ -728,6 +778,19 @@ class RedirectManagerDashboard extends UmbLitElement {
             console.error('Failed to load missed requests:', error);
         }
         this.missedLoading = false;
+    }
+
+    async loadStats() {
+        this.statsLoading = true;
+        try {
+            const response = await this.authFetch('/umbraco/api/redirectmanager/stats');
+            if (response.ok) {
+                this.stats = await response.json();
+            }
+        } catch (error) {
+            console.error('Failed to load stats:', error);
+        }
+        this.statsLoading = false;
     }
 
     async dismissMissedRequest(item) {
@@ -1142,6 +1205,10 @@ class RedirectManagerDashboard extends UmbLitElement {
                         <span class="tab-count danger">${this.missedRequests.length}</span>
                     ` : ''}
                 </button>
+                <button class="tab-btn ${this.activeTab === 'stats' ? 'active' : ''}"
+                        @click=${() => { this.activeTab = 'stats'; }}>
+                    Overview
+                </button>
             </div>
 
             <!-- Redirects tab -->
@@ -1300,6 +1367,93 @@ class RedirectManagerDashboard extends UmbLitElement {
                                 `)}
                             </tbody>
                         </table>
+                    </div>
+                `}
+            ` : ''}
+
+            <!-- Overview tab -->
+            ${this.activeTab === 'stats' ? html`
+                ${this.statsLoading || !this.stats ? html`
+                    <div class="loading">Loading overview...</div>
+                ` : html`
+                    <div class="stat-cards">
+                        <div class="stat-card">
+                            <span class="stat-value">${this.stats.total}</span>
+                            <span class="stat-label">Total redirects</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value">${this.stats.active}</span>
+                            <span class="stat-label">Active</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value">${this.stats.inactive}</span>
+                            <span class="stat-label">Inactive</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-value">${this.stats.staleRedirects.length}</span>
+                            <span class="stat-label">0 hits in last 30d</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-section">
+                        <h3>Top 10 most-used redirects</h3>
+                        ${this.stats.topRedirects.length === 0 ? html`
+                            <div class="empty">No redirects have any hits yet.</div>
+                        ` : html`
+                            <div class="table-wrapper">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Old URL</th>
+                                            <th>New URL</th>
+                                            <th class="center">Hits</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${this.stats.topRedirects.map(r => html`
+                                            <tr>
+                                                <td class="url-cell" title="${r.oldUrl}"><span class="url-val">${r.oldUrl}</span></td>
+                                                <td class="url-cell" title="${r.newUrl || ''}"><span class="url-val">${r.newUrl || '—'}</span></td>
+                                                <td class="center"><span class="hit-count has-hits">${r.hitCount.toLocaleString()}</span></td>
+                                            </tr>
+                                        `)}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `}
+                    </div>
+
+                    <div class="stat-section">
+                        <h3>Active, but 0 hits in the last 30 days</h3>
+                        <p class="stat-section-hint">Candidates for cleanup — or a sign a rule isn't firing when it should.</p>
+                        ${this.stats.staleRedirects.length === 0 ? html`
+                            <div class="empty">Every active redirect has been hit in the last 30 days.</div>
+                        ` : html`
+                            <div class="table-wrapper">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Old URL</th>
+                                            <th>New URL</th>
+                                            <th class="center">All-time hits</th>
+                                            <th class="center">Last hit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${this.stats.staleRedirects.map(r => html`
+                                            <tr>
+                                                <td class="url-cell" title="${r.oldUrl}"><span class="url-val">${r.oldUrl}</span></td>
+                                                <td class="url-cell" title="${r.newUrl || ''}"><span class="url-val">${r.newUrl || '—'}</span></td>
+                                                <td class="center"><span class="hit-count">${r.hitCount.toLocaleString()}</span></td>
+                                                <td class="center" style="font-size:11px;color:#888;">
+                                                    ${r.lastHitDate ? new Date(r.lastHitDate).toLocaleDateString() : 'Never'}
+                                                </td>
+                                            </tr>
+                                        `)}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `}
                     </div>
                 `}
             ` : ''}
