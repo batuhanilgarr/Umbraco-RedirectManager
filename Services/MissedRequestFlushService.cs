@@ -1,8 +1,9 @@
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.RedirectManager.Models;
 
 namespace Umbraco.RedirectManager.Services;
@@ -15,17 +16,17 @@ public class MissedRequestFlushService : BackgroundService
     private const int MaxPathLength = 2048;
 
     private readonly IMissedRequestTracker _tracker;
-    private readonly IConfiguration _configuration;
+    private readonly IOptionsMonitor<ConnectionStrings> _connectionStrings;
     private readonly ILogger<MissedRequestFlushService> _logger;
     private DateTime _lastCleanupUtc = DateTime.MinValue;
 
     public MissedRequestFlushService(
         IMissedRequestTracker tracker,
-        IConfiguration configuration,
+        IOptionsMonitor<ConnectionStrings> connectionStrings,
         ILogger<MissedRequestFlushService> logger)
     {
         _tracker = tracker;
-        _configuration = configuration;
+        _connectionStrings = connectionStrings;
         _logger = logger;
     }
 
@@ -75,7 +76,7 @@ public class MissedRequestFlushService : BackgroundService
         {
             try
             {
-                using var db = FlushDatabaseFactory.Create(_configuration);
+                using var db = FlushDatabaseFactory.Create(_connectionStrings.CurrentValue);
                 using var transaction = db.GetTransaction();
                 db.Execute(
                     $"DELETE FROM {MissedRequest.TableName} WHERE LastSeenDate < @0",
@@ -95,7 +96,7 @@ public class MissedRequestFlushService : BackgroundService
         var truncatedPath = path.Length > MaxPathLength ? path.Substring(0, MaxPathLength) : path;
         var pathHash = ComputeHash(truncatedPath);
 
-        using var db = FlushDatabaseFactory.Create(_configuration);
+        using var db = FlushDatabaseFactory.Create(_connectionStrings.CurrentValue);
         using var transaction = db.GetTransaction();
 
         var rowsAffected = db.Execute(
@@ -120,7 +121,7 @@ public class MissedRequestFlushService : BackgroundService
                 // makes this throw instead of silently creating a duplicate row.
                 // Retry as an update, with a fresh standalone Database since this
                 // transaction may no longer be usable after a failed statement.
-                using var retryDb = FlushDatabaseFactory.Create(_configuration);
+                using var retryDb = FlushDatabaseFactory.Create(_connectionStrings.CurrentValue);
                 using var retryTransaction = retryDb.GetTransaction();
                 retryDb.Execute(
                     $@"UPDATE {MissedRequest.TableName}

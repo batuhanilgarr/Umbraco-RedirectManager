@@ -1,6 +1,6 @@
 using System.Data.Common;
-using Microsoft.Extensions.Configuration;
 using NPoco;
+using Umbraco.Cms.Core.Configuration.Models;
 
 namespace Umbraco.RedirectManager.Services;
 
@@ -20,28 +20,30 @@ namespace Umbraco.RedirectManager.Services;
 /// </summary>
 internal static class FlushDatabaseFactory
 {
-    // Mirrors Umbraco.Cms.Core.Configuration.Models.ConnectionStrings' own
-    // conventions: the connection string lives at ConnectionStrings:umbracoDbDSN,
-    // its provider name at ConnectionStrings:umbracoDbDSN_ProviderName (the
-    // "_ProviderName" postfix is Umbraco's own ConnectionStrings.ProviderNamePostfix
-    // constant), and "Microsoft.Data.SqlClient" is Umbraco's own
-    // ConnectionStrings.DefaultProviderName fallback when the key is absent.
-    private const string ConnectionStringName = "umbracoDbDSN";
-    private const string DefaultProviderName = "Microsoft.Data.SqlClient";
-
-    public static Database Create(IConfiguration configuration)
+    public static Database Create(ConnectionStrings connectionStrings)
     {
-        var connectionString = configuration.GetConnectionString(ConnectionStringName)
-            ?? throw new InvalidOperationException($"Connection string '{ConnectionStringName}' is not configured.");
-        var providerName = configuration[$"ConnectionStrings:{ConnectionStringName}_ProviderName"]
-            ?? DefaultProviderName;
+        // Takes the already-resolved ConnectionStrings snapshot (from
+        // IOptionsMonitor<ConnectionStrings>.CurrentValue) rather than reading
+        // raw IConfiguration ourselves. Umbraco normalizes this value during
+        // startup — replacing the |DataDirectory| placeholder for SQLite,
+        // forcing Mode=ReadWriteCreate when unset, and rewriting the legacy
+        // System.Data.SqlClient provider name to Microsoft.Data.SqlClient — and
+        // reusing that normalized value is the only way to stay correct across
+        // every deployment shape (SQL Server, SQLite, legacy provider names)
+        // instead of re-deriving Umbraco's config conventions by hand.
+        if (string.IsNullOrWhiteSpace(connectionStrings.ConnectionString))
+        {
+            throw new InvalidOperationException("The Umbraco connection string is not configured.");
+        }
+
+        var providerName = string.IsNullOrWhiteSpace(connectionStrings.ProviderName)
+            ? ConnectionStrings.DefaultProviderName
+            : connectionStrings.ProviderName;
 
         // Umbraco's own SQL Server/SQLite composers register their DbProviderFactory
-        // into the process-wide DbProviderFactories registry during startup
-        // (see Umbraco.Cms.Persistence.SqlServer.UmbracoBuilderExtensions.AddUmbracoSqlServerSupport,
-        // which calls DbProviderFactories.RegisterFactory("Microsoft.Data.SqlClient", ...)),
-        // so by the time these background services run this lookup succeeds — it
-        // relies on that registration, not on anything ambient/thread-static.
+        // into the process-wide DbProviderFactories registry during startup, so by
+        // the time these background services run (30+ seconds later) this lookup
+        // succeeds — it relies on that registration, not on anything ambient.
         var providerFactory = DbProviderFactories.GetFactory(providerName);
 
         // Same resolution Umbraco's own UmbracoDatabaseFactory uses internally:
@@ -50,6 +52,6 @@ internal static class FlushDatabaseFactory
 
         // A brand-new Database instance every call: no shared/cached/singleton
         // state, no ambient scope, no ambient connection — genuinely independent.
-        return new Database(connectionString, databaseType, providerFactory);
+        return new Database(connectionStrings.ConnectionString, databaseType, providerFactory);
     }
 }

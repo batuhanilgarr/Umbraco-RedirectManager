@@ -1,7 +1,8 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NPoco;
+using Umbraco.Cms.Core.Configuration.Models;
 using Umbraco.RedirectManager.Models;
 
 namespace Umbraco.RedirectManager.Services;
@@ -13,17 +14,17 @@ public class RedirectHitFlushService : BackgroundService
     private static readonly TimeSpan HitDailyRetentionPeriod = TimeSpan.FromDays(35);
 
     private readonly IRedirectHitTracker _hitTracker;
-    private readonly IConfiguration _configuration;
+    private readonly IOptionsMonitor<ConnectionStrings> _connectionStrings;
     private readonly ILogger<RedirectHitFlushService> _logger;
     private DateTime _lastCleanupUtc = DateTime.MinValue;
 
     public RedirectHitFlushService(
         IRedirectHitTracker hitTracker,
-        IConfiguration configuration,
+        IOptionsMonitor<ConnectionStrings> connectionStrings,
         ILogger<RedirectHitFlushService> logger)
     {
         _hitTracker = hitTracker;
-        _configuration = configuration;
+        _connectionStrings = connectionStrings;
         _logger = logger;
     }
 
@@ -59,7 +60,7 @@ public class RedirectHitFlushService : BackgroundService
 
             try
             {
-                using var db = FlushDatabaseFactory.Create(_configuration);
+                using var db = FlushDatabaseFactory.Create(_connectionStrings.CurrentValue);
                 using var transaction = db.GetTransaction();
 
                 foreach (var (redirectId, hit) in drained)
@@ -90,7 +91,7 @@ public class RedirectHitFlushService : BackgroundService
         {
             try
             {
-                using var db = FlushDatabaseFactory.Create(_configuration);
+                using var db = FlushDatabaseFactory.Create(_connectionStrings.CurrentValue);
                 using var transaction = db.GetTransaction();
                 db.Execute(
                     $"DELETE FROM {RedirectHitDaily.TableName} WHERE HitDate < @0",
