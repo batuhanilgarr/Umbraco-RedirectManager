@@ -17,6 +17,7 @@ public class RedirectManagerPackageMigrationPlan : PackageMigrationPlan
         To<AddHitCountColumns>(new Guid("4F2A8B31-6C7C-4A8E-9E22-2D4D6D9CDDF1"));
         To<CreateMissedRequestsTable>(new Guid("7A1E9C42-3B5D-4F6A-8E11-9C2D5A7B3F04"));
         To<AddDomainColumn>(new Guid("B8D4E617-2F0A-4C9B-A5D3-6E1F8C0A9B72"));
+        To<CreateRedirectHitDailyTable>(new Guid("1D9F4E23-6A8B-4C1D-9E7A-3B5C8D2F4A61"));
     }
 }
 
@@ -132,6 +133,23 @@ public class AddDomainColumn : AsyncMigrationBase
     }
 }
 
+public class CreateRedirectHitDailyTable : AsyncMigrationBase
+{
+    public CreateRedirectHitDailyTable(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override Task MigrateAsync()
+    {
+        if (TableExists(RedirectHitDaily.TableName) == false)
+        {
+            Create.Table<RedirectHitDaily>().Do();
+        }
+
+        return Task.CompletedTask;
+    }
+}
+
 #else
 
 public class CreateRedirectManagerTable : MigrationBase
@@ -230,6 +248,21 @@ public class AddDomainColumn : MigrationBase
         if (ColumnExists(RedirectEntry.TableName, "Domain") == false)
         {
             AddColumn<RedirectEntry>(RedirectEntry.TableName, "Domain");
+        }
+    }
+}
+
+public class CreateRedirectHitDailyTable : MigrationBase
+{
+    public CreateRedirectHitDailyTable(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override void Migrate()
+    {
+        if (TableExists(RedirectHitDaily.TableName) == false)
+        {
+            Create.Table<RedirectHitDaily>().Do();
         }
     }
 }
