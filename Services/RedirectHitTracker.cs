@@ -7,6 +7,7 @@ public interface IRedirectHitTracker
 {
     void RecordHit(int redirectId);
     IReadOnlyDictionary<int, (int Count, DateTime LastHitUtc)> DrainAll();
+    void MergeBack(IReadOnlyDictionary<int, (int Count, DateTime LastHitUtc)> data);
 }
 
 public class RedirectHitTracker : IRedirectHitTracker
@@ -23,6 +24,21 @@ public class RedirectHitTracker : IRedirectHitTracker
                 existing.Increment();
                 return existing;
             });
+    }
+
+    public void MergeBack(IReadOnlyDictionary<int, (int Count, DateTime LastHitUtc)> data)
+    {
+        foreach (var (redirectId, hit) in data)
+        {
+            _accumulators.AddOrUpdate(
+                redirectId,
+                _ => new HitAccumulator(hit.Count, hit.LastHitUtc),
+                (_, existing) =>
+                {
+                    existing.Add(hit.Count, hit.LastHitUtc);
+                    return existing;
+                });
+        }
     }
 
     public IReadOnlyDictionary<int, (int Count, DateTime LastHitUtc)> DrainAll()
@@ -60,6 +76,27 @@ public class RedirectHitTracker : IRedirectHitTracker
         {
             Interlocked.Increment(ref _count);
             Interlocked.Exchange(ref _lastHitUtcTicks, DateTime.UtcNow.Ticks);
+        }
+
+        public void Add(int count, DateTime lastHitUtc)
+        {
+            Interlocked.Add(ref _count, count);
+
+            // Only advance LastHitUtc, never regress it — a merge-back of an
+            // older failed batch shouldn't overwrite a newer hit that was
+            // recorded in the meantime.
+            var newTicks = lastHitUtc.Ticks;
+            var current = Interlocked.Read(ref _lastHitUtcTicks);
+            while (newTicks > current)
+            {
+                var original = Interlocked.CompareExchange(ref _lastHitUtcTicks, newTicks, current);
+                if (original == current)
+                {
+                    break;
+                }
+
+                current = original;
+            }
         }
     }
 }
