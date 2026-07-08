@@ -126,8 +126,27 @@ public class RedirectHitFlushService : BackgroundService
         {
             // Another instance's flush inserted the same (RedirectId, HitDate)
             // bucket between our UPDATE and INSERT. Retry as an update now
-            // that the row exists (same race-recovery pattern as
-            // MissedRequestFlushService.UpsertOne).
+            // that the row exists.
+            //
+            // Unlike MissedRequestFlushService.UpsertOne's retry (which opens a
+            // FRESH scope because that scope's transaction may no longer be
+            // usable after a failed statement), this retry deliberately reuses
+            // the SAME shared/ambient `scope` passed in from Flush(). The whole
+            // flush batch — the entries-table HitCount update and every
+            // redirect's daily-bucket upsert — must stay in one transaction so
+            // it commits or rolls back together; that's what lets the outer
+            // catch in Flush() safely call _hitTracker.MergeBack(drained) for
+            // the FULL batch on any failure, not just the item that failed.
+            // Opening a fresh scope here would just join that same ambient
+            // transaction anyway (nested CreateScope() joins the outer one),
+            // so it would add nothing while making the intent look like this
+            // upsert is isolated when it isn't.
+            //
+            // This relies on SQL Server's default XACT_ABORT OFF session
+            // setting: a unique-constraint violation from the INSERT above
+            // aborts only that one statement, not the whole transaction, so
+            // `scope`'s transaction is still usable for this retry UPDATE and
+            // for the rest of the batch's statements once the loop continues.
             scope.Database.Execute(
                 $@"UPDATE {RedirectHitDaily.TableName}
                    SET HitCount = HitCount + @0
