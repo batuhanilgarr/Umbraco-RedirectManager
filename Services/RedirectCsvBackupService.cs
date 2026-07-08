@@ -204,6 +204,19 @@ public class RedirectCsvBackupService : BackgroundService
             isBodyHtml: false,
             attachments: new[] { new EmailMessageAttachment(attachmentStream, fileName) });
 
-        await _emailSender.SendAsync(message, "RedirectManagerBackup").ConfigureAwait(false);
+        // IEmailSender.SendAsync's signature differs between the two Umbraco
+        // major versions this package targets: Umbraco 13's (net8.0) has no
+        // "expires" parameter at all, while Umbraco 17/18's (net10.0) 2-arg
+        // and 3-arg overloads are obsolete in 17.1.0 ("scheduled for removal
+        // in Umbraco 18") and genuinely gone by Umbraco 18 — so a 2-arg call
+        // compiles fine against 17.1.0 but throws MissingMethodException at
+        // runtime against an 18.x host. Each branch below calls the one
+        // overload whose exact signature is stable for that TFM's Umbraco
+        // major version.
+#if NET10_0_OR_GREATER
+        await _emailSender.SendAsync(message, "RedirectManagerBackup", enableNotification: false, expires: null).ConfigureAwait(false);
+#else
+        await _emailSender.SendAsync(message, "RedirectManagerBackup", enableNotification: false).ConfigureAwait(false);
+#endif
     }
 }
