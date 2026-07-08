@@ -16,7 +16,7 @@ A URL redirect manager plugin for Umbraco CMS **13, 17, and 18**. Manage 301, 30
 - **Redesigned backoffice dashboard**: Clean, modern UI built with Lit (Umbraco 17/18) and AngularJS (Umbraco 13). Compact status legend, search bar, filters, bulk selection, and tab-based navigation all in one view.
 - **Domain-scoped redirects**: Scope a redirect to a specific hostname for multi-site installs. The same Old URL can point to a different New URL per domain, with domain-specific rules taking precedence over global ones. Leave the Domain field blank to apply a redirect to all domains.
 - **Regex and exact match**: Support for both exact path redirects and regex rules with `$1` capture groups. Regex rules are highlighted with a purple pill in the dashboard.
-- **Hit-count analytics**: Every redirect tracks how many times it has fired and when it was last hit, visible directly in the redirect list.
+- **Hit-count analytics**: Every redirect tracks how many times it has fired and when it was last hit, plus rolling 7-day and 30-day totals, visible directly in the redirect list — useful for spotting stale redirects to retire or rules that aren't firing when they should.
 - **404 log with one-click redirect creation**: Genuine 404s are logged automatically with hit count, first seen, and last seen dates. Turn any frequent 404 into a redirect in a single click.
 - **CSV import/export**: Migrate or bulk-edit redirects via CSV files.
 - **Built-in test tool**: Test a path before saving to confirm which redirect rule will match.
@@ -60,7 +60,7 @@ After installation, restart your Umbraco application and open the **Redirect Man
 
 ## Database
 
-The plugin creates two tables automatically:
+The plugin creates three tables automatically:
 
 **`RedirectManagerEntries`**
 
@@ -78,6 +78,12 @@ The plugin creates two tables automatically:
 | LastHitDate | datetime | Timestamp of the most recent hit |
 | CreatedDate | datetime | |
 | UpdatedDate | datetime | |
+
+**`RedirectManagerHitDaily`**
+
+One row per redirect per UTC day, used to compute the 7-day/30-day rolling
+totals shown in the dashboard. Rows older than 35 days are pruned
+automatically.
 
 **`RedirectManagerMissedRequests`**
 
