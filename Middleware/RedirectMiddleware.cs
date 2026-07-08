@@ -50,6 +50,12 @@ public class RedirectMiddleware
         var redirect = redirectService.GetByOldUrl(pathAndQuery, domain);
         if (redirect == null && pathAndQuery != path)
             redirect = redirectService.GetByOldUrl(path, domain);
+        if (redirect == null)
+        {
+            var toggledPath = ToggleTrailingSlash(path);
+            if (toggledPath != null)
+                redirect = redirectService.GetByOldUrl(toggledPath, domain);
+        }
 
         if (redirect != null && redirect.IsActive)
         {
@@ -215,5 +221,19 @@ public class RedirectMiddleware
         };
 
         return skipPaths.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+    }
+
+    // Lets an exact-match rule fire regardless of a trailing-slash mismatch
+    // between the request path and the stored OldUrl (e.g. a rule for
+    // "/sayfa" also fires for "/sayfa/"). Returns null for the root path,
+    // where toggling a trailing slash is meaningless.
+    private static string? ToggleTrailingSlash(string path)
+    {
+        if (string.IsNullOrEmpty(path) || path == "/")
+            return null;
+
+        return path.EndsWith("/", StringComparison.Ordinal)
+            ? path.TrimEnd('/')
+            : path + "/";
     }
 }
