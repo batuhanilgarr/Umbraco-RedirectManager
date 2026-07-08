@@ -37,7 +37,13 @@ public class RedirectApiController : Controller
             ? _redirectService.GetAll()
             : _redirectService.GetAllFiltered(q, statusCode, isActive, isRegex);
 
-        return Ok(redirects.Select(ToDto));
+        var windowCounts = _redirectService.GetHitWindowCounts();
+
+        return Ok(redirects.Select(r =>
+        {
+            var window = windowCounts.TryGetValue(r.Id, out var w) ? w : (Last7: 0, Last30: 0);
+            return ToDto(r, window.Last7, window.Last30);
+        }));
     }
 
     [HttpGet("get/{id:int}")]
@@ -421,7 +427,7 @@ public class RedirectApiController : Controller
         public List<int> Ids { get; set; } = new();
     }
 
-    private static RedirectEntryDto ToDto(RedirectEntry r)
+    private static RedirectEntryDto ToDto(RedirectEntry r, int hits7d = 0, int hits30d = 0)
     {
         return new RedirectEntryDto
         {
@@ -434,7 +440,9 @@ public class RedirectApiController : Controller
             IsActive = r.IsActive,
             IsRegex = r.IsRegex,
             HitCount = r.HitCount,
-            LastHitDate = r.LastHitDate
+            LastHitDate = r.LastHitDate,
+            Hits7d = hits7d,
+            Hits30d = hits30d
         };
     }
 

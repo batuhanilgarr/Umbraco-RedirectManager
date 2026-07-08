@@ -12,6 +12,8 @@ public class RedirectEntryDto
     public bool IsRegex { get; set; } = false;
     public int HitCount { get; set; } = 0;
     public DateTime? LastHitDate { get; set; }
+    public int Hits7d { get; set; } = 0;
+    public int Hits30d { get; set; } = 0;
 }
 
 public class CreateRedirectEntryDto
