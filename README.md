@@ -19,6 +19,10 @@ A URL redirect manager plugin for Umbraco CMS **13, 17, and 18**. Manage 301, 30
 - **Hit-count analytics**: Every redirect tracks how many times it has fired and when it was last hit, plus rolling 7-day and 30-day totals, visible directly in the redirect list — useful for spotting stale redirects to retire or rules that aren't firing when they should.
 - **404 log with one-click redirect creation**: Genuine 404s are logged automatically with hit count, first seen, and last seen dates. Turn any frequent 404 into a redirect in a single click.
 - **CSV import/export**: Migrate or bulk-edit redirects via CSV files.
+- **Scheduled CSV backup**: Opt-in periodic backup of all redirects to a local folder and/or by email (`RedirectManager:Backup` config), independent of manual export.
+- **A/B testing**: Split traffic on a 301/302 exact-match rule between two target URLs by percentage, with per-visitor sticky assignment (cookie) and separate hit counts per variant.
+- **Dashboard overview**: Totals, active/inactive counts, top 10 most-used redirects, and active redirects with zero hits in the last 30 days — exportable as CSV, with an optional periodic summary email.
+- **Trailing-slash matching**: An exact-match rule fires regardless of a trailing-slash mismatch between the request and the stored Old URL.
 - **Built-in test tool**: Test a path before saving to confirm which redirect rule will match.
 - **Backoffice-secured API**: All redirect-management endpoints require an authenticated Umbraco backoffice session with a valid bearer token.
 - **Automatic database migration**: Tables are created and updated automatically on first run — no manual SQL required.
@@ -74,8 +78,12 @@ The plugin creates three tables automatically:
 | StatusCode | int | 301, 302, 404, or 410 |
 | IsActive | bit | Enable/disable without deleting |
 | IsRegex | bit | Treat OldUrl as a regex pattern |
-| HitCount | int | Total number of times this rule fired |
+| HitCount | int | Total number of times this rule fired (variant A, if A/B testing) |
 | LastHitDate | datetime | Timestamp of the most recent hit |
+| VariantBUrl | nvarchar | A/B test target URL — null means this rule isn't an A/B test |
+| VariantBWeight | int | % of visitors sent to Variant B |
+| VariantBHitCount | int | Total number of times Variant B fired |
+| VariantBLastHitDate | datetime | Timestamp of the most recent Variant B hit |
 | CreatedDate | datetime | |
 | UpdatedDate | datetime | |
 
