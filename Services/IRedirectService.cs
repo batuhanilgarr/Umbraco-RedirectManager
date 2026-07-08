@@ -15,4 +15,5 @@ public interface IRedirectService
     bool Delete(int id);
     int BulkDelete(IEnumerable<int> ids);
     int BulkSetActive(IEnumerable<int> ids, bool isActive);
+    IReadOnlyDictionary<int, (int Last7, int Last30)> GetHitWindowCounts();
 }

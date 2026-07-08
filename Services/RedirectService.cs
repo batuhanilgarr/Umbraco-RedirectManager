@@ -136,6 +136,36 @@ public class RedirectService : IRedirectService
         }) ?? Enumerable.Empty<RedirectEntry>();
     }
 
+    public IReadOnlyDictionary<int, (int Last7, int Last30)> GetHitWindowCounts()
+    {
+        using var scope = _scopeProvider.CreateScope();
+
+        // "Last 7 days" / "last 30 days" both count today, so the cutoff is
+        // today minus (window - 1) days.
+        var cutoff7 = DateTime.UtcNow.Date.AddDays(-6);
+        var cutoff30 = DateTime.UtcNow.Date.AddDays(-29);
+
+        var rows = scope.Database.Fetch<HitWindowRow>(
+            $@"SELECT RedirectId,
+                      SUM(CASE WHEN HitDate >= @0 THEN HitCount ELSE 0 END) AS Last7,
+                      SUM(CASE WHEN HitDate >= @1 THEN HitCount ELSE 0 END) AS Last30
+               FROM {RedirectHitDaily.TableName}
+               WHERE HitDate >= @1
+               GROUP BY RedirectId",
+            cutoff7, cutoff30);
+
+        scope.Complete();
+
+        return rows.ToDictionary(r => r.RedirectId, r => (r.Last7, r.Last30));
+    }
+
+    private sealed class HitWindowRow
+    {
+        public int RedirectId { get; set; }
+        public int Last7 { get; set; }
+        public int Last30 { get; set; }
+    }
+
     public RedirectEntry Create(CreateRedirectEntryDto dto)
     {
         var isRegex = dto.IsRegex;
