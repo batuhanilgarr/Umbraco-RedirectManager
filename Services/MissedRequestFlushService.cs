@@ -1,8 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.RedirectManager.Models;
 
 namespace Umbraco.RedirectManager.Services;
@@ -15,17 +15,17 @@ public class MissedRequestFlushService : BackgroundService
     private const int MaxPathLength = 2048;
 
     private readonly IMissedRequestTracker _tracker;
-    private readonly IScopeProvider _scopeProvider;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<MissedRequestFlushService> _logger;
     private DateTime _lastCleanupUtc = DateTime.MinValue;
 
     public MissedRequestFlushService(
         IMissedRequestTracker tracker,
-        IScopeProvider scopeProvider,
+        IConfiguration configuration,
         ILogger<MissedRequestFlushService> logger)
     {
         _tracker = tracker;
-        _scopeProvider = scopeProvider;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -55,39 +55,37 @@ public class MissedRequestFlushService : BackgroundService
             return;
         }
 
-        lock (FlushCoordinator.Lock)
+        // Each path gets its own standalone Database/transaction rather than one shared
+        // one for the whole batch: an upsert race on one path (see UpsertOne) can throw and
+        // needs to retry with a fresh Database, and isolating them also means a failure
+        // on one path can't roll back or swallow every other path in the same window.
+        foreach (var (path, miss) in drained)
         {
-            // Each path gets its own scope/transaction rather than one shared scope for
-            // the whole batch: an upsert race on one path (see UpsertOne) can throw and
-            // needs to retry in a fresh scope, and isolating scopes also means a failure
-            // on one path can't roll back or swallow every other path in the same window.
-            foreach (var (path, miss) in drained)
+            try
             {
-                try
-                {
-                    UpsertOne(path, miss);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to flush missed-request count for {Path}", path);
-                }
+                UpsertOne(path, miss);
             }
-
-            if (cleanupDue)
+            catch (Exception ex)
             {
-                try
-                {
-                    using var scope = _scopeProvider.CreateScope();
-                    scope.Database.Execute(
-                        $"DELETE FROM {MissedRequest.TableName} WHERE LastSeenDate < @0",
-                        DateTime.UtcNow - RetentionPeriod);
-                    scope.Complete();
-                    _lastCleanupUtc = DateTime.UtcNow;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to run missed-request retention cleanup");
-                }
+                _logger.LogWarning(ex, "Failed to flush missed-request count for {Path}", path);
+            }
+        }
+
+        if (cleanupDue)
+        {
+            try
+            {
+                using var db = FlushDatabaseFactory.Create(_configuration);
+                using var transaction = db.GetTransaction();
+                db.Execute(
+                    $"DELETE FROM {MissedRequest.TableName} WHERE LastSeenDate < @0",
+                    DateTime.UtcNow - RetentionPeriod);
+                transaction.Complete();
+                _lastCleanupUtc = DateTime.UtcNow;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to run missed-request retention cleanup");
             }
         }
     }
@@ -97,9 +95,10 @@ public class MissedRequestFlushService : BackgroundService
         var truncatedPath = path.Length > MaxPathLength ? path.Substring(0, MaxPathLength) : path;
         var pathHash = ComputeHash(truncatedPath);
 
-        using var scope = _scopeProvider.CreateScope();
+        using var db = FlushDatabaseFactory.Create(_configuration);
+        using var transaction = db.GetTransaction();
 
-        var rowsAffected = scope.Database.Execute(
+        var rowsAffected = db.Execute(
             $@"UPDATE {MissedRequest.TableName}
                SET HitCount = HitCount + @0, LastSeenDate = @1
                WHERE PathHash = @2",
@@ -109,7 +108,7 @@ public class MissedRequestFlushService : BackgroundService
         {
             try
             {
-                scope.Database.Execute(
+                db.Execute(
                     $@"INSERT INTO {MissedRequest.TableName} (Path, PathHash, HitCount, FirstSeenDate, LastSeenDate)
                        VALUES (@0, @1, @2, @3, @4)",
                     truncatedPath, pathHash, miss.Count, miss.FirstSeenUtc, miss.LastSeenUtc);
@@ -119,20 +118,21 @@ public class MissedRequestFlushService : BackgroundService
                 // Another instance (or another thread's flush) inserted the same new
                 // path between our UPDATE and INSERT. The unique index on PathHash
                 // makes this throw instead of silently creating a duplicate row.
-                // Retry as an update, in a fresh scope since this scope's transaction
-                // may no longer be usable after a failed statement.
-                using var retryScope = _scopeProvider.CreateScope();
-                retryScope.Database.Execute(
+                // Retry as an update, with a fresh standalone Database since this
+                // transaction may no longer be usable after a failed statement.
+                using var retryDb = FlushDatabaseFactory.Create(_configuration);
+                using var retryTransaction = retryDb.GetTransaction();
+                retryDb.Execute(
                     $@"UPDATE {MissedRequest.TableName}
                        SET HitCount = HitCount + @0, LastSeenDate = @1
                        WHERE PathHash = @2",
                     miss.Count, miss.LastSeenUtc, pathHash);
-                retryScope.Complete();
+                retryTransaction.Complete();
                 return;
             }
         }
 
-        scope.Complete();
+        transaction.Complete();
     }
 
     private static string ComputeHash(string path)
