@@ -52,52 +52,55 @@ public class RedirectHitFlushService : BackgroundService
             return;
         }
 
-        if (drained.Count > 0)
+        lock (FlushCoordinator.Lock)
         {
-            var today = DateTime.UtcNow.Date;
-
-            try
+            if (drained.Count > 0)
             {
-                using var scope = _scopeProvider.CreateScope();
+                var today = DateTime.UtcNow.Date;
 
-                foreach (var (redirectId, hit) in drained)
+                try
                 {
-                    scope.Database.Execute(
-                        $@"UPDATE {RedirectEntry.TableName}
-                           SET HitCount = HitCount + @0,
-                               LastHitDate = CASE WHEN LastHitDate IS NULL OR @1 > LastHitDate THEN @1 ELSE LastHitDate END
-                           WHERE Id = @2",
-                        hit.Count, hit.LastHitUtc, redirectId);
+                    using var scope = _scopeProvider.CreateScope();
 
-                    UpsertDailyBucket(scope, redirectId, hit.Count, today);
+                    foreach (var (redirectId, hit) in drained)
+                    {
+                        scope.Database.Execute(
+                            $@"UPDATE {RedirectEntry.TableName}
+                               SET HitCount = HitCount + @0,
+                                   LastHitDate = CASE WHEN LastHitDate IS NULL OR @1 > LastHitDate THEN @1 ELSE LastHitDate END
+                               WHERE Id = @2",
+                            hit.Count, hit.LastHitUtc, redirectId);
+
+                        UpsertDailyBucket(scope, redirectId, hit.Count, today);
+                    }
+
+                    scope.Complete();
                 }
+                catch (Exception ex)
+                {
+                    // Whole batch shares one transaction, so on any failure none of
+                    // it committed — safe to merge the entire drained snapshot back
+                    // into the tracker for the next flush attempt to retry.
+                    _hitTracker.MergeBack(drained);
+                    _logger.LogWarning(ex, "Failed to flush redirect hit counts for {Count} redirect(s)", drained.Count);
+                }
+            }
 
-                scope.Complete();
-            }
-            catch (Exception ex)
+            if (cleanupDue)
             {
-                // Whole batch shares one transaction, so on any failure none of
-                // it committed — safe to merge the entire drained snapshot back
-                // into the tracker for the next flush attempt to retry.
-                _hitTracker.MergeBack(drained);
-                _logger.LogWarning(ex, "Failed to flush redirect hit counts for {Count} redirect(s)", drained.Count);
-            }
-        }
-
-        if (cleanupDue)
-        {
-            try
-            {
-                using var scope = _scopeProvider.CreateScope();
-                scope.Database.Execute(
-                    $"DELETE FROM {RedirectHitDaily.TableName} WHERE HitDate < @0",
-                    DateTime.UtcNow.Date - HitDailyRetentionPeriod);
-                scope.Complete();
-                _lastCleanupUtc = DateTime.UtcNow;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to run redirect hit-daily retention cleanup");
+                try
+                {
+                    using var scope = _scopeProvider.CreateScope();
+                    scope.Database.Execute(
+                        $"DELETE FROM {RedirectHitDaily.TableName} WHERE HitDate < @0",
+                        DateTime.UtcNow.Date - HitDailyRetentionPeriod);
+                    scope.Complete();
+                    _lastCleanupUtc = DateTime.UtcNow;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to run redirect hit-daily retention cleanup");
+                }
             }
         }
     }

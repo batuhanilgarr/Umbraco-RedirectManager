@@ -55,36 +55,39 @@ public class MissedRequestFlushService : BackgroundService
             return;
         }
 
-        // Each path gets its own scope/transaction rather than one shared scope for
-        // the whole batch: an upsert race on one path (see UpsertOne) can throw and
-        // needs to retry in a fresh scope, and isolating scopes also means a failure
-        // on one path can't roll back or swallow every other path in the same window.
-        foreach (var (path, miss) in drained)
+        lock (FlushCoordinator.Lock)
         {
-            try
+            // Each path gets its own scope/transaction rather than one shared scope for
+            // the whole batch: an upsert race on one path (see UpsertOne) can throw and
+            // needs to retry in a fresh scope, and isolating scopes also means a failure
+            // on one path can't roll back or swallow every other path in the same window.
+            foreach (var (path, miss) in drained)
             {
-                UpsertOne(path, miss);
+                try
+                {
+                    UpsertOne(path, miss);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to flush missed-request count for {Path}", path);
+                }
             }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to flush missed-request count for {Path}", path);
-            }
-        }
 
-        if (cleanupDue)
-        {
-            try
+            if (cleanupDue)
             {
-                using var scope = _scopeProvider.CreateScope();
-                scope.Database.Execute(
-                    $"DELETE FROM {MissedRequest.TableName} WHERE LastSeenDate < @0",
-                    DateTime.UtcNow - RetentionPeriod);
-                scope.Complete();
-                _lastCleanupUtc = DateTime.UtcNow;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to run missed-request retention cleanup");
+                try
+                {
+                    using var scope = _scopeProvider.CreateScope();
+                    scope.Database.Execute(
+                        $"DELETE FROM {MissedRequest.TableName} WHERE LastSeenDate < @0",
+                        DateTime.UtcNow - RetentionPeriod);
+                    scope.Complete();
+                    _lastCleanupUtc = DateTime.UtcNow;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to run missed-request retention cleanup");
+                }
             }
         }
     }
