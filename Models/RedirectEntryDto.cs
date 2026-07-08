@@ -14,6 +14,10 @@ public class RedirectEntryDto
     public DateTime? LastHitDate { get; set; }
     public int Hits7d { get; set; } = 0;
     public int Hits30d { get; set; } = 0;
+    public string? VariantBUrl { get; set; }
+    public int? VariantBWeight { get; set; }
+    public int VariantBHitCount { get; set; } = 0;
+    public DateTime? VariantBLastHitDate { get; set; }
 }
 
 public class CreateRedirectEntryDto
@@ -25,6 +29,8 @@ public class CreateRedirectEntryDto
     public int StatusCode { get; set; } = 301;
     public bool IsActive { get; set; } = true;
     public bool IsRegex { get; set; } = false;
+    public string? VariantBUrl { get; set; }
+    public int? VariantBWeight { get; set; }
 }
 
 public class UpdateRedirectEntryDto
@@ -36,4 +42,6 @@ public class UpdateRedirectEntryDto
     public int StatusCode { get; set; } = 301;
     public bool IsActive { get; set; } = true;
     public bool IsRegex { get; set; } = false;
+    public string? VariantBUrl { get; set; }
+    public int? VariantBWeight { get; set; }
 }

@@ -88,7 +88,10 @@
                     description: "",
                     statusCode: "301",
                     isActive: true,
-                    isRegex: false
+                    isRegex: false,
+                    abTestEnabled: false,
+                    variantBUrl: "",
+                    variantBWeight: 50
                 },
                 close: function () {
                     vm.closeModal();
@@ -111,7 +114,10 @@
                     description: redirect.description || "",
                     statusCode: redirect.statusCode.toString(),
                     isActive: redirect.isActive,
-                    isRegex: !!redirect.isRegex
+                    isRegex: !!redirect.isRegex,
+                    abTestEnabled: !!redirect.variantBUrl,
+                    variantBUrl: redirect.variantBUrl || "",
+                    variantBWeight: redirect.variantBWeight != null ? redirect.variantBWeight : 50
                 },
                 close: function () {
                     vm.closeModal();
@@ -161,6 +167,18 @@
             if ((redirect.statusCode === 301 || redirect.statusCode === 302) && !redirect.newUrl) {
                 notificationsService.error("Validation Error", "New URL is required for redirect status codes");
                 return;
+            }
+
+            if (redirect.abTestEnabled && !redirect.variantBUrl) {
+                notificationsService.error("Validation Error", "Variant B URL is required when A/B test is enabled");
+                return;
+            }
+
+            if (redirect.abTestEnabled) {
+                redirect.variantBWeight = parseInt(redirect.variantBWeight, 10);
+            } else {
+                redirect.variantBUrl = null;
+                redirect.variantBWeight = null;
             }
 
             model.submitButtonState = "busy";

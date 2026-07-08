@@ -29,6 +29,33 @@
                        placeholder="/new-page">
             </umb-control-group>
 
+            <umb-control-group label="A/B test"
+                               description="Split traffic between New URL and a second URL"
+                               ng-if="(model.redirect.statusCode == 301 || model.redirect.statusCode == 302) && !model.redirect.isRegex">
+                <umb-toggle checked="model.redirect.abTestEnabled"
+                            on-click="model.redirect.abTestEnabled = !model.redirect.abTestEnabled">
+                </umb-toggle>
+            </umb-control-group>
+
+            <umb-control-group label="Variant B URL"
+                               description="Visitors assigned to Variant B go here instead of New URL"
+                               ng-if="model.redirect.abTestEnabled && (model.redirect.statusCode == 301 || model.redirect.statusCode == 302) && !model.redirect.isRegex"
+                               required="true">
+                <input type="text"
+                       ng-model="model.redirect.variantBUrl"
+                       class="umb-property-editor umb-textstring"
+                       placeholder="/new-page-variant-b">
+            </umb-control-group>
+
+            <umb-control-group label="Variant B weight"
+                               description="% of visitors sent to Variant B. A visitor is assigned once (cookie) and always sees the same variant afterward."
+                               ng-if="model.redirect.abTestEnabled && (model.redirect.statusCode == 301 || model.redirect.statusCode == 302) && !model.redirect.isRegex">
+                <input type="number"
+                       min="0" max="100"
+                       ng-model="model.redirect.variantBWeight"
+                       class="umb-property-editor umb-textstring">
+            </umb-control-group>
+
             <umb-control-group label="Domain"
                                description="Leave blank to apply this redirect to all domains. If both a domain-specific and an all-domains redirect exist for the same Old URL, the domain-specific one wins.">
                 <input type="text"

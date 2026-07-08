@@ -109,7 +109,7 @@ public class RedirectApiController : Controller
         if ((dto.StatusCode == 301 || dto.StatusCode == 302) && string.IsNullOrWhiteSpace(dto.NewUrl))
             return BadRequest("New URL is required for redirect status codes");
 
-        var validationError = ValidateRedirect(dto.OldUrl, dto.NewUrl, dto.StatusCode, dto.IsRegex);
+        var validationError = ValidateRedirect(dto.OldUrl, dto.NewUrl, dto.StatusCode, dto.IsRegex, dto.VariantBUrl, dto.VariantBWeight);
         if (validationError != null)
             return BadRequest(validationError);
 
@@ -130,7 +130,7 @@ public class RedirectApiController : Controller
         if ((dto.StatusCode == 301 || dto.StatusCode == 302) && string.IsNullOrWhiteSpace(dto.NewUrl))
             return BadRequest("New URL is required for redirect status codes");
 
-        var validationError = ValidateRedirect(dto.OldUrl, dto.NewUrl, dto.StatusCode, dto.IsRegex);
+        var validationError = ValidateRedirect(dto.OldUrl, dto.NewUrl, dto.StatusCode, dto.IsRegex, dto.VariantBUrl, dto.VariantBWeight);
         if (validationError != null)
             return BadRequest(validationError);
 
@@ -457,7 +457,11 @@ public class RedirectApiController : Controller
             HitCount = r.HitCount,
             LastHitDate = r.LastHitDate,
             Hits7d = hits7d,
-            Hits30d = hits30d
+            Hits30d = hits30d,
+            VariantBUrl = r.VariantBUrl,
+            VariantBWeight = r.VariantBWeight,
+            VariantBHitCount = r.VariantBHitCount,
+            VariantBLastHitDate = r.VariantBLastHitDate
         };
     }
 
@@ -474,7 +478,7 @@ public class RedirectApiController : Controller
         };
     }
 
-    private static string? ValidateRedirect(string oldUrl, string? newUrl, int statusCode, bool isRegex)
+    private static string? ValidateRedirect(string oldUrl, string? newUrl, int statusCode, bool isRegex, string? variantBUrl = null, int? variantBWeight = null)
     {
         if (isRegex)
         {
@@ -496,6 +500,22 @@ public class RedirectApiController : Controller
             var target = newUrl.Trim();
             if (!(target.StartsWith("/") || target.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || target.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
                 return "New URL must start with '/' or 'http(s)://'";
+        }
+
+        if (!string.IsNullOrWhiteSpace(variantBUrl))
+        {
+            if (isRegex)
+                return "A/B testing (Variant B URL) isn't supported for regex rules";
+
+            if (statusCode != 301 && statusCode != 302)
+                return "A/B testing (Variant B URL) only applies to 301/302 redirect rules";
+
+            var target = variantBUrl.Trim();
+            if (!(target.StartsWith("/") || target.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || target.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
+                return "Variant B URL must start with '/' or 'http(s)://'";
+
+            if (variantBWeight is not int weight || weight < 0 || weight > 100)
+                return "Variant B weight must be between 0 and 100";
         }
 
         return null;

@@ -24,6 +24,9 @@ public class RedirectManagerComposer : IComposer
         builder.Services.Configure<RedirectBackupOptions>(builder.Config.GetSection("RedirectManager:Backup"));
         builder.Services.AddHostedService<RedirectCsvBackupService>();
 
+        builder.Services.AddSingleton<IVariantBHitTracker, VariantBHitTracker>();
+        builder.Services.AddHostedService<VariantBHitFlushService>();
+
         builder.Services.Configure<UmbracoPipelineOptions>(options =>
         {
             options.PipelineFilters.Insert(0, new UmbracoPipelineFilter("RedirectManager")

@@ -56,4 +56,25 @@ public class RedirectEntry
     [Column("LastHitDate")]
     [NullSetting(NullSetting = NullSettings.Null)]
     public DateTime? LastHitDate { get; set; }
+
+    // A/B test: when set, a visitor is split between NewUrl (variant A) and
+    // VariantBUrl (variant B) by VariantBWeight (percentage sent to B),
+    // sticky per-visitor via a cookie. Null VariantBUrl means "not an A/B
+    // test" — NewUrl/HitCount/LastHitDate behave exactly as before.
+    [Column("VariantBUrl")]
+    [NullSetting(NullSetting = NullSettings.Null)]
+    [Length(2048)]
+    public string? VariantBUrl { get; set; }
+
+    [Column("VariantBWeight")]
+    [NullSetting(NullSetting = NullSettings.Null)]
+    public int? VariantBWeight { get; set; }
+
+    [Column("VariantBHitCount")]
+    [Constraint(Default = 0)]
+    public int VariantBHitCount { get; set; } = 0;
+
+    [Column("VariantBLastHitDate")]
+    [NullSetting(NullSetting = NullSettings.Null)]
+    public DateTime? VariantBLastHitDate { get; set; }
 }

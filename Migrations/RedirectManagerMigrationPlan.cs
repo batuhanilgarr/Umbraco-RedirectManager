@@ -18,6 +18,7 @@ public class RedirectManagerPackageMigrationPlan : PackageMigrationPlan
         To<CreateMissedRequestsTable>(new Guid("7A1E9C42-3B5D-4F6A-8E11-9C2D5A7B3F04"));
         To<AddDomainColumn>(new Guid("B8D4E617-2F0A-4C9B-A5D3-6E1F8C0A9B72"));
         To<CreateRedirectHitDailyTable>(new Guid("1D9F4E23-6A8B-4C1D-9E7A-3B5C8D2F4A61"));
+        To<AddAbTestColumns>(new Guid("6E3A9C15-4B7D-4F2E-8A1C-9D6E5F0B3C82"));
     }
 }
 
@@ -150,6 +151,43 @@ public class CreateRedirectHitDailyTable : AsyncMigrationBase
     }
 }
 
+public class AddAbTestColumns : AsyncMigrationBase
+{
+    public AddAbTestColumns(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override Task MigrateAsync()
+    {
+        if (TableExists(RedirectEntry.TableName) == false)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "VariantBUrl") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "VariantBUrl");
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "VariantBWeight") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "VariantBWeight");
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "VariantBHitCount") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "VariantBHitCount");
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "VariantBLastHitDate") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "VariantBLastHitDate");
+        }
+
+        return Task.CompletedTask;
+    }
+}
+
 #else
 
 public class CreateRedirectManagerTable : MigrationBase
@@ -263,6 +301,41 @@ public class CreateRedirectHitDailyTable : MigrationBase
         if (TableExists(RedirectHitDaily.TableName) == false)
         {
             Create.Table<RedirectHitDaily>().Do();
+        }
+    }
+}
+
+public class AddAbTestColumns : MigrationBase
+{
+    public AddAbTestColumns(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override void Migrate()
+    {
+        if (TableExists(RedirectEntry.TableName) == false)
+        {
+            return;
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "VariantBUrl") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "VariantBUrl");
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "VariantBWeight") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "VariantBWeight");
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "VariantBHitCount") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "VariantBHitCount");
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "VariantBLastHitDate") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "VariantBLastHitDate");
         }
     }
 }

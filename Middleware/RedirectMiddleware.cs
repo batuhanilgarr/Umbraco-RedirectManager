@@ -11,6 +11,7 @@ public class RedirectMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<RedirectMiddleware> _logger;
     private readonly IRedirectHitTracker _hitTracker;
+    private readonly IVariantBHitTracker _variantBHitTracker;
     private readonly IMissedRequestTracker _missedRequestTracker;
 
     private static readonly ConcurrentDictionary<string, Regex> RegexCache = new();
@@ -20,11 +21,13 @@ public class RedirectMiddleware
         RequestDelegate next,
         ILogger<RedirectMiddleware> logger,
         IRedirectHitTracker hitTracker,
+        IVariantBHitTracker variantBHitTracker,
         IMissedRequestTracker missedRequestTracker)
     {
         _next = next;
         _logger = logger;
         _hitTracker = hitTracker;
+        _variantBHitTracker = variantBHitTracker;
         _missedRequestTracker = missedRequestTracker;
     }
 
@@ -61,26 +64,24 @@ public class RedirectMiddleware
         {
             _logger.LogDebug("Redirect found for {OldUrl} -> {NewUrl} ({StatusCode})",
                 redirect.OldUrl, redirect.NewUrl, redirect.StatusCode);
-            _hitTracker.RecordHit(redirect.Id);
 
             switch (redirect.StatusCode)
             {
                 case 301:
-                    context.Response.StatusCode = 301;
-                    context.Response.Headers.Location = redirect.NewUrl ?? "/";
-                    return;
-
                 case 302:
-                    context.Response.StatusCode = 302;
-                    context.Response.Headers.Location = redirect.NewUrl ?? "/";
+                    var targetUrl = ResolveRedirectTarget(context, redirect);
+                    context.Response.StatusCode = redirect.StatusCode;
+                    context.Response.Headers.Location = targetUrl ?? "/";
                     return;
 
                 case 404:
+                    _hitTracker.RecordHit(redirect.Id);
                     context.Response.StatusCode = 404;
                     await context.Response.WriteAsync("Not Found");
                     return;
 
                 case 410:
+                    _hitTracker.RecordHit(redirect.Id);
                     context.Response.StatusCode = 410;
                     await context.Response.WriteAsync("Gone");
                     return;
@@ -124,6 +125,52 @@ public class RedirectMiddleware
         {
             _missedRequestTracker.RecordMiss(path);
         }
+    }
+
+    // A/B test resolution for an exact-match 301/302 rule. Not applied to
+    // regex rules (out of scope — see design spec) or to 404/410 (there's no
+    // second URL to split traffic toward). A visitor is assigned a variant
+    // once and stays on it via a cookie, so repeat visits are consistent.
+    private string? ResolveRedirectTarget(HttpContext context, Umbraco.RedirectManager.Models.RedirectEntry redirect)
+    {
+        if (string.IsNullOrWhiteSpace(redirect.VariantBUrl) || redirect.VariantBWeight is not int weight)
+        {
+            _hitTracker.RecordHit(redirect.Id);
+            return redirect.NewUrl;
+        }
+
+        var cookieName = $"rm_ab_{redirect.Id}";
+        var assignment = context.Request.Cookies[cookieName];
+
+        bool useVariantB;
+        if (assignment == "B")
+        {
+            useVariantB = true;
+        }
+        else if (assignment == "A")
+        {
+            useVariantB = false;
+        }
+        else
+        {
+            useVariantB = Random.Shared.Next(100) < Math.Clamp(weight, 0, 100);
+            context.Response.Cookies.Append(cookieName, useVariantB ? "B" : "A", new CookieOptions
+            {
+                Expires = DateTimeOffset.UtcNow.AddDays(30),
+                HttpOnly = true,
+                SameSite = SameSiteMode.Lax,
+                IsEssential = true
+            });
+        }
+
+        if (useVariantB)
+        {
+            _variantBHitTracker.RecordHit(redirect.Id);
+            return redirect.VariantBUrl;
+        }
+
+        _hitTracker.RecordHit(redirect.Id);
+        return redirect.NewUrl;
     }
 
     private RedirectMatch? FindRegexRedirect(string path, string? domain, IRedirectService redirectService)

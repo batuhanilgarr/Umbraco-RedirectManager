@@ -451,6 +451,13 @@ class RedirectManagerDashboard extends UmbLitElement {
             color: #5b21b6;
         }
 
+        .type-pill.ab-pill {
+            background: #fff7ed;
+            border-color: #fed7aa;
+            color: #9a3412;
+            margin-left: 4px;
+        }
+
         .active-indicator {
             display: inline-flex;
             align-items: center;
@@ -739,7 +746,10 @@ class RedirectManagerDashboard extends UmbLitElement {
             description: '',
             statusCode: 301,
             isActive: true,
-            isRegex: false
+            isRegex: false,
+            abTestEnabled: false,
+            variantBUrl: '',
+            variantBWeight: 50
         };
     }
 
@@ -838,7 +848,10 @@ class RedirectManagerDashboard extends UmbLitElement {
             description: redirect.description || '',
             statusCode: redirect.statusCode,
             isActive: redirect.isActive,
-            isRegex: !!redirect.isRegex
+            isRegex: !!redirect.isRegex,
+            abTestEnabled: !!redirect.variantBUrl,
+            variantBUrl: redirect.variantBUrl || '',
+            variantBWeight: redirect.variantBWeight ?? 50
         };
         this.showModal = true;
     }
@@ -851,9 +864,10 @@ class RedirectManagerDashboard extends UmbLitElement {
 
     handleInputChange(e) {
         const { name, value, type, checked } = e.target;
+        const isIntField = name === 'statusCode' || name === 'variantBWeight';
         this.formData = {
             ...this.formData,
-            [name]: type === 'checkbox' ? checked : (name === 'statusCode' ? parseInt(value) : value)
+            [name]: type === 'checkbox' ? checked : (isIntField ? parseInt(value, 10) : value)
         };
     }
 
@@ -1016,19 +1030,30 @@ class RedirectManagerDashboard extends UmbLitElement {
             return;
         }
 
+        if (this.formData.abTestEnabled && !this.formData.variantBUrl) {
+            this.showMessage('Variant B URL is required when A/B test is enabled', 'error');
+            return;
+        }
+
+        const payload = {
+            ...this.formData,
+            variantBUrl: this.formData.abTestEnabled ? this.formData.variantBUrl : null,
+            variantBWeight: this.formData.abTestEnabled ? this.formData.variantBWeight : null
+        };
+
         try {
             let response;
             if (this.editingRedirect) {
                 response = await this.authFetch(`/umbraco/api/redirectmanager/update/${this.editingRedirect.id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(this.formData)
+                    body: JSON.stringify(payload)
                 });
             } else {
                 response = await this.authFetch('/umbraco/api/redirectmanager/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(this.formData)
+                    body: JSON.stringify(payload)
                 });
             }
 
@@ -1277,6 +1302,12 @@ class RedirectManagerDashboard extends UmbLitElement {
                                             <span class="type-pill ${redirect.isRegex ? 'regex' : ''}">
                                                 ${redirect.isRegex ? 'Regex' : 'Exact'}
                                             </span>
+                                            ${redirect.variantBUrl ? html`
+                                                <span class="type-pill ab-pill"
+                                                      title="A/B test — A: ${(redirect.hitCount || 0).toLocaleString()} hits, B: ${(redirect.variantBHitCount || 0).toLocaleString()} hits (${redirect.variantBWeight}% to B)">
+                                                    A/B
+                                                </span>
+                                            ` : ''}
                                         </td>
                                         <td class="center">
                                             <span class="active-indicator">
@@ -1510,6 +1541,46 @@ class RedirectManagerDashboard extends UmbLitElement {
                                         </div>
                                     ` : ''}
                                 </div>
+
+                                <!-- A/B test -->
+                                ${(this.formData.statusCode === 301 || this.formData.statusCode === 302) && !this.formData.isRegex ? html`
+                                    <div class="form-group">
+                                        <div class="toggle-row">
+                                            <label class="toggle-label" for="modal-abTestEnabled">
+                                                A/B test
+                                                <span class="toggle-hint"> — split traffic between New URL and a second URL</span>
+                                            </label>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox"
+                                                       name="abTestEnabled"
+                                                       id="modal-abTestEnabled"
+                                                       .checked=${this.formData.abTestEnabled}
+                                                       @change=${this.handleInputChange} />
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    ${this.formData.abTestEnabled ? html`
+                                        <div class="form-group">
+                                            <label>Variant B URL <span class="req">*</span></label>
+                                            <input type="text"
+                                                   name="variantBUrl"
+                                                   .value=${this.formData.variantBUrl}
+                                                   @input=${this.handleInputChange}
+                                                   placeholder="/new-page-variant-b" />
+                                            <small>Visitors assigned to Variant B go here instead of New URL.</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Variant B weight — % of visitors sent to B</label>
+                                            <input type="number"
+                                                   name="variantBWeight"
+                                                   min="0" max="100"
+                                                   .value=${String(this.formData.variantBWeight)}
+                                                   @input=${this.handleInputChange} />
+                                            <small>A visitor is assigned once (cookie) and always sees the same variant afterward.</small>
+                                        </div>
+                                    ` : ''}
+                                ` : ''}
 
                                 <!-- Domain -->
                                 <div class="form-group">

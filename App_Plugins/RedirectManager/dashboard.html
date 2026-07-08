@@ -115,6 +115,11 @@
                                 <span class="type-pill" ng-class="{'regex': redirect.isRegex}">
                                     {{redirect.isRegex ? 'Regex' : 'Exact'}}
                                 </span>
+                                <span class="type-pill ab-pill"
+                                      ng-if="redirect.variantBUrl"
+                                      title="{{'A/B test — A: ' + (redirect.hitCount || 0) + ' hits, B: ' + (redirect.variantBHitCount || 0) + ' hits (' + redirect.variantBWeight + '% to B)'}}">
+                                    A/B
+                                </span>
                             </td>
                             <td style="text-align:center;">
                                 <span ng-class="{'redirect-active': redirect.isActive, 'redirect-inactive': !redirect.isActive}">
