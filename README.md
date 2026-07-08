@@ -52,6 +52,8 @@ After installation, restart your Umbraco application and open the **Redirect Man
 6. Use the **Test** button on any row to verify a redirect resolves as expected.
 7. Switch to the **404 Log** tab to review unmatched requests and convert them to redirects with one click.
 8. Use **Export CSV** / **Import CSV** for bulk operations.
+9. For a 301/302 exact-match rule, enable **A/B test** to split traffic between New URL and a second Variant B URL by percentage — visitors are assigned once and stay on their variant via a cookie.
+10. Switch to the **Overview** tab for totals, the top 10 most-used redirects, and active redirects with zero hits in the last 30 days — exportable as CSV.
 
 ## Status Codes
 
@@ -99,7 +101,42 @@ Logs genuine 404 responses (path, hit count, first seen, last seen). Entries old
 
 ## Configuration
 
-No additional configuration required. The plugin works out of the box after installation.
+The plugin works out of the box with no configuration required. Scheduled CSV
+backup and the periodic overview email are opt-in and configured via
+`appsettings.json`, under `RedirectManager:Backup`:
+
+```json
+{
+  "RedirectManager": {
+    "Backup": {
+      "Enabled": false,
+      "FolderPath": "App_Data/RedirectManagerBackups",
+      "IntervalHours": 24,
+      "RetentionCount": 30,
+      "EmailTo": "",
+      "SummaryEmailEnabled": false,
+      "SummaryEmailTo": "",
+      "SummaryIntervalHours": 168
+    }
+  }
+}
+```
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `Enabled` | `false` | Turns on the scheduled raw CSV backup (all redirects, same format as the manual export). |
+| `FolderPath` | *(none)* | Folder to write timestamped backup files to. Leave blank to skip the file destination. |
+| `IntervalHours` | `24` | How often to write a new backup. |
+| `RetentionCount` | `30` | How many backup files to keep in `FolderPath` before deleting the oldest. |
+| `EmailTo` | *(none)* | Comma-separated recipients for the raw CSV backup email. Leave blank to skip the email destination. |
+| `SummaryEmailEnabled` | `false` | Turns on the periodic overview report email (totals, top 10, stale redirects — the same data as the dashboard's Overview tab). |
+| `SummaryEmailTo` | *(none)* | Comma-separated recipients for the overview report email. |
+| `SummaryIntervalHours` | `168` (weekly) | How often to send the overview report email. |
+
+Email delivery (both the raw backup and the overview report) uses Umbraco's
+own SMTP configuration (`Umbraco:CMS:Global:Smtp`, standard for any Umbraco
+site) — a `From` address must be set there, or email delivery is skipped
+with a warning in the log.
 
 ## License
 
