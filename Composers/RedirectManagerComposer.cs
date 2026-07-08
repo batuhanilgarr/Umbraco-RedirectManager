@@ -4,6 +4,7 @@ using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
 using Umbraco.Cms.Web.Common.ApplicationBuilder;
 using Umbraco.RedirectManager.Middleware;
+using Umbraco.RedirectManager.Models;
 using Umbraco.RedirectManager.Services;
 
 namespace Umbraco.RedirectManager.Composers;
@@ -19,6 +20,9 @@ public class RedirectManagerComposer : IComposer
         builder.Services.AddHostedService<RedirectHitFlushService>();
         builder.Services.AddSingleton<IMissedRequestTracker, MissedRequestTracker>();
         builder.Services.AddHostedService<MissedRequestFlushService>();
+
+        builder.Services.Configure<RedirectBackupOptions>(builder.Config.GetSection("RedirectManager:Backup"));
+        builder.Services.AddHostedService<RedirectCsvBackupService>();
 
         builder.Services.Configure<UmbracoPipelineOptions>(options =>
         {

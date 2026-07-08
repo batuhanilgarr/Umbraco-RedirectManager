@@ -235,26 +235,7 @@ public class RedirectApiController : Controller
             ? _redirectService.GetAll()
             : _redirectService.GetAllFiltered(q, statusCode, isActive, isRegex);
 
-        var sb = new StringBuilder();
-        sb.AppendLine("OldUrl,NewUrl,Description,StatusCode,IsActive,IsRegex");
-
-        foreach (var r in redirects)
-        {
-            sb.Append(EscapeCsv(r.OldUrl));
-            sb.Append(',');
-            sb.Append(EscapeCsv(r.NewUrl ?? string.Empty));
-            sb.Append(',');
-            sb.Append(EscapeCsv(r.Description ?? string.Empty));
-            sb.Append(',');
-            sb.Append(r.StatusCode);
-            sb.Append(',');
-            sb.Append(r.IsActive ? "true" : "false");
-            sb.Append(',');
-            sb.Append(r.IsRegex ? "true" : "false");
-            sb.AppendLine();
-        }
-
-        var bytes = Encoding.UTF8.GetBytes(sb.ToString());
+        var bytes = RedirectCsvWriter.Write(redirects);
         return File(bytes, "text/csv", "redirects.csv");
     }
 
@@ -363,16 +344,6 @@ public class RedirectApiController : Controller
         }
 
         return Ok(new { created, updated, skipped });
-    }
-
-    private static string EscapeCsv(string value)
-    {
-        if (value.Contains('"') || value.Contains(',') || value.Contains('\n') || value.Contains('\r'))
-        {
-            return '"' + value.Replace("\"", "\"\"") + '"';
-        }
-
-        return value;
     }
 
     private static List<string> ParseCsvLine(string line)
