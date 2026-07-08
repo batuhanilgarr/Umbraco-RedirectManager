@@ -18,4 +18,15 @@ public class RedirectBackupOptions
     // Comma-separated recipient list. Null/blank disables the email
     // destination (file backup can still be used on its own).
     public string? EmailTo { get; set; }
+
+    // Separate from the raw CSV backup above: a periodic overview report
+    // (totals, top 10, stale list — the same data as the dashboard's
+    // Overview tab) emailed as a CSV attachment. Off by default; independent
+    // toggle/schedule/recipients from the raw backup, since these serve
+    // different audiences (an ops backup vs. a human-readable summary).
+    public bool SummaryEmailEnabled { get; set; } = false;
+
+    public string? SummaryEmailTo { get; set; }
+
+    public int SummaryIntervalHours { get; set; } = 168; // weekly
 }

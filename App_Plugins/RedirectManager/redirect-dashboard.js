@@ -946,15 +946,14 @@ class RedirectManagerDashboard extends UmbLitElement {
         }
     }
 
-    async exportCsv() {
-        // A plain navigation (window.location.href) can't carry an Authorization
-        // header, so the file has to be fetched (with the bearer token attached
-        // via authFetch) and then handed to the browser as a Blob download.
-        const url = `/umbraco/api/redirectmanager/export${this.buildQueryParams()}`;
+    // A plain navigation (window.location.href) can't carry an Authorization
+    // header, so the file has to be fetched (with the bearer token attached
+    // via authFetch) and then handed to the browser as a Blob download.
+    async downloadFile(url, fileName, errorMessage) {
         try {
             const response = await this.authFetch(url);
             if (!response.ok) {
-                this.showMessage('Failed to export CSV', 'error');
+                this.showMessage(errorMessage, 'error');
                 return;
             }
 
@@ -962,7 +961,7 @@ class RedirectManagerDashboard extends UmbLitElement {
             const objectUrl = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = objectUrl;
-            link.download = 'redirects.csv';
+            link.download = fileName;
             // Umbraco's backoffice router installs a global click listener that
             // turns same-origin anchor clicks into SPA navigations via
             // history.pushState — which throws a SecurityError for blob: URLs
@@ -978,9 +977,20 @@ class RedirectManagerDashboard extends UmbLitElement {
             document.body.removeChild(link);
             URL.revokeObjectURL(objectUrl);
         } catch (error) {
-            console.error('Failed to export CSV:', error);
-            this.showMessage('Failed to export CSV', 'error');
+            console.error(errorMessage, error);
+            this.showMessage(errorMessage, 'error');
         }
+    }
+
+    async exportCsv() {
+        await this.downloadFile(
+            `/umbraco/api/redirectmanager/export${this.buildQueryParams()}`,
+            'redirects.csv',
+            'Failed to export CSV');
+    }
+
+    async exportStats() {
+        await this.downloadFile('/umbraco/api/redirectmanager/stats/export', 'redirect-overview.csv', 'Failed to export overview');
     }
 
     triggerImport() {
@@ -1407,6 +1417,9 @@ class RedirectManagerDashboard extends UmbLitElement {
                 ${this.statsLoading || !this.stats ? html`
                     <div class="loading">Loading overview...</div>
                 ` : html`
+                    <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+                        <button class="btn" @click=${this.exportStats}>Export overview (CSV)</button>
+                    </div>
                     <div class="stat-cards">
                         <div class="stat-card">
                             <span class="stat-value">${this.stats.total}</span>

@@ -228,6 +228,12 @@
                 </div>
 
                 <div ng-if="!vm.statsLoading && vm.stats">
+                    <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+                        <umb-button type="button"
+                                    label="Export overview (CSV)"
+                                    action="vm.exportStats()">
+                        </umb-button>
+                    </div>
                     <div class="stat-cards">
                         <div class="stat-card">
                             <span class="stat-value">{{vm.stats.total}}</span>

@@ -49,45 +49,30 @@ public class RedirectApiController : Controller
     [HttpGet("stats")]
     public IActionResult GetStats()
     {
-        var redirects = _redirectService.GetAll().ToList();
-        var windowCounts = _redirectService.GetHitWindowCounts();
-
-        var top = redirects
-            .Where(r => r.HitCount > 0)
-            .OrderByDescending(r => r.HitCount)
-            .Take(10)
-            .Select(r => new
-            {
-                r.Id,
-                r.OldUrl,
-                r.NewUrl,
-                r.HitCount,
-                r.LastHitDate
-            });
-
-        // Active rules with zero hits in the trailing 30-day window — either a
-        // stale rule (safe to retire) or a misconfigured one that isn't firing
-        // when it should.
-        var stale = redirects
-            .Where(r => r.IsActive && (!windowCounts.TryGetValue(r.Id, out var w) || w.Last30 == 0))
-            .OrderBy(r => r.LastHitDate ?? DateTime.MinValue)
-            .Select(r => new
-            {
-                r.Id,
-                r.OldUrl,
-                r.NewUrl,
-                r.HitCount,
-                r.LastHitDate
-            });
+        var stats = BuildStats();
 
         return Ok(new
         {
-            total = redirects.Count,
-            active = redirects.Count(r => r.IsActive),
-            inactive = redirects.Count(r => !r.IsActive),
-            topRedirects = top,
-            staleRedirects = stale
+            total = stats.Total,
+            active = stats.Active,
+            inactive = stats.Inactive,
+            topRedirects = stats.TopRedirects,
+            staleRedirects = stats.StaleRedirects
         });
+    }
+
+    [HttpGet("stats/export")]
+    public IActionResult ExportStatsCsv()
+    {
+        var bytes = RedirectStatsCsvWriter.Write(BuildStats());
+        return File(bytes, "text/csv", "redirect-overview.csv");
+    }
+
+    private RedirectStatsBuilder.Stats BuildStats()
+    {
+        var redirects = _redirectService.GetAll();
+        var windowCounts = _redirectService.GetHitWindowCounts();
+        return RedirectStatsBuilder.Build(redirects, windowCounts);
     }
 
     [HttpGet("get/{id:int}")]

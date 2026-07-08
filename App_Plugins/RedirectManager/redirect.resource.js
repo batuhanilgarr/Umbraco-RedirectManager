@@ -29,6 +29,9 @@
             exportUrl: function () {
                 return baseUrl + "export";
             },
+            statsExportUrl: function () {
+                return baseUrl + "stats/export";
+            },
             importCsvContent: function (content) {
                 // Send raw CSV content; backend will parse Request.Body
                 return $http.post(baseUrl + "import", content, {

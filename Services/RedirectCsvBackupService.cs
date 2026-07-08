@@ -25,6 +25,7 @@ public class RedirectCsvBackupService : BackgroundService
     private readonly IEmailSender _emailSender;
     private readonly ILogger<RedirectCsvBackupService> _logger;
     private DateTime _lastBackupUtc = DateTime.MinValue;
+    private DateTime _lastSummaryEmailUtc = DateTime.MinValue;
 
     public RedirectCsvBackupService(
         IOptionsMonitor<RedirectBackupOptions> backupOptions,
@@ -47,6 +48,7 @@ public class RedirectCsvBackupService : BackgroundService
         do
         {
             await RunIfDueAsync().ConfigureAwait(false);
+            await RunSummaryEmailIfDueAsync().ConfigureAwait(false);
         }
         while (await timer.WaitForNextTickAsync(stoppingToken).ConfigureAwait(false));
     }
@@ -78,7 +80,12 @@ public class RedirectCsvBackupService : BackgroundService
 
             if (!string.IsNullOrWhiteSpace(options.EmailTo))
             {
-                await SendByEmailAsync(options.EmailTo, fileName, csvBytes).ConfigureAwait(false);
+                await SendEmailWithAttachmentAsync(
+                    options.EmailTo,
+                    "Redirect Manager - Scheduled CSV Backup",
+                    $"Attached is the scheduled redirect backup generated on {DateTime.UtcNow:u}.",
+                    fileName,
+                    csvBytes).ConfigureAwait(false);
             }
 
             _lastBackupUtc = DateTime.UtcNow;
@@ -89,10 +96,60 @@ public class RedirectCsvBackupService : BackgroundService
         }
     }
 
+    private async Task RunSummaryEmailIfDueAsync()
+    {
+        var options = _backupOptions.CurrentValue;
+        if (!options.SummaryEmailEnabled || string.IsNullOrWhiteSpace(options.SummaryEmailTo))
+        {
+            return;
+        }
+
+        var interval = TimeSpan.FromHours(Math.Max(1, options.SummaryIntervalHours));
+        if (DateTime.UtcNow - _lastSummaryEmailUtc < interval)
+        {
+            return;
+        }
+
+        try
+        {
+            var stats = BuildStats();
+            var csvBytes = RedirectStatsCsvWriter.Write(stats);
+            var fileName = $"redirect-overview-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv";
+            var body =
+                $"Redirect Manager overview for {DateTime.UtcNow:yyyy-MM-dd}:\n\n" +
+                $"Total redirects: {stats.Total}\n" +
+                $"Active: {stats.Active}\n" +
+                $"Inactive: {stats.Inactive}\n" +
+                $"Active with 0 hits in the last 30 days: {stats.StaleRedirects.Count}\n\n" +
+                "Full breakdown attached as CSV.";
+
+            await SendEmailWithAttachmentAsync(
+                options.SummaryEmailTo,
+                "Redirect Manager - Overview Report",
+                body,
+                fileName,
+                csvBytes).ConfigureAwait(false);
+
+            _lastSummaryEmailUtc = DateTime.UtcNow;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send scheduled redirect overview email");
+        }
+    }
+
     private List<RedirectEntry> FetchRedirects()
     {
         using var db = FlushDatabaseFactory.Create(_connectionStrings.CurrentValue);
         return db.Fetch<RedirectEntry>($"SELECT * FROM {RedirectEntry.TableName} ORDER BY CreatedDate DESC");
+    }
+
+    private RedirectStatsBuilder.Stats BuildStats()
+    {
+        using var db = FlushDatabaseFactory.Create(_connectionStrings.CurrentValue);
+        var redirects = db.Fetch<RedirectEntry>($"SELECT * FROM {RedirectEntry.TableName} ORDER BY CreatedDate DESC");
+        var windowCounts = RedirectStatsBuilder.FetchHitWindowCounts(db);
+        return RedirectStatsBuilder.Build(redirects, windowCounts);
     }
 
     private void WriteToFolder(string folderPath, string fileName, byte[] csvBytes, int retentionCount)
@@ -118,7 +175,7 @@ public class RedirectCsvBackupService : BackgroundService
         }
     }
 
-    private async Task SendByEmailAsync(string emailTo, string fileName, byte[] csvBytes)
+    private async Task SendEmailWithAttachmentAsync(string emailTo, string subject, string body, string fileName, byte[] attachmentBytes)
     {
         var recipients = emailTo.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (recipients.Length == 0)
@@ -130,20 +187,20 @@ public class RedirectCsvBackupService : BackgroundService
         if (string.IsNullOrWhiteSpace(from))
         {
             _logger.LogWarning(
-                "Redirect CSV backup: EmailTo is configured but no SMTP 'From' address is set " +
+                "Redirect Manager: an email destination is configured but no SMTP 'From' address is set " +
                 "(Umbraco:CMS:Global:Smtp:From) — skipping email delivery.");
             return;
         }
 
-        using var attachmentStream = new MemoryStream(csvBytes);
+        using var attachmentStream = new MemoryStream(attachmentBytes);
         var message = new EmailMessage(
             from,
             recipients,
             null,
             null,
             null,
-            "Redirect Manager - Scheduled CSV Backup",
-            $"Attached is the scheduled redirect backup generated on {DateTime.UtcNow:u}.",
+            subject,
+            body,
             isBodyHtml: false,
             attachments: new[] { new EmailMessageAttachment(attachmentStream, fileName) });
 

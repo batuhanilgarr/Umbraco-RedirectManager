@@ -236,6 +236,10 @@
             $window.location.href = url;
         };
 
+        vm.exportStats = function () {
+            $window.location.href = redirectResource.statsExportUrl();
+        };
+
         vm.triggerImport = function () {
             if (vm.importInProgress) return;
             var input = document.getElementById("redirectManagerImportFileInput");
