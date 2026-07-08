@@ -1156,6 +1156,8 @@ class RedirectManagerDashboard extends UmbLitElement {
                                     <th class="center">Match</th>
                                     <th class="center">Active</th>
                                     <th class="center" title="Hit count">Hits</th>
+                                    <th class="center" title="Hits in the last 7 days">7d</th>
+                                    <th class="center" title="Hits in the last 30 days">30d</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -1208,6 +1210,16 @@ class RedirectManagerDashboard extends UmbLitElement {
                                         <td class="center" title="${this.getLastHitTitle(redirect)}">
                                             <span class="hit-count ${(redirect.hitCount || 0) > 0 ? 'has-hits' : ''}">
                                                 ${(redirect.hitCount || 0).toLocaleString()}
+                                            </span>
+                                        </td>
+                                        <td class="center">
+                                            <span class="hit-count ${(redirect.hits7d || 0) > 0 ? 'has-hits' : ''}">
+                                                ${(redirect.hits7d || 0).toLocaleString()}
+                                            </span>
+                                        </td>
+                                        <td class="center">
+                                            <span class="hit-count ${(redirect.hits30d || 0) > 0 ? 'has-hits' : ''}">
+                                                ${(redirect.hits30d || 0).toLocaleString()}
                                             </span>
                                         </td>
                                         <td>

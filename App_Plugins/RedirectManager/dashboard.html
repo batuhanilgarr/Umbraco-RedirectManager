@@ -83,6 +83,8 @@
                             <th style="text-align:center;">Match</th>
                             <th style="text-align:center;">Active</th>
                             <th style="text-align:center;" title="Hit count">Hits</th>
+                            <th style="text-align:center;" title="Hits in the last 7 days">7d</th>
+                            <th style="text-align:center;" title="Hits in the last 30 days">30d</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -119,6 +121,18 @@
                                 <span class="hit-count"
                                       ng-class="{'live': (redirect.hitCount || 0) > 0}">
                                     {{redirect.hitCount || 0}}
+                                </span>
+                            </td>
+                            <td style="text-align:center;">
+                                <span class="hit-count"
+                                      ng-class="{'live': (redirect.hits7d || 0) > 0}">
+                                    {{redirect.hits7d || 0}}
+                                </span>
+                            </td>
+                            <td style="text-align:center;">
+                                <span class="hit-count"
+                                      ng-class="{'live': (redirect.hits30d || 0) > 0}">
+                                    {{redirect.hits30d || 0}}
                                 </span>
                             </td>
                             <td class="redirect-actions">
