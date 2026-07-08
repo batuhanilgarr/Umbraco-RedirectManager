@@ -886,6 +886,16 @@ class RedirectManagerDashboard extends UmbLitElement {
             const link = document.createElement('a');
             link.href = objectUrl;
             link.download = 'redirects.csv';
+            // Umbraco's backoffice router installs a global click listener that
+            // turns same-origin anchor clicks into SPA navigations via
+            // history.pushState — which throws a SecurityError for blob: URLs
+            // (they have an opaque origin and can't be used as a history entry),
+            // aborting the click and silently killing the download. data-router-slot
+            //="disabled" is the router's own documented escape hatch for exactly
+            // this case (see packages/core/router/router-slot/util/anchor.ts in
+            // Umbraco-CMS): it makes the router skip this anchor entirely so the
+            // browser handles the click as a normal download instead.
+            link.dataset.routerSlot = 'disabled';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
