@@ -382,6 +382,12 @@ body {
     background: var(--color-surface);
 }
 
+/* Users */
+.users-status {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+}
+
 .table-wrap {
     overflow-x: auto;
     border-radius: var(--radius-lg);

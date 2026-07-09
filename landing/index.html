@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="8Bitiz Redirect Manager – URL redirect management for Umbraco CMS 17 LTS. 301, 302, 404, 410, regex, CSV import/export, backoffice dashboard.">
+    <meta name="description" content="8Bitiz Redirect Manager – URL redirect management for Umbraco CMS 13, 17 & 18. 301, 302, 404, 410, regex, hit analytics, A/B testing, scheduled backups, CSV import/export.">
     <title>8Bitiz Redirect Manager – Umbraco URL Redirect Plugin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,6 +21,7 @@
                 <a href="#features">Features</a>
                 <a href="#install">Install</a>
                 <a href="#status-codes">Status codes</a>
+                <a href="#users">Users</a>
                 <a href="#changelog">Changelog</a>
                 <a href="https://github.com/batuhanilgarr/Umbraco-RedirectManager" target="_blank" rel="noopener">GitHub</a>
             </nav>
@@ -30,9 +31,9 @@
     <main>
         <section class="hero">
             <div class="container hero-inner">
-                <p class="hero-badge">Umbraco CMS 17 LTS</p>
+                <p class="hero-badge">v1.6.0 · Umbraco CMS 13, 17 &amp; 18</p>
                 <h1 class="hero-title">Manage URL redirects from the backoffice</h1>
-                <p class="hero-lead">301, 302, 404, 410 — exact and regex rules, CSV import/export, bulk actions. No config files, no IIS rewrite. One NuGet package.</p>
+                <p class="hero-lead">301, 302, 404, 410 — exact and regex rules, hit analytics, A/B testing, scheduled backups, CSV import/export. No config files, no IIS rewrite. One NuGet package.</p>
                 <div class="hero-cta">
                     <a href="#install" class="btn btn-primary">Get started</a>
                     <a href="https://www.nuget.org/packages/BT.RedirectManager" target="_blank" rel="noopener" class="btn btn-secondary">View on NuGet</a>
@@ -47,7 +48,7 @@
         <section id="features" class="section section-features">
             <div class="container">
                 <h2 class="section-title">Everything you need for redirects</h2>
-                <p class="section-lead">Built for Umbraco 17. Install, open Settings → Redirect Manager, and start adding rules.</p>
+                <p class="section-lead">Built for Umbraco 13, 17 &amp; 18. Install, open Settings → Redirect Manager, and start adding rules.</p>
                 <ul class="features-grid">
                     <li class="feature-card">
                         <span class="feature-icon" aria-hidden="true">301</span>
@@ -57,12 +58,27 @@
                     <li class="feature-card">
                         <span class="feature-icon" aria-hidden="true">/.*/</span>
                         <h3>Exact & regex</h3>
-                        <p>Match paths exactly or use regex with capture groups. One pattern can handle many URLs.</p>
+                        <p>Match paths exactly or use regex with capture groups, with automatic trailing-slash matching. One pattern can handle many URLs.</p>
+                    </li>
+                    <li class="feature-card">
+                        <span class="feature-icon" aria-hidden="true">📈</span>
+                        <h3>Hit analytics</h3>
+                        <p>Per-redirect hit counts with 7-day and 30-day windows, plus a dashboard overview of totals, top redirects, and stale rules.</p>
+                    </li>
+                    <li class="feature-card">
+                        <span class="feature-icon" aria-hidden="true">⚖</span>
+                        <h3>A/B testing</h3>
+                        <p>Split traffic between two destination URLs with a weighted, cookie-sticky variant — hits tracked separately for each.</p>
+                    </li>
+                    <li class="feature-card">
+                        <span class="feature-icon" aria-hidden="true">🗓</span>
+                        <h3>Scheduled backups</h3>
+                        <p>Automatic CSV backups on a schedule, saved to disk and/or emailed — plus a periodic overview summary email.</p>
                     </li>
                     <li class="feature-card">
                         <span class="feature-icon" aria-hidden="true">⚙</span>
                         <h3>Backoffice dashboard</h3>
-                        <p>Search, filter, bulk activate/deactivate, export CSV, import CSV. Test a URL before saving.</p>
+                        <p>Search, filter, bulk activate/deactivate, export CSV, import CSV, and a 404 log for missed requests. Test a URL before saving.</p>
                     </li>
                     <li class="feature-card">
                         <span class="feature-icon" aria-hidden="true">📦</span>
@@ -72,12 +88,7 @@
                     <li class="feature-card">
                         <span class="feature-icon" aria-hidden="true">🗄</span>
                         <h3>Database storage</h3>
-                        <p>Redirects live in a dedicated table. Migration runs on startup. No file edits.</p>
-                    </li>
-                    <li class="feature-card">
-                        <span class="feature-icon" aria-hidden="true">🔄</span>
-                        <h3>Your own NuGet feed</h3>
-                        <p>Docker + BaGet: run a private NuGet server and push the plugin for all your Umbraco projects.</p>
+                        <p>Redirects live in a dedicated table, scoped per domain if needed. Migration runs on startup. No file edits.</p>
                     </li>
                 </ul>
             </div>
@@ -163,11 +174,71 @@ dotnet add package BT.RedirectManager</code></pre>
             </div>
         </section>
 
+        <section id="users" class="section section-users">
+            <div class="container">
+                <h2 class="section-title">Who's running it</h2>
+                <p class="section-lead">Live data from sites that opted in to the plugin's anonymous usage ping.</p>
+                <div id="users-loading" class="users-status">Loading…</div>
+                <div id="users-error" class="users-status" hidden>Couldn't load usage data right now.</div>
+                <div class="table-wrap" id="users-table-wrap" hidden>
+                    <table class="status-table" id="users-table">
+                        <thead>
+                            <tr>
+                                <th>Domain</th>
+                                <th>Plugin version</th>
+                                <th>Umbraco version</th>
+                                <th>Pings</th>
+                                <th>Last seen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
         <section id="changelog" class="section section-changelog">
             <div class="container">
                 <h2 class="section-title">Changelog</h2>
                 <p class="section-lead">Release notes for all versions.</p>
                 <div class="changelog-list">
+                    <article class="changelog-entry">
+                        <h3 class="changelog-version">1.6.0</h3>
+                        <ul>
+                            <li>Opt-in anonymous usage ping — a one-time consent prompt on first dashboard load (or the toggle on the Overview tab), so no data is ever sent without explicit permission.</li>
+                            <li>Ping fires from a periodic background check and from the dashboard being opened, sharing one 24-hour-per-site throttle.</li>
+                        </ul>
+                    </article>
+                    <article class="changelog-entry">
+                        <h3 class="changelog-version">1.5.0</h3>
+                        <ul>
+                            <li>Fixed a critical crash: background flush services were corrupting Umbraco's ambient DB scope — rewritten to use standalone database connections.</li>
+                            <li>Fixed CSV export being intercepted by Umbraco's backoffice router instead of downloading.</li>
+                            <li>Trailing-slash matching: exact redirect rules now match regardless of a trailing slash.</li>
+                            <li>Scheduled CSV backups (file and/or email) on a configurable interval.</li>
+                            <li>A/B testing: weighted, cookie-sticky split between two destination URLs with separate hit tracking.</li>
+                            <li>Dashboard overview panel — totals, top 10 redirects, stale-redirect list — plus CSV export and a periodic summary email.</li>
+                        </ul>
+                    </article>
+                    <article class="changelog-entry">
+                        <h3 class="changelog-version">1.4.0</h3>
+                        <ul>
+                            <li>Windowed hit analytics: 7-day and 30-day hit counts alongside all-time counts, in both dashboard UIs.</li>
+                        </ul>
+                    </article>
+                    <article class="changelog-entry">
+                        <h3 class="changelog-version">1.3.1</h3>
+                        <ul>
+                            <li>Redesigned backoffice dashboard UI.</li>
+                            <li>Fixed dashboard API calls missing the backoffice bearer token.</li>
+                        </ul>
+                    </article>
+                    <article class="changelog-entry">
+                        <h3 class="changelog-version">1.3.0</h3>
+                        <ul>
+                            <li>Domain-scoped redirects, hit-count analytics, and automatic 404 request logging.</li>
+                        </ul>
+                    </article>
                     <article class="changelog-entry">
                         <h3 class="changelog-version">1.2.15</h3>
                         <ul>
@@ -278,7 +349,7 @@ dotnet add package BT.RedirectManager</code></pre>
     <footer class="site-footer">
         <div class="container footer-inner">
             <p class="footer-brand">8Bitiz Redirect Manager</p>
-            <p class="footer-license">MIT License · Umbraco CMS 17 LTS</p>
+            <p class="footer-license">MIT License · Umbraco CMS 13, 17 &amp; 18</p>
             <p class="footer-links">
                 <a href="https://github.com/batuhanilgarr/Umbraco-RedirectManager" target="_blank" rel="noopener">Repository</a>
                 <a href="https://www.nuget.org/packages/BT.RedirectManager" target="_blank" rel="noopener">NuGet</a>
