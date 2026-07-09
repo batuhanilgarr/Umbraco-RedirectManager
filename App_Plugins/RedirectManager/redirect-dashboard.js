@@ -1266,10 +1266,10 @@ class RedirectManagerDashboard extends UmbLitElement {
             <!-- Update-available banner: unconditional while outdated, no dismiss/close affordance -->
             ${this.updateAvailable ? html`
                 <div class="update-banner">
-                    Yeni sürüm mevcut: <strong>${this.latestVersion}</strong>
-                    (şu an ${this.currentVersion} kullanıyorsunuz).
+                    A new version is available: <strong>${this.latestVersion}</strong>
+                    (you're currently on ${this.currentVersion}).
                     <code>dotnet add package BT.RedirectManager --version ${this.latestVersion}</code>
-                    <a href="https://www.nuget.org/packages/BT.RedirectManager" target="_blank" rel="noopener">NuGet'te görüntüle</a>
+                    <a href="https://www.nuget.org/packages/BT.RedirectManager" target="_blank" rel="noopener">View on NuGet</a>
                 </div>
             ` : ''}
 
