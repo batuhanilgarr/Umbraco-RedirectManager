@@ -32,6 +32,9 @@ public class RedirectManagerComposer : IComposer
         builder.Services.AddSingleton<IRedirectTelemetryPinger, RedirectTelemetryPinger>();
         builder.Services.AddHostedService<RedirectTelemetryService>();
 
+        builder.Services.AddSingleton<IRedirectVersionChecker, RedirectVersionChecker>();
+        builder.Services.AddHostedService<RedirectVersionCheckService>();
+
         builder.Services.Configure<UmbracoPipelineOptions>(options =>
         {
             options.PipelineFilters.Insert(0, new UmbracoPipelineFilter("RedirectManager")
