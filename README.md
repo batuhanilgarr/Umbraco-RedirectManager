@@ -24,6 +24,7 @@ A URL redirect manager plugin for Umbraco CMS **13, 17, and 18**. Manage 301, 30
 - **Dashboard overview**: Totals, active/inactive counts, top 10 most-used redirects, and active redirects with zero hits in the last 30 days — exportable as CSV, with an optional periodic summary email.
 - **Trailing-slash matching**: An exact-match rule fires regardless of a trailing-slash mismatch between the request and the stored Old URL.
 - **Built-in test tool**: Test a path before saving to confirm which redirect rule will match.
+- **Update notifications**: The dashboard checks NuGet.org once every 24 hours and shows a persistent banner whenever a newer version is available — always on, no configuration, no site data sent.
 - **Backoffice-secured API**: All redirect-management endpoints require an authenticated Umbraco backoffice session with a valid bearer token.
 - **Automatic database migration**: Tables are created and updated automatically on first run — no manual SQL required.
 - **Auto-copy App_Plugins**: App_Plugins assets are copied to the output directory on build via the included MSBuild targets file.
