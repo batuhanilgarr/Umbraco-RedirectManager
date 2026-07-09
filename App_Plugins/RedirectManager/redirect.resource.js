@@ -55,6 +55,9 @@
             },
             disableTelemetry: function () {
                 return $http.post(baseUrl + "telemetry/disable", null);
+            },
+            getUpdateStatus: function () {
+                return $http.get(baseUrl + "update-status");
             }
         };
     }

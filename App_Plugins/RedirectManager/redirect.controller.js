@@ -18,6 +18,9 @@
         vm.telemetryLoading = false;
         vm.telemetryDecided = true;
         vm.showTelemetryPrompt = false;
+        vm.updateAvailable = false;
+        vm.currentVersion = '';
+        vm.latestVersion = '';
 
         vm.setActiveTab = function (tab) {
             vm.activeTab = tab;
@@ -238,6 +241,16 @@
             });
         };
 
+        // Always-on update-availability check (no opt-in — no site data is
+        // sent, only a public NuGet.org listing is read).
+        vm.loadUpdateStatus = function () {
+            redirectResource.getUpdateStatus().then(function (response) {
+                vm.updateAvailable = !!response.data.updateAvailable;
+                vm.currentVersion = response.data.currentVersion || '';
+                vm.latestVersion = response.data.latestVersion || '';
+            });
+        };
+
         vm.setTelemetryEnabled = function (enabled) {
             vm.telemetryLoading = true;
             var request = enabled ? redirectResource.enableTelemetry() : redirectResource.disableTelemetry();
@@ -268,6 +281,7 @@
         vm.loadMissedRequests();
         vm.loadStats();
         vm.loadTelemetryStatus();
+        vm.loadUpdateStatus();
 
         // Opt-in usage ping (no-op if telemetry is disabled/unconfigured server-side); never blocks dashboard load.
         redirectResource.pingTelemetry().catch(function () { });

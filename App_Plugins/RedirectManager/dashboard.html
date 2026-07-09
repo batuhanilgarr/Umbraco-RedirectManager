@@ -59,6 +59,14 @@
             <h1 style="margin:0 0 4px;font-size:20px;font-weight:600;color:#1b264f;letter-spacing:-0.01em;">Bitiz Redirect Manager</h1>
             <p style="margin:0 0 16px;font-size:13px;color:#888;line-height:1.5;">Centrally manage URL redirects for your site.</p>
 
+            <!-- Update-available banner: unconditional while outdated, no dismiss/close affordance -->
+            <div class="update-banner" ng-if="vm.updateAvailable">
+                Yeni sürüm mevcut: <strong>{{vm.latestVersion}}</strong>
+                (şu an {{vm.currentVersion}} kullanıyorsunuz).
+                <code>dotnet add package BT.RedirectManager --version {{vm.latestVersion}}</code>
+                <a href="https://www.nuget.org/packages/BT.RedirectManager" target="_blank" rel="noopener">NuGet'te görüntüle</a>
+            </div>
+
             <!-- Status legend (compact) -->
             <div class="redirect-status-legend">
                 <div class="legend-item">
