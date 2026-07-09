@@ -14,6 +14,10 @@
         vm.missedLoading = false;
         vm.stats = null;
         vm.statsLoading = false;
+        vm.telemetryEnabled = false;
+        vm.telemetryLoading = false;
+        vm.telemetryDecided = true;
+        vm.showTelemetryPrompt = false;
 
         vm.setActiveTab = function (tab) {
             vm.activeTab = tab;
@@ -226,9 +230,47 @@
             });
         };
 
+        vm.loadTelemetryStatus = function () {
+            redirectResource.getTelemetryStatus().then(function (response) {
+                vm.telemetryEnabled = !!response.data.enabled;
+                vm.telemetryDecided = !!response.data.decided;
+                vm.showTelemetryPrompt = !vm.telemetryDecided;
+            });
+        };
+
+        vm.setTelemetryEnabled = function (enabled) {
+            vm.telemetryLoading = true;
+            var request = enabled ? redirectResource.enableTelemetry() : redirectResource.disableTelemetry();
+            request.then(function () {
+                vm.telemetryEnabled = enabled;
+                vm.telemetryDecided = true;
+                vm.showTelemetryPrompt = false;
+                vm.telemetryLoading = false;
+            }, function () {
+                vm.telemetryLoading = false;
+                notificationsService.error("Error", "Failed to update telemetry setting");
+            });
+        };
+
+        vm.toggleTelemetryEnabled = function () {
+            vm.setTelemetryEnabled(vm.telemetryEnabled);
+        };
+
+        vm.acceptTelemetryPrompt = function () {
+            vm.setTelemetryEnabled(true);
+        };
+
+        vm.declineTelemetryPrompt = function () {
+            vm.setTelemetryEnabled(false);
+        };
+
         vm.loadRedirects();
         vm.loadMissedRequests();
         vm.loadStats();
+        vm.loadTelemetryStatus();
+
+        // Opt-in usage ping (no-op if telemetry is disabled/unconfigured server-side); never blocks dashboard load.
+        redirectResource.pingTelemetry().catch(function () { });
 
         vm.exportCsv = function () {
             var url = redirectResource.exportUrl();

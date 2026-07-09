@@ -17,13 +17,59 @@ public class RedirectApiController : Controller
 {
     private readonly IRedirectService _redirectService;
     private readonly IMissedRequestService _missedRequestService;
+    private readonly IRedirectTelemetryPinger _telemetryPinger;
+    private readonly IRedirectTelemetrySettingsStore _telemetrySettingsStore;
 
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(100);
 
-    public RedirectApiController(IRedirectService redirectService, IMissedRequestService missedRequestService)
+    public RedirectApiController(
+        IRedirectService redirectService,
+        IMissedRequestService missedRequestService,
+        IRedirectTelemetryPinger telemetryPinger,
+        IRedirectTelemetrySettingsStore telemetrySettingsStore)
     {
         _redirectService = redirectService;
         _missedRequestService = missedRequestService;
+        _telemetryPinger = telemetryPinger;
+        _telemetrySettingsStore = telemetrySettingsStore;
+    }
+
+    // Fired by the dashboard on load. Shares the same 24h-per-site throttle
+    // as the periodic background ping (RedirectTelemetryService) — whichever
+    // fires first in a given window sends it, the other is a no-op. Never
+    // awaited by the caller, so a slow/unreachable telemetry endpoint can't
+    // delay the dashboard. No-ops entirely unless the site owner has
+    // enabled telemetry via the toggle below.
+    [HttpPost("telemetry/ping")]
+    public IActionResult PingTelemetry()
+    {
+        _ = _telemetryPinger.PingIfDueAsync(Request.Host.Value, CancellationToken.None);
+        return Ok();
+    }
+
+    [HttpGet("telemetry/status")]
+    public IActionResult GetTelemetryStatus()
+    {
+        return Ok(new
+        {
+            enabled = _telemetrySettingsStore.IsEnabled(),
+            decided = _telemetrySettingsStore.HasDecided()
+        });
+    }
+
+    [HttpPost("telemetry/enable")]
+    public IActionResult EnableTelemetry()
+    {
+        _telemetrySettingsStore.SetEnabled(true);
+        _ = _telemetryPinger.PingIfDueAsync(Request.Host.Value, CancellationToken.None);
+        return Ok(new { enabled = true });
+    }
+
+    [HttpPost("telemetry/disable")]
+    public IActionResult DisableTelemetry()
+    {
+        _telemetrySettingsStore.SetEnabled(false);
+        return Ok(new { enabled = false });
     }
 
     [HttpGet("getall")]

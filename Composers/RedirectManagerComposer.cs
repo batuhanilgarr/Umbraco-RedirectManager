@@ -27,6 +27,11 @@ public class RedirectManagerComposer : IComposer
         builder.Services.AddSingleton<IVariantBHitTracker, VariantBHitTracker>();
         builder.Services.AddHostedService<VariantBHitFlushService>();
 
+        builder.Services.AddHttpClient();
+        builder.Services.AddSingleton<IRedirectTelemetrySettingsStore, RedirectTelemetrySettingsStore>();
+        builder.Services.AddSingleton<IRedirectTelemetryPinger, RedirectTelemetryPinger>();
+        builder.Services.AddHostedService<RedirectTelemetryService>();
+
         builder.Services.Configure<UmbracoPipelineOptions>(options =>
         {
             options.PipelineFilters.Insert(0, new UmbracoPipelineFilter("RedirectManager")

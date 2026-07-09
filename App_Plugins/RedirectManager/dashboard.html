@@ -1,4 +1,35 @@
 <div ng-controller="RedirectManager.DashboardController as vm">
+    <!-- Telemetry consent prompt (first dashboard load only, until accepted or declined) -->
+    <div class="modal-overlay" ng-if="vm.showTelemetryPrompt">
+        <div class="modal" style="max-width:420px;">
+            <div class="modal-header">
+                <h2>Help improve Redirect Manager?</h2>
+            </div>
+            <div class="form-body">
+                <p style="margin:0 0 16px;">
+                    Send a small anonymous ping (a random site ID, this site's domain,
+                    and the plugin/Umbraco version — no redirect data, no traffic, no
+                    IPs) so the author can see the plugin is still installed. You can
+                    change this anytime from the Overview tab.
+                </p>
+                <div style="display:flex; justify-content:flex-end; gap:8px;">
+                    <umb-button type="button"
+                                button-style="secondary"
+                                label="No thanks"
+                                disabled="vm.telemetryLoading"
+                                action="vm.declineTelemetryPrompt()">
+                    </umb-button>
+                    <umb-button type="button"
+                                button-style="success"
+                                label="Yes, send anonymous data"
+                                disabled="vm.telemetryLoading"
+                                action="vm.acceptTelemetryPrompt()">
+                    </umb-button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <umb-box>
         <!-- Page header -->
         <umb-box-header title="Redirect Manager">
@@ -306,6 +337,23 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="stat-section">
+                        <h3>Telemetry</h3>
+                        <p class="stat-section-hint">
+                            Opt-in. When enabled, sends a small anonymous ping (a random site ID,
+                            this site's domain, and the plugin/Umbraco version — no redirect data,
+                            no traffic, no IPs) so the plugin author can see it's still installed.
+                            Off by default.
+                        </p>
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                            <input type="checkbox"
+                                   ng-model="vm.telemetryEnabled"
+                                   ng-disabled="vm.telemetryLoading"
+                                   ng-change="vm.toggleTelemetryEnabled()" />
+                            <span>Send anonymous usage data</span>
+                        </label>
                     </div>
                 </div>
             </div>

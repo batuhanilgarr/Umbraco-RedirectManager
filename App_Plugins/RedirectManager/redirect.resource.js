@@ -43,6 +43,18 @@
             },
             dismissMissed: function (id) {
                 return $http.delete(baseUrl + "missed/" + id);
+            },
+            pingTelemetry: function () {
+                return $http.post(baseUrl + "telemetry/ping", null);
+            },
+            getTelemetryStatus: function () {
+                return $http.get(baseUrl + "telemetry/status");
+            },
+            enableTelemetry: function () {
+                return $http.post(baseUrl + "telemetry/enable", null);
+            },
+            disableTelemetry: function () {
+                return $http.post(baseUrl + "telemetry/disable", null);
             }
         };
     }

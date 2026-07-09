@@ -21,7 +21,11 @@ class RedirectManagerDashboard extends UmbLitElement {
         missedRequests: { type: Array },
         missedLoading: { type: Boolean },
         stats: { type: Object },
-        statsLoading: { type: Boolean }
+        statsLoading: { type: Boolean },
+        telemetryEnabled: { type: Boolean },
+        telemetryLoading: { type: Boolean },
+        telemetryDecided: { type: Boolean },
+        showTelemetryPrompt: { type: Boolean }
     };
 
     static styles = css`
@@ -648,6 +652,10 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.activeTab = 'redirects';
         this.missedRequests = [];
         this.missedLoading = false;
+        this.telemetryEnabled = false;
+        this.telemetryLoading = false;
+        this.telemetryDecided = true;
+        this.showTelemetryPrompt = false;
     }
 
     showMessage(text, type = 'info') {
@@ -725,6 +733,59 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.loadRedirects();
         this.loadMissedRequests();
         this.loadStats();
+        this.loadTelemetryStatus();
+        this.pingTelemetry();
+    }
+
+    /** Opt-in usage ping (no-op if telemetry is disabled/unconfigured server-side); never blocks dashboard load. */
+    pingTelemetry() {
+        this.authFetch('/umbraco/api/redirectmanager/telemetry/ping', { method: 'POST' }).catch(() => {});
+    }
+
+    async loadTelemetryStatus() {
+        try {
+            const response = await this.authFetch('/umbraco/api/redirectmanager/telemetry/status');
+            if (response.ok) {
+                const result = await response.json();
+                this.telemetryEnabled = !!result.enabled;
+                this.telemetryDecided = !!result.decided;
+                this.showTelemetryPrompt = !this.telemetryDecided;
+            }
+        } catch (error) {
+            console.error('Failed to load telemetry status:', error);
+        }
+    }
+
+    async setTelemetryEnabled(enabled) {
+        this.telemetryLoading = true;
+        try {
+            const response = await this.authFetch(
+                `/umbraco/api/redirectmanager/telemetry/${enabled ? 'enable' : 'disable'}`,
+                { method: 'POST' }
+            );
+            if (response.ok) {
+                this.telemetryEnabled = enabled;
+                this.telemetryDecided = true;
+                this.showTelemetryPrompt = false;
+            } else {
+                this.showMessage('Failed to update telemetry setting', 'error');
+            }
+        } catch (error) {
+            this.showMessage('Failed to update telemetry setting', 'error');
+        }
+        this.telemetryLoading = false;
+    }
+
+    toggleTelemetryEnabled(e) {
+        this.setTelemetryEnabled(e.target.checked);
+    }
+
+    acceptTelemetryPrompt() {
+        this.setTelemetryEnabled(true);
+    }
+
+    declineTelemetryPrompt() {
+        this.setTelemetryEnabled(false);
     }
 
     /** Ensure redirect.css is in document so modal styles apply if modal is in light DOM */
@@ -1499,7 +1560,50 @@ class RedirectManagerDashboard extends UmbLitElement {
                             </div>
                         `}
                     </div>
+
+                    <div class="stat-section">
+                        <h3>Telemetry</h3>
+                        <p class="stat-section-hint">
+                            Opt-in. When enabled, sends a small anonymous ping (a random site ID,
+                            this site's domain, and the plugin/Umbraco version — no redirect data,
+                            no traffic, no IPs) so the plugin author can see it's still installed.
+                            Off by default.
+                        </p>
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                            <input type="checkbox"
+                                   .checked=${this.telemetryEnabled}
+                                   ?disabled=${this.telemetryLoading}
+                                   @change=${this.toggleTelemetryEnabled} />
+                            <span>Send anonymous usage data</span>
+                        </label>
+                    </div>
                 `}
+            ` : ''}
+
+            <!-- Telemetry consent prompt (first dashboard load only, until accepted or declined) -->
+            ${this.showTelemetryPrompt ? html`
+                <div class="redirect-manager-modal-root">
+                    <style>${RedirectManagerDashboard.modalInlineStyles}</style>
+                    <div class="modal-overlay">
+                        <div class="modal" style="max-width:420px;">
+                            <div class="modal-header">
+                                <h2>Help improve Redirect Manager?</h2>
+                            </div>
+                            <div class="form-body">
+                                <p style="margin:0 0 16px;">
+                                    Send a small anonymous ping (a random site ID, this site's domain,
+                                    and the plugin/Umbraco version — no redirect data, no traffic, no
+                                    IPs) so the author can see the plugin is still installed. You can
+                                    change this anytime from the Overview tab.
+                                </p>
+                                <div style="display:flex; justify-content:flex-end; gap:8px;">
+                                    <button class="btn" ?disabled=${this.telemetryLoading} @click=${this.declineTelemetryPrompt}>No thanks</button>
+                                    <button class="btn btn-primary" ?disabled=${this.telemetryLoading} @click=${this.acceptTelemetryPrompt}>Yes, send anonymous data</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             ` : ''}
 
             <!-- Modal -->

@@ -138,6 +138,30 @@ own SMTP configuration (`Umbraco:CMS:Global:Smtp`, standard for any Umbraco
 site) — a `From` address must be set there, or email delivery is skipped
 with a warning in the log.
 
+## Telemetry (opt-in, off by default)
+
+The plugin can optionally send a small "still installed, here's the
+version" ping to the maintainer, so they can see which sites are actively
+using it. **This is entirely opt-in — nothing is ever sent unless you
+explicitly turn it on.**
+
+The first time you open the dashboard, you'll be asked once: "Help
+improve Redirect Manager?" with **Yes** / **No thanks** — your answer is
+saved and you won't be asked again. You can change your mind anytime from
+the "Send anonymous usage data" toggle on the Overview tab. There is no
+appsettings.json configuration for this; the prompt/toggle is the only
+control.
+
+**What's sent, when enabled:** a random ID generated once and stored
+locally in `App_Data/RedirectManagerTelemetry/site-id.txt` (not derived
+from any identifying information), this site's domain (read from the
+current request automatically — never typed in), the plugin version, and
+the Umbraco version — nothing else. No redirect rules, no traffic data, no
+IP addresses are collected by this plugin. Sent once when you accept the
+prompt (or flip the toggle on), then at most once every 24 hours — either from the dashboard being
+opened or from a periodic background check, whichever happens first in a
+given 24-hour window.
+
 ## License
 
 MIT
