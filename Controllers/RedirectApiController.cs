@@ -19,6 +19,7 @@ public class RedirectApiController : Controller
     private readonly IMissedRequestService _missedRequestService;
     private readonly IRedirectTelemetryPinger _telemetryPinger;
     private readonly IRedirectTelemetrySettingsStore _telemetrySettingsStore;
+    private readonly IRedirectVersionChecker _versionChecker;
 
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(100);
 
@@ -26,12 +27,14 @@ public class RedirectApiController : Controller
         IRedirectService redirectService,
         IMissedRequestService missedRequestService,
         IRedirectTelemetryPinger telemetryPinger,
-        IRedirectTelemetrySettingsStore telemetrySettingsStore)
+        IRedirectTelemetrySettingsStore telemetrySettingsStore,
+        IRedirectVersionChecker versionChecker)
     {
         _redirectService = redirectService;
         _missedRequestService = missedRequestService;
         _telemetryPinger = telemetryPinger;
         _telemetrySettingsStore = telemetrySettingsStore;
+        _versionChecker = versionChecker;
     }
 
     // Fired by the dashboard on load. Shares the same 24h-per-site throttle
@@ -70,6 +73,26 @@ public class RedirectApiController : Controller
     {
         _telemetrySettingsStore.SetEnabled(false);
         return Ok(new { enabled = false });
+    }
+
+    // Fired by the dashboard on load. Reads the cached update-check result
+    // (never blocks on a live NuGet.org call) and also fires a non-blocking
+    // refresh via CheckIfDueAsync, which is a no-op unless 24h have elapsed
+    // since the last successful check — same throttle used by the hourly
+    // background trigger (RedirectVersionCheckService).
+    [HttpGet("update-status")]
+    public IActionResult GetUpdateStatus()
+    {
+        _ = _versionChecker.CheckIfDueAsync(CancellationToken.None);
+        var status = _versionChecker.GetStatus();
+
+        return Ok(new
+        {
+            currentVersion = status.CurrentVersion,
+            latestVersion = status.LatestVersion,
+            updateAvailable = status.UpdateAvailable,
+            checkedAtUtc = status.CheckedAtUtc
+        });
     }
 
     [HttpGet("getall")]
