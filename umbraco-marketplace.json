@@ -1,7 +1,7 @@
 {
   "$schema": "https://marketplace.umbraco.com/umbraco-marketplace-schema.json",
   "Title": "BT Redirect Manager",
-  "Description": "Modern URL redirect manager for Umbraco 13, 17, and 18. Manage 301, 302, 404, and 410 redirects from a clean backoffice dashboard with regex support, domain-scoped rules for multi-site installs, hit-count analytics, automatic 404 logging, CSV import/export, and a built‑in test tool.",
+  "Description": "Modern URL redirect manager for Umbraco 13, 17, and 18. Manage 301, 302, 404, and 410 redirects from a clean backoffice dashboard with regex support, domain-scoped rules for multi-site installs, 7-day/30-day windowed hit-count analytics, A/B testing with cookie-sticky weighted splits, scheduled CSV backups (file and/or email), a dashboard overview panel, automatic 404 logging, CSV import/export, and a built‑in test tool.",
   "Category": "Editor Tools",
   "AlternateCategory": "Developer Tools",
   "Tags": [
@@ -13,6 +13,9 @@
     "404",
     "410",
     "seo",
+    "analytics",
+    "ab-testing",
+    "backup",
     "editor tools"
   ],
   "AuthorDetails": {

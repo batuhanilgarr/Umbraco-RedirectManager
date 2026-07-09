@@ -1,6 +1,6 @@
 # BT Redirect Manager
 
-A URL redirect manager plugin for Umbraco CMS **13, 17, and 18**. Manage 301, 302, 404, and 410 redirects directly from the Umbraco backoffice with a redesigned modern dashboard, CSV import/export, regex support, domain scoping, hit-count analytics, and a built-in test tool.
+A URL redirect manager plugin for Umbraco CMS **13, 17, and 18**. Manage 301, 302, 404, and 410 redirects directly from the Umbraco backoffice with a redesigned modern dashboard, CSV import/export, regex support, domain scoping, windowed (7d/30d) hit-count analytics, A/B testing, scheduled backups, and a built-in test tool.
 
 ## Screenshots
 
