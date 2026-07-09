@@ -25,7 +25,10 @@ class RedirectManagerDashboard extends UmbLitElement {
         telemetryEnabled: { type: Boolean },
         telemetryLoading: { type: Boolean },
         telemetryDecided: { type: Boolean },
-        showTelemetryPrompt: { type: Boolean }
+        showTelemetryPrompt: { type: Boolean },
+        updateAvailable: { type: Boolean },
+        currentVersion: { type: String },
+        latestVersion: { type: String }
     };
 
     static styles = css`
@@ -231,6 +234,35 @@ class RedirectManagerDashboard extends UmbLitElement {
         .notif-success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
         .notif-error   { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
         .notif-info    { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+
+        .update-banner {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px 14px;
+            margin-bottom: 14px;
+            border-radius: 6px;
+            border: 1px solid #c7d2fe;
+            background: #eef2ff;
+            color: #3730a3;
+            font-size: 12px;
+        }
+
+        .update-banner code {
+            padding: 2px 6px;
+            background: #fff;
+            border: 1px solid #e0e7ff;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .update-banner a {
+            color: #3730a3;
+            font-weight: 600;
+            text-decoration: underline;
+        }
 
         /* ── bulk bar ── */
         .bulk-bar {
@@ -656,6 +688,9 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.telemetryLoading = false;
         this.telemetryDecided = true;
         this.showTelemetryPrompt = false;
+        this.updateAvailable = false;
+        this.currentVersion = '';
+        this.latestVersion = '';
     }
 
     showMessage(text, type = 'info') {
@@ -735,11 +770,27 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.loadStats();
         this.loadTelemetryStatus();
         this.pingTelemetry();
+        this.loadUpdateStatus();
     }
 
     /** Opt-in usage ping (no-op if telemetry is disabled/unconfigured server-side); never blocks dashboard load. */
     pingTelemetry() {
         this.authFetch('/umbraco/api/redirectmanager/telemetry/ping', { method: 'POST' }).catch(() => {});
+    }
+
+    /** Always-on update-availability check (no opt-in — no site data is sent, only a public NuGet.org listing is read). */
+    async loadUpdateStatus() {
+        try {
+            const response = await this.authFetch('/umbraco/api/redirectmanager/update-status');
+            if (response.ok) {
+                const result = await response.json();
+                this.updateAvailable = !!result.updateAvailable;
+                this.currentVersion = result.currentVersion || '';
+                this.latestVersion = result.latestVersion || '';
+            }
+        } catch (error) {
+            console.error('Failed to load update status:', error);
+        }
     }
 
     async loadTelemetryStatus() {
@@ -1211,6 +1262,16 @@ class RedirectManagerDashboard extends UmbLitElement {
                     + Add redirect
                 </button>
             </div>
+
+            <!-- Update-available banner: unconditional while outdated, no dismiss/close affordance -->
+            ${this.updateAvailable ? html`
+                <div class="update-banner">
+                    Yeni sürüm mevcut: <strong>${this.latestVersion}</strong>
+                    (şu an ${this.currentVersion} kullanıyorsunuz).
+                    <code>dotnet add package BT.RedirectManager --version ${this.latestVersion}</code>
+                    <a href="https://www.nuget.org/packages/BT.RedirectManager" target="_blank" rel="noopener">NuGet'te görüntüle</a>
+                </div>
+            ` : ''}
 
             <!-- Status legend -->
             <div class="status-legend">
