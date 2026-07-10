@@ -504,6 +504,17 @@ public class RedirectApiController : Controller
     // silently shifting ValidFrom/ValidUntil by the browser's UTC offset on every
     // read-edit-resave round trip. This normalizes the Kind back to Utc right before the
     // value leaves the service boundary, without touching how it's stored or queried.
+    //
+    // Do NOT replace DateTime.SpecifyKind with .ToUniversalTime() here -- the value is
+    // already a correct UTC instant, just mislabeled; ToUniversalTime() would treat the
+    // Unspecified Kind as Local and shift the value again, corrupting it a second time.
+    //
+    // Only ValidFrom/ValidUntil are wrapped: they're the only DateTime fields the client
+    // ever resubmits (via the edit modal), so they're the only ones with a corruption
+    // risk on a read-edit-resave round trip. LastHitDate/VariantBLastHitDate/CreatedDate/
+    // UpdatedDate share the same Kind=Unspecified root cause and the same display-only
+    // timezone skew, but since the client never sends them back, that's a lower-severity,
+    // separate issue left out of scope here rather than an oversight.
     private static DateTime? AsUtc(DateTime? value) =>
         value.HasValue ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) : null;
 
