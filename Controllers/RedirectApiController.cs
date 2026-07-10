@@ -511,10 +511,12 @@ public class RedirectApiController : Controller
     //
     // Only ValidFrom/ValidUntil are wrapped: they're the only DateTime fields the client
     // ever resubmits (via the edit modal), so they're the only ones with a corruption
-    // risk on a read-edit-resave round trip. LastHitDate/VariantBLastHitDate/CreatedDate/
-    // UpdatedDate share the same Kind=Unspecified root cause and the same display-only
-    // timezone skew, but since the client never sends them back, that's a lower-severity,
-    // separate issue left out of scope here rather than an oversight.
+    // risk on a read-edit-resave round trip. LastHitDate/VariantBLastHitDate (also on
+    // RedirectEntryDto, display-only) share the same Kind=Unspecified root cause and the
+    // same display-only timezone skew, but since the client never sends them back,
+    // that's a lower-severity, separate issue left out of scope here rather than an
+    // oversight. CreatedDate/UpdatedDate aren't even exposed on RedirectEntryDto, so this
+    // choke point never serializes them at all.
     private static DateTime? AsUtc(DateTime? value) =>
         value.HasValue ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) : null;
 
