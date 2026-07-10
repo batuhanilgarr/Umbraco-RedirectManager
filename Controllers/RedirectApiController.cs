@@ -248,6 +248,56 @@ public class RedirectApiController : Controller
             });
         }
 
+        foreach (var r in _redirectService.GetActiveWildcardEntries())
+        {
+            if (string.IsNullOrWhiteSpace(r.OldUrl))
+                continue;
+
+            Regex wildcardRegex;
+            try
+            {
+                wildcardRegex = new Regex(WildcardPatternBuilder.BuildRegexPattern(r.OldUrl), RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, RegexTimeout);
+            }
+            catch
+            {
+                continue;
+            }
+
+            bool wildcardMatched;
+            try
+            {
+                wildcardMatched = wildcardRegex.IsMatch(normalizedPath);
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                continue;
+            }
+
+            if (!wildcardMatched)
+                continue;
+
+            var wildcardNewUrl = r.NewUrl;
+            if ((r.StatusCode == 301 || r.StatusCode == 302) && !string.IsNullOrWhiteSpace(wildcardNewUrl))
+            {
+                try
+                {
+                    wildcardNewUrl = wildcardRegex.Replace(normalizedPath, wildcardNewUrl.Replace("*", "$1", StringComparison.Ordinal));
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+
+            return Ok(new
+            {
+                matched = true,
+                matchType = "Wildcard",
+                redirect = ToDto(r),
+                computedNewUrl = wildcardNewUrl
+            });
+        }
+
         foreach (var r in _redirectService.GetActiveRegexEntries())
         {
             if (string.IsNullOrWhiteSpace(r.OldUrl))
