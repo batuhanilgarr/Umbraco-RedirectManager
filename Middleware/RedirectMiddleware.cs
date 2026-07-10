@@ -69,7 +69,8 @@ public class RedirectMiddleware
             {
                 case 301:
                 case 302:
-                    var targetUrl = ResolveRedirectTarget(context, redirect);
+                    var targetUrl = AppendPreservedQueryString(
+                        ResolveRedirectTarget(context, redirect), redirect.PreserveQueryString, context.Request.QueryString);
                     context.Response.StatusCode = redirect.StatusCode;
                     context.Response.Headers.Location = targetUrl ?? "/";
                     return;
@@ -99,12 +100,14 @@ public class RedirectMiddleware
             {
                 case 301:
                     context.Response.StatusCode = 301;
-                    context.Response.Headers.Location = regexRedirect.ComputedNewUrl ?? "/";
+                    context.Response.Headers.Location = AppendPreservedQueryString(
+                        regexRedirect.ComputedNewUrl, regexRedirect.Entry.PreserveQueryString, context.Request.QueryString) ?? "/";
                     return;
 
                 case 302:
                     context.Response.StatusCode = 302;
-                    context.Response.Headers.Location = regexRedirect.ComputedNewUrl ?? "/";
+                    context.Response.Headers.Location = AppendPreservedQueryString(
+                        regexRedirect.ComputedNewUrl, regexRedirect.Entry.PreserveQueryString, context.Request.QueryString) ?? "/";
                     return;
 
                 case 404:
@@ -282,5 +285,22 @@ public class RedirectMiddleware
         return path.EndsWith("/", StringComparison.Ordinal)
             ? path.TrimEnd('/')
             : path + "/";
+    }
+
+    // Appends the incoming request's query string onto a computed redirect
+    // target when the matched rule opts in via PreserveQueryString. If
+    // targetUrl already has its own query string (e.g. "/new?ref=campaign"),
+    // the incoming one is appended with "&" rather than replacing it -- both
+    // survive, with no de-duplication of overlapping parameter names (see
+    // design spec's "Known edge case" section for why that's acceptable).
+    private static string? AppendPreservedQueryString(string? targetUrl, bool preserve, QueryString incomingQuery)
+    {
+        if (!preserve || string.IsNullOrEmpty(targetUrl) || !incomingQuery.HasValue)
+            return targetUrl;
+
+        var incoming = incomingQuery.Value!.TrimStart('?');
+        return targetUrl.Contains('?', StringComparison.Ordinal)
+            ? $"{targetUrl}&{incoming}"
+            : $"{targetUrl}?{incoming}";
     }
 }
