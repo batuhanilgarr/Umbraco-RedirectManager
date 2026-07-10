@@ -19,6 +19,8 @@ public class RedirectEntryDto
     public int VariantBHitCount { get; set; } = 0;
     public DateTime? VariantBLastHitDate { get; set; }
     public bool PreserveQueryString { get; set; } = false;
+    public DateTime? ValidFrom { get; set; }
+    public DateTime? ValidUntil { get; set; }
 }
 
 public class CreateRedirectEntryDto
@@ -33,6 +35,8 @@ public class CreateRedirectEntryDto
     public string? VariantBUrl { get; set; }
     public int? VariantBWeight { get; set; }
     public bool PreserveQueryString { get; set; } = false;
+    public DateTime? ValidFrom { get; set; }
+    public DateTime? ValidUntil { get; set; }
 }
 
 public class UpdateRedirectEntryDto
@@ -47,4 +51,6 @@ public class UpdateRedirectEntryDto
     public string? VariantBUrl { get; set; }
     public int? VariantBWeight { get; set; }
     public bool PreserveQueryString { get; set; } = false;
+    public DateTime? ValidFrom { get; set; }
+    public DateTime? ValidUntil { get; set; }
 }
