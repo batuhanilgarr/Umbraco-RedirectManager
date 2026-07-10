@@ -95,6 +95,16 @@
             return "Exact";
         };
 
+        vm.getAuditTitle = function (redirect) {
+            var created = redirect.createdDate ? new Date(redirect.createdDate).toLocaleString() : null;
+            var modified = redirect.updatedDate ? new Date(redirect.updatedDate).toLocaleString() : null;
+
+            var createdPart = created ? "Created" + (redirect.createdBy ? " by " + redirect.createdBy : "") + " on " + created : "";
+            var modifiedPart = modified ? "Last modified" + (redirect.modifiedBy ? " by " + redirect.modifiedBy : "") + " on " + modified : "";
+
+            return [createdPart, modifiedPart].filter(Boolean).join(" · ");
+        };
+
         vm.loadRedirects = function () {
             vm.loading = true;
             redirectResource.getAll().then(function (response) {

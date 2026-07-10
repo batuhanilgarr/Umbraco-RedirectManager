@@ -133,7 +133,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr ng-repeat="redirect in vm.redirects">
+                        <tr ng-repeat="redirect in vm.redirects" title="{{vm.getAuditTitle(redirect)}}">
                             <td style="text-align:center;">
                                 <span class="redirect-status redirect-status-{{redirect.statusCode}}">
                                     {{redirect.statusCode}}
