@@ -77,4 +77,8 @@ public class RedirectEntry
     [Column("VariantBLastHitDate")]
     [NullSetting(NullSetting = NullSettings.Null)]
     public DateTime? VariantBLastHitDate { get; set; }
+
+    [Column("PreserveQueryString")]
+    [Constraint(Default = false)]
+    public bool PreserveQueryString { get; set; } = false;
 }
