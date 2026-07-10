@@ -180,6 +180,7 @@ public class RedirectService : IRedirectService
             IsRegex = isRegex,
             VariantBUrl = string.IsNullOrWhiteSpace(dto.VariantBUrl) ? null : NormalizeNewUrl(dto.VariantBUrl, isRegex),
             VariantBWeight = string.IsNullOrWhiteSpace(dto.VariantBUrl) ? null : dto.VariantBWeight,
+            PreserveQueryString = dto.PreserveQueryString,
             CreatedDate = DateTime.UtcNow,
             UpdatedDate = DateTime.UtcNow
         };
@@ -214,6 +215,7 @@ public class RedirectService : IRedirectService
         existing.IsActive = dto.IsActive;
         existing.VariantBUrl = string.IsNullOrWhiteSpace(dto.VariantBUrl) ? null : NormalizeNewUrl(dto.VariantBUrl, existing.IsRegex);
         existing.VariantBWeight = string.IsNullOrWhiteSpace(dto.VariantBUrl) ? null : dto.VariantBWeight;
+        existing.PreserveQueryString = dto.PreserveQueryString;
         existing.UpdatedDate = DateTime.UtcNow;
 
         scope.Database.Update(existing);
