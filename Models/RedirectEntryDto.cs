@@ -21,6 +21,10 @@ public class RedirectEntryDto
     public bool PreserveQueryString { get; set; } = false;
     public DateTime? ValidFrom { get; set; }
     public DateTime? ValidUntil { get; set; }
+    public string? CreatedBy { get; set; }
+    public string? ModifiedBy { get; set; }
+    public DateTime CreatedDate { get; set; }
+    public DateTime UpdatedDate { get; set; }
 }
 
 public class CreateRedirectEntryDto
