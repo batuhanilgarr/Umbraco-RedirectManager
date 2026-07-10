@@ -18,6 +18,7 @@ public class RedirectEntryDto
     public int? VariantBWeight { get; set; }
     public int VariantBHitCount { get; set; } = 0;
     public DateTime? VariantBLastHitDate { get; set; }
+    public bool PreserveQueryString { get; set; } = false;
 }
 
 public class CreateRedirectEntryDto
@@ -31,6 +32,7 @@ public class CreateRedirectEntryDto
     public bool IsRegex { get; set; } = false;
     public string? VariantBUrl { get; set; }
     public int? VariantBWeight { get; set; }
+    public bool PreserveQueryString { get; set; } = false;
 }
 
 public class UpdateRedirectEntryDto
@@ -44,4 +46,5 @@ public class UpdateRedirectEntryDto
     public bool IsRegex { get; set; } = false;
     public string? VariantBUrl { get; set; }
     public int? VariantBWeight { get; set; }
+    public bool PreserveQueryString { get; set; } = false;
 }
