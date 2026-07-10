@@ -861,7 +861,8 @@ class RedirectManagerDashboard extends UmbLitElement {
             isRegex: false,
             abTestEnabled: false,
             variantBUrl: '',
-            variantBWeight: 50
+            variantBWeight: 50,
+            preserveQueryString: false
         };
     }
 
@@ -963,7 +964,8 @@ class RedirectManagerDashboard extends UmbLitElement {
             isRegex: !!redirect.isRegex,
             abTestEnabled: !!redirect.variantBUrl,
             variantBUrl: redirect.variantBUrl || '',
-            variantBWeight: redirect.variantBWeight ?? 50
+            variantBWeight: redirect.variantBWeight ?? 50,
+            preserveQueryString: !!redirect.preserveQueryString
         };
         this.showModal = true;
     }
@@ -1758,6 +1760,26 @@ class RedirectManagerDashboard extends UmbLitElement {
                                             <small>A visitor is assigned once (cookie) and always sees the same variant afterward.</small>
                                         </div>
                                     ` : ''}
+                                ` : ''}
+
+                                <!-- Preserve query string -->
+                                ${this.formData.statusCode === 301 || this.formData.statusCode === 302 ? html`
+                                    <div class="form-group">
+                                        <div class="toggle-row">
+                                            <label class="toggle-label" for="modal-preserveQueryString">
+                                                Preserve query string
+                                                <span class="toggle-hint"> — append the incoming request's query string to New URL</span>
+                                            </label>
+                                            <label class="toggle-switch">
+                                                <input type="checkbox"
+                                                       name="preserveQueryString"
+                                                       id="modal-preserveQueryString"
+                                                       .checked=${this.formData.preserveQueryString}
+                                                       @change=${this.handleInputChange} />
+                                                <span class="toggle-slider"></span>
+                                            </label>
+                                        </div>
+                                    </div>
                                 ` : ''}
 
                                 <!-- Domain -->
