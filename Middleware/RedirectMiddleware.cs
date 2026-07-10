@@ -15,6 +15,7 @@ public class RedirectMiddleware
     private readonly IMissedRequestTracker _missedRequestTracker;
 
     private static readonly ConcurrentDictionary<string, Regex> RegexCache = new();
+    private static readonly ConcurrentDictionary<string, Regex> WildcardRegexCache = new();
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(100);
 
     public RedirectMiddleware(
@@ -83,6 +84,39 @@ public class RedirectMiddleware
 
                 case 410:
                     _hitTracker.RecordHit(redirect.Id);
+                    context.Response.StatusCode = 410;
+                    await context.Response.WriteAsync("Gone");
+                    return;
+            }
+        }
+
+        var wildcardRedirect = FindWildcardRedirect(path, domain, redirectService);
+        if (wildcardRedirect != null)
+        {
+            _logger.LogDebug("Wildcard redirect found for {OldUrl} -> {NewUrl} ({StatusCode})",
+                wildcardRedirect.Entry.OldUrl, wildcardRedirect.ComputedNewUrl, wildcardRedirect.Entry.StatusCode);
+            _hitTracker.RecordHit(wildcardRedirect.Entry.Id);
+
+            switch (wildcardRedirect.Entry.StatusCode)
+            {
+                case 301:
+                    context.Response.StatusCode = 301;
+                    context.Response.Headers.Location = AppendPreservedQueryString(
+                        wildcardRedirect.ComputedNewUrl, wildcardRedirect.Entry.PreserveQueryString, context.Request.QueryString) ?? "/";
+                    return;
+
+                case 302:
+                    context.Response.StatusCode = 302;
+                    context.Response.Headers.Location = AppendPreservedQueryString(
+                        wildcardRedirect.ComputedNewUrl, wildcardRedirect.Entry.PreserveQueryString, context.Request.QueryString) ?? "/";
+                    return;
+
+                case 404:
+                    context.Response.StatusCode = 404;
+                    await context.Response.WriteAsync("Not Found");
+                    return;
+
+                case 410:
                     context.Response.StatusCode = 410;
                     await context.Response.WriteAsync("Gone");
                     return;
@@ -227,6 +261,66 @@ public class RedirectMiddleware
                 try
                 {
                     newUrl = regex.Replace(path, newUrl);
+                }
+                catch
+                {
+                    // If replace fails, fall back to original NewUrl
+                }
+            }
+
+            return new RedirectMatch(r, newUrl);
+        }
+
+        return null;
+    }
+
+    private RedirectMatch? FindWildcardRedirect(string path, string? domain, IRedirectService redirectService)
+    {
+        try
+        {
+            var entries = redirectService.GetActiveWildcardEntries();
+
+            if (domain != null)
+            {
+                var domainMatch = FindWildcardMatchIn(entries.Where(r => r.Domain == domain), path);
+                if (domainMatch != null)
+                    return domainMatch;
+            }
+
+            return FindWildcardMatchIn(entries.Where(r => string.IsNullOrEmpty(r.Domain)), path);
+        }
+        catch (RegexMatchTimeoutException ex)
+        {
+            _logger.LogWarning(ex, "Wildcard redirect match timed out");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error evaluating wildcard redirects");
+        }
+
+        return null;
+    }
+
+    private RedirectMatch? FindWildcardMatchIn(IEnumerable<Umbraco.RedirectManager.Models.RedirectEntry> candidates, string path)
+    {
+        foreach (var r in candidates)
+        {
+            if (string.IsNullOrWhiteSpace(r.OldUrl))
+                continue;
+
+            var regex = WildcardRegexCache.GetOrAdd(r.OldUrl, pattern =>
+                new Regex(WildcardPatternBuilder.BuildRegexPattern(pattern), RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, RegexTimeout));
+
+            if (!regex.IsMatch(path))
+                continue;
+
+            var newUrl = r.NewUrl;
+
+            if ((r.StatusCode == 301 || r.StatusCode == 302) && !string.IsNullOrWhiteSpace(newUrl))
+            {
+                try
+                {
+                    newUrl = regex.Replace(path, newUrl.Replace("*", "$1", StringComparison.Ordinal));
                 }
                 catch
                 {
