@@ -56,6 +56,14 @@
                        class="umb-property-editor umb-textstring">
             </umb-control-group>
 
+            <umb-control-group label="Preserve query string"
+                               description="Append the incoming request's query string (e.g. ?utm_source=...) to New URL"
+                               ng-if="model.redirect.statusCode == 301 || model.redirect.statusCode == 302">
+                <umb-toggle checked="model.redirect.preserveQueryString"
+                            on-click="model.redirect.preserveQueryString = !model.redirect.preserveQueryString">
+                </umb-toggle>
+            </umb-control-group>
+
             <umb-control-group label="Domain"
                                description="Leave blank to apply this redirect to all domains. If both a domain-specific and an all-domains redirect exist for the same Old URL, the domain-specific one wins.">
                 <input type="text"

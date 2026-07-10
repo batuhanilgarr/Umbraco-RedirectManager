@@ -98,7 +98,8 @@
                     isRegex: false,
                     abTestEnabled: false,
                     variantBUrl: "",
-                    variantBWeight: 50
+                    variantBWeight: 50,
+                    preserveQueryString: false
                 },
                 close: function () {
                     vm.closeModal();
@@ -124,7 +125,8 @@
                     isRegex: !!redirect.isRegex,
                     abTestEnabled: !!redirect.variantBUrl,
                     variantBUrl: redirect.variantBUrl || "",
-                    variantBWeight: redirect.variantBWeight != null ? redirect.variantBWeight : 50
+                    variantBWeight: redirect.variantBWeight != null ? redirect.variantBWeight : 50,
+                    preserveQueryString: !!redirect.preserveQueryString
                 },
                 close: function () {
                     vm.closeModal();
