@@ -81,4 +81,12 @@ public class RedirectEntry
     [Column("PreserveQueryString")]
     [Constraint(Default = false)]
     public bool PreserveQueryString { get; set; } = false;
+
+    [Column("ValidFrom")]
+    [NullSetting(NullSetting = NullSettings.Null)]
+    public DateTime? ValidFrom { get; set; }
+
+    [Column("ValidUntil")]
+    [NullSetting(NullSetting = NullSettings.Null)]
+    public DateTime? ValidUntil { get; set; }
 }
