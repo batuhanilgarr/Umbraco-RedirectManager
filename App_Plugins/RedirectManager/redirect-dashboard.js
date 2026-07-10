@@ -1171,7 +1171,7 @@ class RedirectManagerDashboard extends UmbLitElement {
             return;
         }
 
-        if ((this.formData.oldUrl.match(/\*/g) || []).length > 1) {
+        if (!this.formData.isRegex && (this.formData.oldUrl.match(/\*/g) || []).length > 1) {
             this.showMessage('Old URL can only contain one wildcard (*)', 'error');
             return;
         }
@@ -1181,7 +1181,7 @@ class RedirectManagerDashboard extends UmbLitElement {
             return;
         }
 
-        if ((this.formData.newUrl.match(/\*/g) || []).length > 1) {
+        if (!this.formData.isRegex && (this.formData.newUrl.match(/\*/g) || []).length > 1) {
             this.showMessage('New URL can only contain one wildcard (*)', 'error');
             return;
         }
