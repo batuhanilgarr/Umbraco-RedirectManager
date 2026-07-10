@@ -1288,6 +1288,16 @@ class RedirectManagerDashboard extends UmbLitElement {
             : 'Never hit';
     }
 
+    getAuditTitle(redirect) {
+        const created = redirect.createdDate ? new Date(redirect.createdDate).toLocaleString() : null;
+        const modified = redirect.updatedDate ? new Date(redirect.updatedDate).toLocaleString() : null;
+
+        const createdPart = created ? `Created${redirect.createdBy ? ` by ${redirect.createdBy}` : ''} on ${created}` : '';
+        const modifiedPart = modified ? `Last modified${redirect.modifiedBy ? ` by ${redirect.modifiedBy}` : ''} on ${modified}` : '';
+
+        return [createdPart, modifiedPart].filter(Boolean).join(' · ');
+    }
+
     // Converts a stored UTC ISO string (or null) into the local-time string
     // an <input type="datetime-local"> expects (no timezone designator,
     // minute precision). Returns '' for null/invalid input, which the input
@@ -1475,7 +1485,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                             </thead>
                             <tbody>
                                 ${this.redirects.map(redirect => html`
-                                    <tr class="${this.selectedIds.includes(redirect.id) ? 'row-selected' : ''}">
+                                    <tr class="${this.selectedIds.includes(redirect.id) ? 'row-selected' : ''}" title="${this.getAuditTitle(redirect)}">
                                         <td>
                                             <input type="checkbox"
                                                    .checked=${this.selectedIds.includes(redirect.id)}
