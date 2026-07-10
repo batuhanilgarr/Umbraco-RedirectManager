@@ -72,6 +72,20 @@
                        placeholder="example.com">
             </umb-control-group>
 
+            <umb-control-group label="Valid from"
+                               description="Leave blank to make this redirect active immediately.">
+                <input type="datetime-local"
+                       ng-model="model.redirect.validFrom"
+                       class="umb-property-editor umb-textstring">
+            </umb-control-group>
+
+            <umb-control-group label="Valid until"
+                               description="Leave blank to keep this redirect active indefinitely.">
+                <input type="datetime-local"
+                       ng-model="model.redirect.validUntil"
+                       class="umb-property-editor umb-textstring">
+            </umb-control-group>
+
             <umb-control-group label="Notes"
                                description="Optional description to help identify the purpose of this redirect">
                 <textarea ng-model="model.redirect.description"

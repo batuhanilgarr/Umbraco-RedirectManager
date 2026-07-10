@@ -164,6 +164,11 @@
                                 <span ng-class="{'redirect-active': redirect.isActive, 'redirect-inactive': !redirect.isActive}">
                                     {{redirect.isActive ? 'Yes' : 'No'}}
                                 </span>
+                                <span ng-if="vm.getScheduleBadge(redirect)"
+                                      class="schedule-badge"
+                                      ng-class="{'scheduled': vm.getScheduleBadge(redirect) === 'Scheduled', 'expired': vm.getScheduleBadge(redirect) === 'Expired'}">
+                                    {{vm.getScheduleBadge(redirect)}}
+                                </span>
                             </td>
                             <td style="text-align:center;"
                                 title="{{redirect.lastHitDate ? ('Last hit: ' + (redirect.lastHitDate | date:'medium')) : 'Never hit'}}">

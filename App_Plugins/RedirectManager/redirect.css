@@ -60,6 +60,18 @@
 .redirect-active   { color: #2bc37b; font-weight: 600; }
 .redirect-inactive { color: #d42054; font-weight: 600; }
 
+.schedule-badge {
+    display: inline-block;
+    margin-left: 5px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.schedule-badge.scheduled { background: #dbeafe; color: #1e40af; }
+.schedule-badge.expired   { background: #f3f4f6; color: #6b7280; }
+
 /* ── Action buttons ── */
 .redirect-actions { white-space: nowrap; }
 .redirect-actions .umb-button { margin-right: 4px; }

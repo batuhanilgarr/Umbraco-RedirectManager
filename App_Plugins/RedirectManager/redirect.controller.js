@@ -74,6 +74,17 @@
             return found ? found.label : code;
         };
 
+        vm.getScheduleBadge = function (redirect) {
+            var now = new Date();
+            if (redirect.validFrom && new Date(redirect.validFrom) > now) {
+                return "Scheduled";
+            }
+            if (redirect.validUntil && new Date(redirect.validUntil) < now) {
+                return "Expired";
+            }
+            return null;
+        };
+
         vm.loadRedirects = function () {
             vm.loading = true;
             redirectResource.getAll().then(function (response) {
@@ -99,7 +110,9 @@
                     abTestEnabled: false,
                     variantBUrl: "",
                     variantBWeight: 50,
-                    preserveQueryString: false
+                    preserveQueryString: false,
+                    validFrom: null,
+                    validUntil: null
                 },
                 close: function () {
                     vm.closeModal();
@@ -126,7 +139,9 @@
                     abTestEnabled: !!redirect.variantBUrl,
                     variantBUrl: redirect.variantBUrl || "",
                     variantBWeight: redirect.variantBWeight != null ? redirect.variantBWeight : 50,
-                    preserveQueryString: !!redirect.preserveQueryString
+                    preserveQueryString: !!redirect.preserveQueryString,
+                    validFrom: redirect.validFrom ? new Date(redirect.validFrom) : null,
+                    validUntil: redirect.validUntil ? new Date(redirect.validUntil) : null
                 },
                 close: function () {
                     vm.closeModal();
@@ -180,6 +195,11 @@
 
             if (redirect.abTestEnabled && !redirect.variantBUrl) {
                 notificationsService.error("Validation Error", "Variant B URL is required when A/B test is enabled");
+                return;
+            }
+
+            if (redirect.validFrom && redirect.validUntil && new Date(redirect.validUntil) < new Date(redirect.validFrom)) {
+                notificationsService.error("Validation Error", "Valid until must be after Valid from");
                 return;
             }
 
