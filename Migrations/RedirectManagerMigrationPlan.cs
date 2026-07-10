@@ -21,6 +21,7 @@ public class RedirectManagerPackageMigrationPlan : PackageMigrationPlan
         To<AddAbTestColumns>(new Guid("6E3A9C15-4B7D-4F2E-8A1C-9D6E5F0B3C82"));
         To<AddPreserveQueryStringColumn>(new Guid("9C4F2A18-5E7B-4D3A-8F16-2C9E7B4A6D31"));
         To<AddValidityWindowColumns>(new Guid("A2E5F8C1-3B6D-4A9E-8F17-5C0D9E4B7A63"));
+        To<AddAuditFieldColumns>(new Guid("D3B6A947-8F2C-4E15-9A03-6D7B1C5E9F82"));
     }
 }
 
@@ -239,6 +240,33 @@ public class AddValidityWindowColumns : AsyncMigrationBase
     }
 }
 
+public class AddAuditFieldColumns : AsyncMigrationBase
+{
+    public AddAuditFieldColumns(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override Task MigrateAsync()
+    {
+        if (TableExists(RedirectEntry.TableName) == false)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "CreatedBy") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "CreatedBy");
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "ModifiedBy") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "ModifiedBy");
+        }
+
+        return Task.CompletedTask;
+    }
+}
+
 #else
 
 public class CreateRedirectManagerTable : MigrationBase
@@ -432,6 +460,31 @@ public class AddValidityWindowColumns : MigrationBase
         if (ColumnExists(RedirectEntry.TableName, "ValidUntil") == false)
         {
             AddColumn<RedirectEntry>(RedirectEntry.TableName, "ValidUntil");
+        }
+    }
+}
+
+public class AddAuditFieldColumns : MigrationBase
+{
+    public AddAuditFieldColumns(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override void Migrate()
+    {
+        if (TableExists(RedirectEntry.TableName) == false)
+        {
+            return;
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "CreatedBy") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "CreatedBy");
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "ModifiedBy") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "ModifiedBy");
         }
     }
 }
