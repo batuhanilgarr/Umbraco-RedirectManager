@@ -10,6 +10,7 @@ public interface IRedirectService
     RedirectEntry? GetByOldUrl(string oldUrl, string? domain = null);
     RedirectEntry? GetByOldUrlAndIsRegex(string oldUrl, bool isRegex, string? domain = null);
     IEnumerable<RedirectEntry> GetActiveRegexEntries();
+    IEnumerable<RedirectEntry> GetActiveWildcardEntries();
     RedirectEntry Create(CreateRedirectEntryDto dto);
     RedirectEntry? Update(int id, UpdateRedirectEntryDto dto);
     bool Delete(int id);

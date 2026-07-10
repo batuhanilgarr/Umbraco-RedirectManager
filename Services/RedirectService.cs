@@ -10,6 +10,7 @@ public class RedirectService : IRedirectService
     private readonly IMemoryCache _memoryCache;
 
     private const string ActiveRegexCacheKey = "RedirectManager.ActiveRegexEntries";
+    private const string ActiveWildcardCacheKey = "RedirectManager.ActiveWildcardEntries";
 
     public RedirectService(IScopeProvider scopeProvider, IMemoryCache memoryCache)
     {
@@ -139,6 +140,22 @@ public class RedirectService : IRedirectService
         }) ?? Enumerable.Empty<RedirectEntry>();
     }
 
+    public IEnumerable<RedirectEntry> GetActiveWildcardEntries()
+    {
+        return _memoryCache.GetOrCreate(ActiveWildcardCacheKey, entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30);
+
+            using var scope = _scopeProvider.CreateScope();
+            var now = DateTime.UtcNow;
+            var results = scope.Database.Fetch<RedirectEntry>(
+                $"SELECT * FROM {RedirectEntry.TableName} WHERE IsActive = 1 AND IsRegex = 0 AND OldUrl LIKE '%*%' AND (ValidFrom IS NULL OR ValidFrom <= @0) AND (ValidUntil IS NULL OR ValidUntil >= @0) ORDER BY CreatedDate DESC",
+                now);
+            scope.Complete();
+            return results;
+        }) ?? Enumerable.Empty<RedirectEntry>();
+    }
+
     public IReadOnlyDictionary<int, (int Last7, int Last30)> GetHitWindowCounts()
     {
         using var scope = _scopeProvider.CreateScope();
@@ -194,7 +211,7 @@ public class RedirectService : IRedirectService
         scope.Database.Insert(entry);
         scope.Complete();
 
-        InvalidateRegexCache();
+        InvalidateMatchCaches();
 
         return entry;
     }
@@ -228,7 +245,7 @@ public class RedirectService : IRedirectService
         scope.Database.Update(existing);
         scope.Complete();
 
-        InvalidateRegexCache();
+        InvalidateMatchCaches();
 
         return existing;
     }
@@ -241,7 +258,7 @@ public class RedirectService : IRedirectService
 
         if (rowsAffected > 0)
         {
-            InvalidateRegexCache();
+            InvalidateMatchCaches();
         }
 
         return rowsAffected > 0;
@@ -261,7 +278,7 @@ public class RedirectService : IRedirectService
 
         if (rowsAffected > 0)
         {
-            InvalidateRegexCache();
+            InvalidateMatchCaches();
         }
 
         return rowsAffected;
@@ -283,13 +300,17 @@ public class RedirectService : IRedirectService
 
         if (rowsAffected > 0)
         {
-            InvalidateRegexCache();
+            InvalidateMatchCaches();
         }
 
         return rowsAffected;
     }
 
-    private void InvalidateRegexCache() => _memoryCache.Remove(ActiveRegexCacheKey);
+    private void InvalidateMatchCaches()
+    {
+        _memoryCache.Remove(ActiveRegexCacheKey);
+        _memoryCache.Remove(ActiveWildcardCacheKey);
+    }
 
     private static string NormalizeUrl(string url)
     {
