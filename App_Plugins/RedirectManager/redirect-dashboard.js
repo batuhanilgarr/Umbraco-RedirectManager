@@ -487,6 +487,12 @@ class RedirectManagerDashboard extends UmbLitElement {
             color: #5b21b6;
         }
 
+        .type-pill.wildcard {
+            background: #fef9c3;
+            border-color: #fde047;
+            color: #854d0e;
+        }
+
         .type-pill.ab-pill {
             background: #fff7ed;
             border-color: #fed7aa;
@@ -1165,8 +1171,18 @@ class RedirectManagerDashboard extends UmbLitElement {
             return;
         }
 
+        if ((this.formData.oldUrl.match(/\*/g) || []).length > 1) {
+            this.showMessage('Old URL can only contain one wildcard (*)', 'error');
+            return;
+        }
+
         if ((this.formData.statusCode === 301 || this.formData.statusCode === 302) && !this.formData.newUrl) {
             this.showMessage('New URL is required for redirect status codes', 'error');
+            return;
+        }
+
+        if ((this.formData.newUrl.match(/\*/g) || []).length > 1) {
+            this.showMessage('New URL can only contain one wildcard (*)', 'error');
             return;
         }
 
@@ -1299,6 +1315,12 @@ class RedirectManagerDashboard extends UmbLitElement {
         if (redirect.validFrom && new Date(redirect.validFrom) > now) return 'Scheduled';
         if (redirect.validUntil && new Date(redirect.validUntil) < now) return 'Expired';
         return null;
+    }
+
+    getMatchTypeLabel(redirect) {
+        if (redirect.isRegex) return 'Regex';
+        if (redirect.oldUrl && redirect.oldUrl.includes('*')) return 'Wildcard';
+        return 'Exact';
     }
 
     getMissedRequestTitle(item) {
@@ -1486,8 +1508,8 @@ class RedirectManagerDashboard extends UmbLitElement {
                                             <span class="notes-val">${redirect.description || '—'}</span>
                                         </td>
                                         <td class="center">
-                                            <span class="type-pill ${redirect.isRegex ? 'regex' : ''}">
-                                                ${redirect.isRegex ? 'Regex' : 'Exact'}
+                                            <span class="type-pill ${redirect.isRegex ? 'regex' : (redirect.oldUrl && redirect.oldUrl.includes('*') ? 'wildcard' : '')}">
+                                                ${this.getMatchTypeLabel(redirect)}
                                             </span>
                                             ${redirect.variantBUrl ? html`
                                                 <span class="type-pill ab-pill"
@@ -1765,7 +1787,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                                                .value=${this.formData.oldUrl}
                                                @input=${this.handleInputChange}
                                                placeholder="/old-page" />
-                                        <small>The path to redirect from.</small>
+                                        <small>The path to redirect from. Tip: use * to match anything (e.g. /blog/*).</small>
                                     </div>
                                     ${this.formData.statusCode === 301 || this.formData.statusCode === 302 ? html`
                                         <div class="form-group">
@@ -1775,7 +1797,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                                                    .value=${this.formData.newUrl}
                                                    @input=${this.handleInputChange}
                                                    placeholder="/new-page" />
-                                            <small>The path to redirect to.</small>
+                                            <small>The path to redirect to. Use * to reuse the matched value (e.g. /articles/*).</small>
                                         </div>
                                     ` : ''}
                                 </div>
