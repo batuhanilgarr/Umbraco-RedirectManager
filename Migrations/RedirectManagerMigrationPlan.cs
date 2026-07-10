@@ -19,6 +19,7 @@ public class RedirectManagerPackageMigrationPlan : PackageMigrationPlan
         To<AddDomainColumn>(new Guid("B8D4E617-2F0A-4C9B-A5D3-6E1F8C0A9B72"));
         To<CreateRedirectHitDailyTable>(new Guid("1D9F4E23-6A8B-4C1D-9E7A-3B5C8D2F4A61"));
         To<AddAbTestColumns>(new Guid("6E3A9C15-4B7D-4F2E-8A1C-9D6E5F0B3C82"));
+        To<AddPreserveQueryStringColumn>(new Guid("9C4F2A18-5E7B-4D3A-8F16-2C9E7B4A6D31"));
     }
 }
 
@@ -188,6 +189,28 @@ public class AddAbTestColumns : AsyncMigrationBase
     }
 }
 
+public class AddPreserveQueryStringColumn : AsyncMigrationBase
+{
+    public AddPreserveQueryStringColumn(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override Task MigrateAsync()
+    {
+        if (TableExists(RedirectEntry.TableName) == false)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "PreserveQueryString") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "PreserveQueryString");
+        }
+
+        return Task.CompletedTask;
+    }
+}
+
 #else
 
 public class CreateRedirectManagerTable : MigrationBase
@@ -336,6 +359,26 @@ public class AddAbTestColumns : MigrationBase
         if (ColumnExists(RedirectEntry.TableName, "VariantBLastHitDate") == false)
         {
             AddColumn<RedirectEntry>(RedirectEntry.TableName, "VariantBLastHitDate");
+        }
+    }
+}
+
+public class AddPreserveQueryStringColumn : MigrationBase
+{
+    public AddPreserveQueryStringColumn(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override void Migrate()
+    {
+        if (TableExists(RedirectEntry.TableName) == false)
+        {
+            return;
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "PreserveQueryString") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "PreserveQueryString");
         }
     }
 }
