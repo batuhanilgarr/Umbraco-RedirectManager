@@ -125,9 +125,8 @@ A/B-test toggle:
   `redirect.controller.js`): a matching checkbox bound to
   `vm.formData.preserveQueryString`.
 
-Label: "Query string koruma" (Lit dashboard is otherwise in English per
-recent commits — use "Preserve query string" there instead, matching that
-dashboard's existing language).
+Label: "Preserve query string" on both dashboards — both are already in
+English throughout their existing markup, so no Turkish label is used here.
 
 ## Decisions confirmed with user (2026-07-10)
 
