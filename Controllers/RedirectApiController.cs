@@ -496,6 +496,17 @@ public class RedirectApiController : Controller
         public List<int> Ids { get; set; } = new();
     }
 
+    // NPoco/ADO.NET providers (Microsoft.Data.Sqlite, Microsoft.Data.SqlClient) return
+    // DateTime values read from the database with Kind = Unspecified, even though every
+    // DateTime this package ever writes is UTC (DateTime.UtcNow). System.Text.Json
+    // serializes an Unspecified-kind DateTime WITHOUT a "Z"/offset suffix, which the
+    // dashboards' `new Date(...)` parsing then misreads as local time instead of UTC --
+    // silently shifting ValidFrom/ValidUntil by the browser's UTC offset on every
+    // read-edit-resave round trip. This normalizes the Kind back to Utc right before the
+    // value leaves the service boundary, without touching how it's stored or queried.
+    private static DateTime? AsUtc(DateTime? value) =>
+        value.HasValue ? DateTime.SpecifyKind(value.Value, DateTimeKind.Utc) : null;
+
     private static RedirectEntryDto ToDto(RedirectEntry r, int hits7d = 0, int hits30d = 0)
     {
         return new RedirectEntryDto
@@ -517,8 +528,8 @@ public class RedirectApiController : Controller
             VariantBHitCount = r.VariantBHitCount,
             VariantBLastHitDate = r.VariantBLastHitDate,
             PreserveQueryString = r.PreserveQueryString,
-            ValidFrom = r.ValidFrom,
-            ValidUntil = r.ValidUntil
+            ValidFrom = AsUtc(r.ValidFrom),
+            ValidUntil = AsUtc(r.ValidUntil)
         };
     }
 
