@@ -185,6 +185,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         }
 
         .toolbar input[type="text"] {
+            box-sizing: border-box;
             width: 100%;
             padding: 7px 10px 7px 28px;
             border: 1px solid #e0e0e0;
