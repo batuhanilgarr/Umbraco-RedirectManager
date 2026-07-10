@@ -516,7 +516,9 @@ public class RedirectApiController : Controller
             VariantBWeight = r.VariantBWeight,
             VariantBHitCount = r.VariantBHitCount,
             VariantBLastHitDate = r.VariantBLastHitDate,
-            PreserveQueryString = r.PreserveQueryString
+            PreserveQueryString = r.PreserveQueryString,
+            ValidFrom = r.ValidFrom,
+            ValidUntil = r.ValidUntil
         };
     }
 

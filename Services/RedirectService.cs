@@ -78,20 +78,21 @@ public class RedirectService : IRedirectService
         using var scope = _scopeProvider.CreateScope();
         var normalizedUrl = NormalizeUrl(oldUrl);
         var normalizedDomain = DomainNormalizer.Normalize(domain);
+        var now = DateTime.UtcNow;
 
         RedirectEntry? result = null;
         if (normalizedDomain != null)
         {
             result = scope.Database.SingleOrDefault<RedirectEntry>(
-                $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND Domain = @1 AND IsActive = 1 AND IsRegex = 0",
-                normalizedUrl, normalizedDomain);
+                $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND Domain = @1 AND IsActive = 1 AND IsRegex = 0 AND (ValidFrom IS NULL OR ValidFrom <= @2) AND (ValidUntil IS NULL OR ValidUntil >= @2)",
+                normalizedUrl, normalizedDomain, now);
         }
 
         if (result == null)
         {
             result = scope.Database.SingleOrDefault<RedirectEntry>(
-                $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND (Domain IS NULL OR Domain = '') AND IsActive = 1 AND IsRegex = 0",
-                normalizedUrl);
+                $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND (Domain IS NULL OR Domain = '') AND IsActive = 1 AND IsRegex = 0 AND (ValidFrom IS NULL OR ValidFrom <= @1) AND (ValidUntil IS NULL OR ValidUntil >= @1)",
+                normalizedUrl, now);
         }
 
         scope.Complete();
@@ -129,8 +130,10 @@ public class RedirectService : IRedirectService
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30);
 
             using var scope = _scopeProvider.CreateScope();
+            var now = DateTime.UtcNow;
             var results = scope.Database.Fetch<RedirectEntry>(
-                $"SELECT * FROM {RedirectEntry.TableName} WHERE IsActive = 1 AND IsRegex = 1 ORDER BY CreatedDate DESC");
+                $"SELECT * FROM {RedirectEntry.TableName} WHERE IsActive = 1 AND IsRegex = 1 AND (ValidFrom IS NULL OR ValidFrom <= @0) AND (ValidUntil IS NULL OR ValidUntil >= @0) ORDER BY CreatedDate DESC",
+                now);
             scope.Complete();
             return results;
         }) ?? Enumerable.Empty<RedirectEntry>();
@@ -181,6 +184,8 @@ public class RedirectService : IRedirectService
             VariantBUrl = string.IsNullOrWhiteSpace(dto.VariantBUrl) ? null : NormalizeNewUrl(dto.VariantBUrl, isRegex),
             VariantBWeight = string.IsNullOrWhiteSpace(dto.VariantBUrl) ? null : dto.VariantBWeight,
             PreserveQueryString = dto.PreserveQueryString,
+            ValidFrom = dto.ValidFrom,
+            ValidUntil = dto.ValidUntil,
             CreatedDate = DateTime.UtcNow,
             UpdatedDate = DateTime.UtcNow
         };
@@ -216,6 +221,8 @@ public class RedirectService : IRedirectService
         existing.VariantBUrl = string.IsNullOrWhiteSpace(dto.VariantBUrl) ? null : NormalizeNewUrl(dto.VariantBUrl, existing.IsRegex);
         existing.VariantBWeight = string.IsNullOrWhiteSpace(dto.VariantBUrl) ? null : dto.VariantBWeight;
         existing.PreserveQueryString = dto.PreserveQueryString;
+        existing.ValidFrom = dto.ValidFrom;
+        existing.ValidUntil = dto.ValidUntil;
         existing.UpdatedDate = DateTime.UtcNow;
 
         scope.Database.Update(existing);
