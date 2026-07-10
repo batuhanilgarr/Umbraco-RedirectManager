@@ -511,6 +511,18 @@ class RedirectManagerDashboard extends UmbLitElement {
         .status-dot.active   { background: #2bc37b; }
         .status-dot.inactive { background: #d42054; }
 
+        .schedule-badge {
+            display: inline-block;
+            margin-left: 5px;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .schedule-badge.scheduled { background: #dbeafe; color: #1e40af; }
+        .schedule-badge.expired   { background: #f3f4f6; color: #6b7280; }
+
         .hit-count {
             font-size: 12px;
             color: #ccc;
@@ -862,7 +874,9 @@ class RedirectManagerDashboard extends UmbLitElement {
             abTestEnabled: false,
             variantBUrl: '',
             variantBWeight: 50,
-            preserveQueryString: false
+            preserveQueryString: false,
+            validFrom: '',
+            validUntil: ''
         };
     }
 
@@ -965,7 +979,9 @@ class RedirectManagerDashboard extends UmbLitElement {
             abTestEnabled: !!redirect.variantBUrl,
             variantBUrl: redirect.variantBUrl || '',
             variantBWeight: redirect.variantBWeight ?? 50,
-            preserveQueryString: !!redirect.preserveQueryString
+            preserveQueryString: !!redirect.preserveQueryString,
+            validFrom: this.toDatetimeLocalValue(redirect.validFrom),
+            validUntil: this.toDatetimeLocalValue(redirect.validUntil)
         };
         this.showModal = true;
     }
@@ -1159,10 +1175,17 @@ class RedirectManagerDashboard extends UmbLitElement {
             return;
         }
 
+        if (this.formData.validFrom && this.formData.validUntil && new Date(this.formData.validUntil) < new Date(this.formData.validFrom)) {
+            this.showMessage('Valid until must be after Valid from', 'error');
+            return;
+        }
+
         const payload = {
             ...this.formData,
             variantBUrl: this.formData.abTestEnabled ? this.formData.variantBUrl : null,
-            variantBWeight: this.formData.abTestEnabled ? this.formData.variantBWeight : null
+            variantBWeight: this.formData.abTestEnabled ? this.formData.variantBWeight : null,
+            validFrom: this.fromDatetimeLocalValue(this.formData.validFrom),
+            validUntil: this.fromDatetimeLocalValue(this.formData.validUntil)
         };
 
         try {
@@ -1246,6 +1269,36 @@ class RedirectManagerDashboard extends UmbLitElement {
         return redirect.lastHitDate
             ? `Last hit: ${new Date(redirect.lastHitDate).toLocaleString()}`
             : 'Never hit';
+    }
+
+    // Converts a stored UTC ISO string (or null) into the local-time string
+    // an <input type="datetime-local"> expects (no timezone designator,
+    // minute precision). Returns '' for null/invalid input, which the input
+    // renders as empty (no date selected).
+    toDatetimeLocalValue(isoString) {
+        if (!isoString) return '';
+        const d = new Date(isoString);
+        if (Number.isNaN(d.getTime())) return '';
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    // Converts a <input type="datetime-local"> value (interpreted by the
+    // browser/JS Date constructor as local time, since it has no timezone
+    // designator) into a UTC ISO string for the API. Returns null for
+    // blank/invalid input.
+    fromDatetimeLocalValue(localValue) {
+        if (!localValue) return null;
+        const d = new Date(localValue);
+        if (Number.isNaN(d.getTime())) return null;
+        return d.toISOString();
+    }
+
+    getScheduleBadge(redirect) {
+        const now = new Date();
+        if (redirect.validFrom && new Date(redirect.validFrom) > now) return 'Scheduled';
+        if (redirect.validUntil && new Date(redirect.validUntil) < now) return 'Expired';
+        return null;
     }
 
     getMissedRequestTitle(item) {
@@ -1448,6 +1501,11 @@ class RedirectManagerDashboard extends UmbLitElement {
                                                 <span class="status-dot ${redirect.isActive ? 'active' : 'inactive'}"></span>
                                                 ${redirect.isActive ? 'Yes' : 'No'}
                                             </span>
+                                            ${this.getScheduleBadge(redirect) ? html`
+                                                <span class="schedule-badge ${this.getScheduleBadge(redirect) === 'Scheduled' ? 'scheduled' : 'expired'}">
+                                                    ${this.getScheduleBadge(redirect)}
+                                                </span>
+                                            ` : ''}
                                         </td>
                                         <td class="center" title="${this.getLastHitTitle(redirect)}">
                                             <span class="hit-count ${(redirect.hitCount || 0) > 0 ? 'has-hits' : ''}">
@@ -1791,6 +1849,26 @@ class RedirectManagerDashboard extends UmbLitElement {
                                            @input=${this.handleInputChange}
                                            placeholder="e.g. shop.example.com" />
                                     <small>Leave blank to apply to all domains. Domain-specific rules take precedence.</small>
+                                </div>
+
+                                <!-- Valid from / Valid until -->
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Valid from <span class="lbl-opt">(optional)</span></label>
+                                        <input type="datetime-local"
+                                               name="validFrom"
+                                               .value=${this.formData.validFrom}
+                                               @input=${this.handleInputChange} />
+                                        <small>Leave blank to make this redirect active immediately.</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Valid until <span class="lbl-opt">(optional)</span></label>
+                                        <input type="datetime-local"
+                                               name="validUntil"
+                                               .value=${this.formData.validUntil}
+                                               @input=${this.handleInputChange} />
+                                        <small>Leave blank to keep this redirect active indefinitely.</small>
+                                    </div>
                                 </div>
 
                                 <!-- Notes -->
