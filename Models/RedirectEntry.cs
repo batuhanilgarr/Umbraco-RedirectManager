@@ -89,4 +89,14 @@ public class RedirectEntry
     [Column("ValidUntil")]
     [NullSetting(NullSetting = NullSettings.Null)]
     public DateTime? ValidUntil { get; set; }
+
+    [Column("CreatedBy")]
+    [NullSetting(NullSetting = NullSettings.Null)]
+    [Length(255)]
+    public string? CreatedBy { get; set; }
+
+    [Column("ModifiedBy")]
+    [NullSetting(NullSetting = NullSettings.Null)]
+    [Length(255)]
+    public string? ModifiedBy { get; set; }
 }
