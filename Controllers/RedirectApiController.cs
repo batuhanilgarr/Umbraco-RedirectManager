@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Umbraco.Cms.Core.Security;
 using Umbraco.Cms.Web.Common.Authorization;
 using Umbraco.RedirectManager.Models;
 using Umbraco.RedirectManager.Services;
@@ -20,6 +21,7 @@ public class RedirectApiController : Controller
     private readonly IRedirectTelemetryPinger _telemetryPinger;
     private readonly IRedirectTelemetrySettingsStore _telemetrySettingsStore;
     private readonly IRedirectVersionChecker _versionChecker;
+    private readonly IBackOfficeSecurityAccessor _backOfficeSecurityAccessor;
 
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(100);
 
@@ -28,14 +30,28 @@ public class RedirectApiController : Controller
         IMissedRequestService missedRequestService,
         IRedirectTelemetryPinger telemetryPinger,
         IRedirectTelemetrySettingsStore telemetrySettingsStore,
-        IRedirectVersionChecker versionChecker)
+        IRedirectVersionChecker versionChecker,
+        IBackOfficeSecurityAccessor backOfficeSecurityAccessor)
     {
         _redirectService = redirectService;
         _missedRequestService = missedRequestService;
         _telemetryPinger = telemetryPinger;
         _telemetrySettingsStore = telemetrySettingsStore;
         _versionChecker = versionChecker;
+        _backOfficeSecurityAccessor = backOfficeSecurityAccessor;
     }
+
+    // Resolves the display name of the currently authenticated backoffice user,
+    // for stamping onto CreatedBy/ModifiedBy. Every endpoint on this controller
+    // is already gated by [Authorize(Policy = AuthorizationPolicies.BackOfficeAccess)],
+    // so this is expected to be non-null on every real request; the nullable
+    // return type is a defensive fallback (e.g. a future non-interactive
+    // caller), not an expected common case. Deliberately resolved server-side
+    // from the authenticated identity rather than accepted from the request
+    // body, since a client should never be able to dictate who audit data
+    // attributes a change to.
+    private string? GetCurrentUserName() =>
+        _backOfficeSecurityAccessor.BackOfficeSecurity?.CurrentUser?.Name;
 
     // Fired by the dashboard on load. Shares the same 24h-per-site throttle
     // as the periodic background ping (RedirectTelemetryService) — whichever
@@ -171,7 +187,7 @@ public class RedirectApiController : Controller
         if (duplicate != null)
             return Conflict("A redirect with the same Old URL and Match type already exists for that domain");
 
-        var redirect = _redirectService.Create(dto);
+        var redirect = _redirectService.Create(dto, GetCurrentUserName());
         return Ok(ToDto(redirect));
     }
 
@@ -192,7 +208,7 @@ public class RedirectApiController : Controller
         if (duplicate != null && duplicate.Id != id)
             return Conflict("A redirect with the same Old URL and Match type already exists for that domain");
 
-        var redirect = _redirectService.Update(id, dto);
+        var redirect = _redirectService.Update(id, dto, GetCurrentUserName());
         if (redirect == null)
             return NotFound();
 
@@ -361,14 +377,14 @@ public class RedirectApiController : Controller
     [HttpPost("bulk/activate")]
     public IActionResult BulkActivate([FromBody] BulkIdsDto dto)
     {
-        var updated = _redirectService.BulkSetActive(dto.Ids, true);
+        var updated = _redirectService.BulkSetActive(dto.Ids, true, GetCurrentUserName());
         return Ok(new { updated });
     }
 
     [HttpPost("bulk/deactivate")]
     public IActionResult BulkDeactivate([FromBody] BulkIdsDto dto)
     {
-        var updated = _redirectService.BulkSetActive(dto.Ids, false);
+        var updated = _redirectService.BulkSetActive(dto.Ids, false, GetCurrentUserName());
         return Ok(new { updated });
     }
 
@@ -435,6 +451,7 @@ public class RedirectApiController : Controller
         int created = 0;
         int updated = 0;
         int skipped = 0;
+        var actorName = GetCurrentUserName();
 
         for (var rowIndex = 1; rowIndex < lines.Length; rowIndex++)
         {
@@ -481,12 +498,12 @@ public class RedirectApiController : Controller
                     StatusCode = dto.StatusCode,
                     IsActive = dto.IsActive,
                     IsRegex = dto.IsRegex
-                });
+                }, actorName);
                 created++;
             }
             else
             {
-                _redirectService.Update(existing.Id, dto);
+                _redirectService.Update(existing.Id, dto, actorName);
                 updated++;
             }
         }
@@ -592,7 +609,11 @@ public class RedirectApiController : Controller
             VariantBLastHitDate = r.VariantBLastHitDate,
             PreserveQueryString = r.PreserveQueryString,
             ValidFrom = AsUtc(r.ValidFrom),
-            ValidUntil = AsUtc(r.ValidUntil)
+            ValidUntil = AsUtc(r.ValidUntil),
+            CreatedBy = r.CreatedBy,
+            ModifiedBy = r.ModifiedBy,
+            CreatedDate = DateTime.SpecifyKind(r.CreatedDate, DateTimeKind.Utc),
+            UpdatedDate = DateTime.SpecifyKind(r.UpdatedDate, DateTimeKind.Utc)
         };
     }
 

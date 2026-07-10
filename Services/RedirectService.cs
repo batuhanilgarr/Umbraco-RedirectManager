@@ -186,7 +186,7 @@ public class RedirectService : IRedirectService
         public int Last30 { get; set; }
     }
 
-    public RedirectEntry Create(CreateRedirectEntryDto dto)
+    public RedirectEntry Create(CreateRedirectEntryDto dto, string? actorName)
     {
         var isRegex = dto.IsRegex;
         var entry = new RedirectEntry
@@ -203,6 +203,8 @@ public class RedirectService : IRedirectService
             PreserveQueryString = dto.PreserveQueryString,
             ValidFrom = dto.ValidFrom,
             ValidUntil = dto.ValidUntil,
+            CreatedBy = actorName,
+            ModifiedBy = actorName,
             CreatedDate = DateTime.UtcNow,
             UpdatedDate = DateTime.UtcNow
         };
@@ -216,7 +218,7 @@ public class RedirectService : IRedirectService
         return entry;
     }
 
-    public RedirectEntry? Update(int id, UpdateRedirectEntryDto dto)
+    public RedirectEntry? Update(int id, UpdateRedirectEntryDto dto, string? actorName)
     {
         using var scope = _scopeProvider.CreateScope();
         var existing = scope.Database.SingleOrDefault<RedirectEntry>(
@@ -240,6 +242,7 @@ public class RedirectService : IRedirectService
         existing.PreserveQueryString = dto.PreserveQueryString;
         existing.ValidFrom = dto.ValidFrom;
         existing.ValidUntil = dto.ValidUntil;
+        existing.ModifiedBy = actorName;
         existing.UpdatedDate = DateTime.UtcNow;
 
         scope.Database.Update(existing);
@@ -284,17 +287,21 @@ public class RedirectService : IRedirectService
         return rowsAffected;
     }
 
-    public int BulkSetActive(IEnumerable<int> ids, bool isActive)
+    public int BulkSetActive(IEnumerable<int> ids, bool isActive, string? actorName)
     {
         var idList = ids?.Distinct().ToArray() ?? Array.Empty<int>();
         if (idList.Length == 0)
             return 0;
 
         using var scope = _scopeProvider.CreateScope();
-        var args = new List<object> { isActive ? 1 : 0, DateTime.UtcNow };
+        // actorName may be null here; NPoco maps a null CLR value in the params
+        // array to a parameterized DBNull, the same as any other nullable column
+        // written via Insert/Update elsewhere in this class -- no special-casing
+        // needed for the null case.
+        var args = new List<object> { isActive ? 1 : 0, DateTime.UtcNow, actorName };
         var placeholders = string.Join(",", idList.Select((_, i) => $"@{i + args.Count}"));
         args.AddRange(idList.Cast<object>());
-        var sql = $"UPDATE {RedirectEntry.TableName} SET IsActive = @0, UpdatedDate = @1 WHERE Id IN ({placeholders})";
+        var sql = $"UPDATE {RedirectEntry.TableName} SET IsActive = @0, UpdatedDate = @1, ModifiedBy = @2 WHERE Id IN ({placeholders})";
         var rowsAffected = scope.Database.Execute(sql, args.ToArray());
         scope.Complete();
 
