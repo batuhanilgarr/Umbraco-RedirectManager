@@ -1070,8 +1070,13 @@ class RedirectManagerDashboard extends UmbLitElement {
                 body: JSON.stringify({ ids: this.selectedIds })
             });
             if (response.ok) {
-                const selected = new Set(this.selectedIds);
-                this.redirects = this.redirects.map(r => selected.has(r.id) ? { ...r, isActive } : r);
+                // Reload from the server rather than optimistically patching isActive
+                // client-side: the bulk endpoint also stamps ModifiedBy/UpdatedDate on
+                // every affected row, and the client has no way to fabricate those
+                // values (it doesn't know the current user's display name), so an
+                // optimistic patch would leave the audit tooltip showing stale data
+                // until the next manual reload.
+                await this.loadRedirects();
                 this.showMessage('Selected redirects updated', 'success');
             } else {
                 const error = await response.text();
