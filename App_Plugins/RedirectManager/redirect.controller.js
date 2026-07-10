@@ -85,6 +85,16 @@
             return null;
         };
 
+        vm.getMatchTypeLabel = function (redirect) {
+            if (redirect.isRegex) {
+                return "Regex";
+            }
+            if (redirect.oldUrl && redirect.oldUrl.indexOf("*") !== -1) {
+                return "Wildcard";
+            }
+            return "Exact";
+        };
+
         vm.loadRedirects = function () {
             vm.loading = true;
             redirectResource.getAll().then(function (response) {
@@ -188,8 +198,18 @@
                 return;
             }
 
+            if ((redirect.oldUrl.match(/\*/g) || []).length > 1) {
+                notificationsService.error("Validation Error", "Old URL can only contain one wildcard (*)");
+                return;
+            }
+
             if ((redirect.statusCode === 301 || redirect.statusCode === 302) && !redirect.newUrl) {
                 notificationsService.error("Validation Error", "New URL is required for redirect status codes");
+                return;
+            }
+
+            if ((redirect.newUrl.match(/\*/g) || []).length > 1) {
+                notificationsService.error("Validation Error", "New URL can only contain one wildcard (*)");
                 return;
             }
 

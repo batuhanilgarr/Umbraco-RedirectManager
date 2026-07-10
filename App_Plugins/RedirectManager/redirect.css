@@ -201,6 +201,12 @@
     color: #5b21b6;
 }
 
+.type-pill.wildcard {
+    background: #fef9c3;
+    border-color: #fde047;
+    color: #854d0e;
+}
+
 /* ── Hit count ── */
 .hit-count       { font-size: 12px; color: #ccc; }
 .hit-count.live  { color: #333; font-weight: 600; }

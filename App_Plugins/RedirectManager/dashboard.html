@@ -151,8 +151,9 @@
                                 {{redirect.description || '—'}}
                             </td>
                             <td style="text-align:center;">
-                                <span class="type-pill" ng-class="{'regex': redirect.isRegex}">
-                                    {{redirect.isRegex ? 'Regex' : 'Exact'}}
+                                <span class="type-pill"
+                                      ng-class="{'regex': redirect.isRegex, 'wildcard': !redirect.isRegex && redirect.oldUrl.indexOf('*') !== -1}">
+                                    {{vm.getMatchTypeLabel(redirect)}}
                                 </span>
                                 <span class="type-pill ab-pill"
                                       ng-if="redirect.variantBUrl"

@@ -11,7 +11,7 @@
             </umb-control-group>
 
             <umb-control-group label="Old URL"
-                               description="The URL path to redirect from"
+                               description="The URL path to redirect from. Tip: use * to match anything (e.g. /blog/*)."
                                required="true">
                 <input type="text"
                        ng-model="model.redirect.oldUrl"
@@ -21,7 +21,7 @@
             </umb-control-group>
 
             <umb-control-group label="New URL"
-                               description="The URL path to redirect to"
+                               description="The URL path to redirect to. Use * to reuse the matched value (e.g. /articles/*)."
                                ng-if="model.redirect.statusCode == 301 || model.redirect.statusCode == 302">
                 <input type="text"
                        ng-model="model.redirect.newUrl"
