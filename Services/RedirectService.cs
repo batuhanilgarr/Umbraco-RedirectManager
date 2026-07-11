@@ -186,6 +186,28 @@ public class RedirectService : IRedirectService
         public int Last30 { get; set; }
     }
 
+    // Used by RedirectManagerHealthCheck (Umbraco's Settings > Health Check
+    // dashboard) to confirm the package's table exists and is queryable --
+    // e.g. after a bad upgrade, a manual DB restore, or a misconfigured
+    // connection string. Deliberately swallows every exception and reports
+    // false rather than letting the health check dashboard itself fault,
+    // since any DB-level failure (missing table, broken connection, missing
+    // permissions) all mean the same thing here: "not accessible."
+    public bool CanAccessTable()
+    {
+        try
+        {
+            using var scope = _scopeProvider.CreateScope();
+            scope.Database.ExecuteScalar<int>($"SELECT COUNT(*) FROM {RedirectEntry.TableName}");
+            scope.Complete();
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public RedirectEntry Create(CreateRedirectEntryDto dto, string? actorName)
     {
         var isRegex = dto.IsRegex;

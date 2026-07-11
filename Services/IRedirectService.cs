@@ -17,4 +17,5 @@ public interface IRedirectService
     int BulkDelete(IEnumerable<int> ids);
     int BulkSetActive(IEnumerable<int> ids, bool isActive, string? actorName);
     IReadOnlyDictionary<int, (int Last7, int Last30)> GetHitWindowCounts();
+    bool CanAccessTable();
 }
