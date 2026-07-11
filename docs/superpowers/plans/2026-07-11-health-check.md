@@ -149,6 +149,28 @@ EOF
 
 ### Task 2: Add the `RedirectManagerHealthCheck` class
 
+**Correction found while implementing this task (2026-07-11):** the first
+implementer subagent discovered, and this was independently confirmed via
+reflection against the actual referenced assemblies, that
+`Umbraco.Cms.Core.HealthChecks.HealthCheck`'s member contract is NOT
+identical between the two Umbraco versions this package targets:
+
+- **net8.0 / Umbraco 13.9.2:** `abstract Task<IEnumerable<HealthCheckStatus>> GetStatus()` and `abstract HealthCheckStatus ExecuteAction(HealthCheckAction)` — both must be overridden, exactly as the original spec assumed.
+- **net10.0 / Umbraco 17.1.0:** `GetStatus()` no longer exists at all. It's replaced by `virtual Task<IEnumerable<HealthCheckStatus>> GetStatusAsync()` (not abstract). `ExecuteAction(HealthCheckAction)` still exists but is now `virtual` (not abstract) rather than required, and a new `virtual Task<HealthCheckStatus> ExecuteActionAsync(HealthCheckAction)` also exists.
+
+A single non-conditional class body cannot satisfy both TFMs (overriding a
+method that doesn't exist on one TFM is a compile error, not a warning).
+The fix is a `#if NET10_0_OR_GREATER` / `#else` split around just the
+`GetStatus`/`GetStatusAsync` override — the same multi-targeting
+convention this codebase already uses in
+`Migrations/RedirectManagerMigrationPlan.cs` for its own
+sync/async-API-shape differences between these two Umbraco versions. The
+status-building logic is factored into a small private `BuildStatus()`
+helper shared by both conditional overrides, so the actual check logic
+isn't duplicated. `ExecuteAction` needs no `#if` — its signature is
+identical (if differently virtual/abstract) on both TFMs, so a single
+override compiles and behaves the same either way.
+
 **Files:**
 - Create: `Services/RedirectManagerHealthCheck.cs`
 
@@ -173,29 +195,43 @@ public class RedirectManagerHealthCheck : HealthCheck
         _redirectService = redirectService;
     }
 
-    public override Task<IEnumerable<HealthCheckStatus>> GetStatus()
+    // Shared by both the net10.0+ GetStatusAsync override and the net8.0
+    // GetStatus override below, so the actual check logic exists in exactly
+    // one place despite the two TFMs requiring different override names.
+    private HealthCheckStatus BuildStatus()
     {
         var accessible = _redirectService.CanAccessTable();
 
-        var status = new HealthCheckStatus(
+        return new HealthCheckStatus(
             accessible
                 ? "The Redirect Manager database table is accessible."
                 : "The Redirect Manager database table could not be accessed. This may mean the package's migration hasn't run yet, or the database connection is misconfigured.")
         {
             ResultType = accessible ? StatusResultType.Success : StatusResultType.Error
         };
-
-        return Task.FromResult<IEnumerable<HealthCheckStatus>>(new[] { status });
     }
+
+#if NET10_0_OR_GREATER
+    // Umbraco.Cms.Core 17.1.0+'s HealthCheck base class replaced the
+    // abstract GetStatus() from 13.9.2 with a virtual GetStatusAsync() --
+    // GetStatus() no longer exists to override on this TFM.
+    public override Task<IEnumerable<HealthCheckStatus>> GetStatusAsync() =>
+        Task.FromResult<IEnumerable<HealthCheckStatus>>(new[] { BuildStatus() });
+#else
+    public override Task<IEnumerable<HealthCheckStatus>> GetStatus() =>
+        Task.FromResult<IEnumerable<HealthCheckStatus>>(new[] { BuildStatus() });
+#endif
 
     // This check has no "Fix" action -- an inaccessible table means a
     // migration hasn't run or the DB connection itself is broken, neither of
     // which this in-process check can safely or usefully "fix" on the
-    // admin's behalf (see design spec's "Decisions" section). GetStatus()
+    // admin's behalf (see design spec's "Decisions" section). BuildStatus()
     // above never adds any Actions to the returned HealthCheckStatus, so
     // Umbraco's dashboard never renders a button that could call this in the
     // first place; the throw is defensive, matching how a check with no
-    // actions would naturally behave if ever miscalled.
+    // actions would naturally behave if ever miscalled. No #if needed here:
+    // ExecuteAction's signature is identical on both TFMs (just virtual
+    // rather than abstract on net10.0+), so one override satisfies both.
     public override HealthCheckStatus ExecuteAction(HealthCheckAction action) =>
         throw new InvalidOperationException("This health check does not support any actions.");
 }
