@@ -235,6 +235,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         .notif-success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
         .notif-error   { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
         .notif-info    { background: #eff6ff; border-color: #bfdbfe; color: #1e40af; }
+        .notif-warning { background: #fffbeb; border-color: #fde68a; color: #92400e; }
 
         .update-banner {
             display: flex;
@@ -1228,13 +1229,16 @@ class RedirectManagerDashboard extends UmbLitElement {
 
             if (response.ok) {
                 const saved = await response.json();
+                const overlapNote = (saved.overlapWarnings && saved.overlapWarnings.length > 0)
+                    ? ` Heads up: this rule also matches existing active rule(s): ${saved.overlapWarnings.join(', ')}`
+                    : '';
 
                 if (this.editingRedirect) {
                     this.redirects = this.redirects.map(r => r.id === saved.id ? saved : r);
-                    this.showMessage('Redirect updated', 'success');
+                    this.showMessage(`Redirect updated.${overlapNote}`, overlapNote ? 'warning' : 'success');
                 } else {
                     this.redirects = [saved, ...this.redirects];
-                    this.showMessage('Redirect created', 'success');
+                    this.showMessage(`Redirect created.${overlapNote}`, overlapNote ? 'warning' : 'success');
                 }
 
                 this.closeModal();
