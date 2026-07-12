@@ -28,6 +28,18 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
+  <!-- Exclude the sibling test project's files (including its generated obj/bin output)
+       from this project's default SDK item globs. Because this csproj lives at the repo
+       root, the default "**/*.cs" Compile glob would otherwise also pick up files under
+       Umbraco.RedirectManager.Tests/ (its own bin/obj exclusion only covers this project's
+       own output directories, not a nested sibling project's). -->
+  <ItemGroup>
+    <Compile Remove="Umbraco.RedirectManager.Tests/**" />
+    <Content Remove="Umbraco.RedirectManager.Tests/**" />
+    <EmbeddedResource Remove="Umbraco.RedirectManager.Tests/**" />
+    <None Remove="Umbraco.RedirectManager.Tests/**" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <PackageReference Include="Umbraco.Cms" Version="17.1.0" />
     <PackageReference Include="Umbraco.Cms.Infrastructure" Version="17.1.0" />

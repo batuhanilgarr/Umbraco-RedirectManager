@@ -6,6 +6,13 @@ out/
 # NuGet packages
 *.nupkg
 
+# Umbraco.Cms.Targets copies its JSON schema files into any referencing
+# project's directory (including test projects) as a build side effect;
+# only the root-level copies are intentionally tracked.
+Umbraco.RedirectManager.Tests/appsettings-schema.json
+Umbraco.RedirectManager.Tests/appsettings-schema.Umbraco.Cms.json
+Umbraco.RedirectManager.Tests/umbraco-package-schema.json
+
 # macOS
 .DS_Store
 
