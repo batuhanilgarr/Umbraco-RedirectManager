@@ -243,8 +243,9 @@
             model.submitButtonState = "busy";
 
             if (redirect.id) {
-                redirectResource.update(redirect.id, redirect).then(function () {
+                redirectResource.update(redirect.id, redirect).then(function (response) {
                     notificationsService.success("Success", "Redirect updated successfully");
+                    vm.notifyOverlapWarnings(response.data);
                     vm.closeModal();
                     vm.loadRedirects();
                 }, function (error) {
@@ -252,14 +253,24 @@
                     model.submitButtonState = "error";
                 });
             } else {
-                redirectResource.create(redirect).then(function () {
+                redirectResource.create(redirect).then(function (response) {
                     notificationsService.success("Success", "Redirect created successfully");
+                    vm.notifyOverlapWarnings(response.data);
                     vm.closeModal();
                     vm.loadRedirects();
                 }, function (error) {
                     notificationsService.error("Error", error.data || "Failed to create redirect");
                     model.submitButtonState = "error";
                 });
+            }
+        };
+
+        vm.notifyOverlapWarnings = function (saved) {
+            if (saved && saved.overlapWarnings && saved.overlapWarnings.length > 0) {
+                notificationsService.warning(
+                    "Overlap warning",
+                    "This rule also matches existing active rule(s): " + saved.overlapWarnings.join(", ")
+                );
             }
         };
 
