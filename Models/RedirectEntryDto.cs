@@ -25,6 +25,12 @@ public class RedirectEntryDto
     public string? ModifiedBy { get; set; }
     public DateTime CreatedDate { get; set; }
     public DateTime UpdatedDate { get; set; }
+
+    // Populated only by Create/Update, only when this entry is an active
+    // broad matcher (regex or wildcard) that also matches one or more
+    // existing active exact rules. Null/absent everywhere else (GetAll,
+    // the /test match endpoint, exact rules, inactive rules).
+    public List<string>? OverlapWarnings { get; set; }
 }
 
 public class CreateRedirectEntryDto

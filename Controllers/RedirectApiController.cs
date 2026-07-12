@@ -188,7 +188,9 @@ public class RedirectApiController : Controller
             return Conflict("A redirect with the same Old URL and Match type already exists for that domain");
 
         var redirect = _redirectService.Create(dto, GetCurrentUserName());
-        return Ok(ToDto(redirect));
+        var resultDto = ToDto(redirect);
+        resultDto.OverlapWarnings = BuildOverlapWarnings(redirect);
+        return Ok(resultDto);
     }
 
     [HttpPut("update/{id:int}")]
@@ -212,7 +214,9 @@ public class RedirectApiController : Controller
         if (redirect == null)
             return NotFound();
 
-        return Ok(ToDto(redirect));
+        var resultDto = ToDto(redirect);
+        resultDto.OverlapWarnings = BuildOverlapWarnings(redirect);
+        return Ok(resultDto);
     }
 
     [HttpDelete("delete/{id:int}")]
@@ -619,6 +623,25 @@ public class RedirectApiController : Controller
             CreatedDate = DateTime.SpecifyKind(r.CreatedDate, DateTimeKind.Utc),
             UpdatedDate = DateTime.SpecifyKind(r.UpdatedDate, DateTimeKind.Utc)
         };
+    }
+
+    private const int MaxOverlapWarnings = 5;
+
+    private List<string>? BuildOverlapWarnings(RedirectEntry redirect)
+    {
+        var isBroadMatcher = redirect.IsRegex || redirect.OldUrl.Contains('*');
+        if (!redirect.IsActive || !isBroadMatcher)
+            return null;
+
+        var overlaps = _redirectService.FindOverlappingExactRules(redirect.OldUrl, redirect.IsRegex, redirect.Domain).ToList();
+        if (overlaps.Count == 0)
+            return null;
+
+        var warnings = overlaps.Take(MaxOverlapWarnings).Select(r => r.OldUrl).ToList();
+        if (overlaps.Count > MaxOverlapWarnings)
+            warnings.Add($"...and {overlaps.Count - MaxOverlapWarnings} more");
+
+        return warnings;
     }
 
     private static MissedRequestDto ToDto(MissedRequest m)
