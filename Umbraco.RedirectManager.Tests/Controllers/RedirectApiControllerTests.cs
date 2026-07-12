@@ -195,4 +195,121 @@ public class RedirectApiControllerTests
         Assert.IsType<OkObjectResult>(result);
         _redirectService.Received(1).Update(1, dto, Arg.Any<string?>());
     }
+
+    [Fact]
+    public void Create_WildcardRuleOverlapsExistingExactRule_PopulatesOverlapWarnings()
+    {
+        var dto = ValidCreateDto();
+        dto.OldUrl = "/blog/*";
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+            .Returns((RedirectEntry?)null);
+        var created = new RedirectEntry { Id = 1, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = true, IsRegex = false, Domain = dto.Domain };
+        _redirectService.Create(dto, Arg.Any<string?>()).Returns(created);
+        _redirectService.FindOverlappingExactRules(created.OldUrl, created.IsRegex, created.Domain)
+            .Returns(new[] { new RedirectEntry { Id = 10, OldUrl = "/blog/post-1" } });
+
+        var result = _controller.Create(dto);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var resultDto = Assert.IsType<RedirectEntryDto>(ok.Value);
+        Assert.Equal(new[] { "/blog/post-1" }, resultDto.OverlapWarnings);
+    }
+
+    [Fact]
+    public void Create_RegexRuleWithNoOverlap_OverlapWarningsIsNull()
+    {
+        var dto = ValidCreateDto();
+        dto.OldUrl = "^/archive/(.+)$";
+        dto.IsRegex = true;
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+            .Returns((RedirectEntry?)null);
+        var created = new RedirectEntry { Id = 2, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = true, IsRegex = true, Domain = dto.Domain };
+        _redirectService.Create(dto, Arg.Any<string?>()).Returns(created);
+        _redirectService.FindOverlappingExactRules(created.OldUrl, created.IsRegex, created.Domain)
+            .Returns(Array.Empty<RedirectEntry>());
+
+        var result = _controller.Create(dto);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var resultDto = Assert.IsType<RedirectEntryDto>(ok.Value);
+        Assert.Null(resultDto.OverlapWarnings);
+    }
+
+    [Fact]
+    public void Create_ExactRule_DoesNotCallFindOverlappingExactRules()
+    {
+        var dto = ValidCreateDto();
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+            .Returns((RedirectEntry?)null);
+        var created = new RedirectEntry { Id = 3, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = true, IsRegex = false, Domain = dto.Domain };
+        _redirectService.Create(dto, Arg.Any<string?>()).Returns(created);
+
+        var result = _controller.Create(dto);
+
+        Assert.IsType<OkObjectResult>(result);
+        _redirectService.DidNotReceive().FindOverlappingExactRules(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<string?>());
+    }
+
+    [Fact]
+    public void Create_InactiveWildcardRule_DoesNotCallFindOverlappingExactRules()
+    {
+        var dto = ValidCreateDto();
+        dto.OldUrl = "/blog/*";
+        dto.IsActive = false;
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+            .Returns((RedirectEntry?)null);
+        var created = new RedirectEntry { Id = 4, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = false, IsRegex = false, Domain = dto.Domain };
+        _redirectService.Create(dto, Arg.Any<string?>()).Returns(created);
+
+        var result = _controller.Create(dto);
+
+        Assert.IsType<OkObjectResult>(result);
+        _redirectService.DidNotReceive().FindOverlappingExactRules(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<string?>());
+    }
+
+    [Fact]
+    public void Create_MoreThanFiveOverlaps_CapsListAndAppendsMoreSuffix()
+    {
+        var dto = ValidCreateDto();
+        dto.OldUrl = "/blog/*";
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+            .Returns((RedirectEntry?)null);
+        var created = new RedirectEntry { Id = 5, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = true, IsRegex = false, Domain = dto.Domain };
+        _redirectService.Create(dto, Arg.Any<string?>()).Returns(created);
+        var overlaps = Enumerable.Range(1, 7)
+            .Select(i => new RedirectEntry { Id = 100 + i, OldUrl = $"/blog/post-{i}" })
+            .ToArray();
+        _redirectService.FindOverlappingExactRules(created.OldUrl, created.IsRegex, created.Domain)
+            .Returns(overlaps);
+
+        var result = _controller.Create(dto);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var resultDto = Assert.IsType<RedirectEntryDto>(ok.Value);
+        Assert.NotNull(resultDto.OverlapWarnings);
+        Assert.Equal(6, resultDto.OverlapWarnings!.Count);
+        Assert.Equal(
+            new[] { "/blog/post-1", "/blog/post-2", "/blog/post-3", "/blog/post-4", "/blog/post-5" },
+            resultDto.OverlapWarnings.Take(5));
+        Assert.Equal("...and 2 more", resultDto.OverlapWarnings[5]);
+    }
+
+    [Fact]
+    public void Update_WildcardRuleOverlapsExistingExactRule_PopulatesOverlapWarnings()
+    {
+        var dto = ValidUpdateDto();
+        dto.OldUrl = "/blog/*";
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+            .Returns((RedirectEntry?)null);
+        var updated = new RedirectEntry { Id = 1, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = true, IsRegex = false, Domain = dto.Domain };
+        _redirectService.Update(1, dto, Arg.Any<string?>()).Returns(updated);
+        _redirectService.FindOverlappingExactRules(updated.OldUrl, updated.IsRegex, updated.Domain)
+            .Returns(new[] { new RedirectEntry { Id = 20, OldUrl = "/blog/post-9" } });
+
+        var result = _controller.Update(1, dto);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var resultDto = Assert.IsType<RedirectEntryDto>(ok.Value);
+        Assert.Equal(new[] { "/blog/post-9" }, resultDto.OverlapWarnings);
+    }
 }
