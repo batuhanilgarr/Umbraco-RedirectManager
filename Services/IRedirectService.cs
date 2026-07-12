@@ -11,6 +11,7 @@ public interface IRedirectService
     RedirectEntry? GetByOldUrlAndIsRegex(string oldUrl, bool isRegex, string? domain = null);
     IEnumerable<RedirectEntry> GetActiveRegexEntries();
     IEnumerable<RedirectEntry> GetActiveWildcardEntries();
+    IEnumerable<RedirectEntry> FindOverlappingExactRules(string oldUrl, bool isRegex, string? domain);
     RedirectEntry Create(CreateRedirectEntryDto dto, string? actorName);
     RedirectEntry? Update(int id, UpdateRedirectEntryDto dto, string? actorName);
     bool Delete(int id);

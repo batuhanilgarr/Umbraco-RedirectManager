@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.Extensions.Caching.Memory;
 using Umbraco.Cms.Infrastructure.Scoping;
 using Umbraco.RedirectManager.Models;
@@ -11,6 +12,8 @@ public class RedirectService : IRedirectService
 
     private const string ActiveRegexCacheKey = "RedirectManager.ActiveRegexEntries";
     private const string ActiveWildcardCacheKey = "RedirectManager.ActiveWildcardEntries";
+
+    private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(100);
 
     public RedirectService(IScopeProvider scopeProvider, IMemoryCache memoryCache)
     {
@@ -154,6 +157,50 @@ public class RedirectService : IRedirectService
             scope.Complete();
             return results;
         }) ?? Enumerable.Empty<RedirectEntry>();
+    }
+
+    public IEnumerable<RedirectEntry> FindOverlappingExactRules(string oldUrl, bool isRegex, string? domain)
+    {
+        using var scope = _scopeProvider.CreateScope();
+        var candidates = scope.Database.Fetch<RedirectEntry>(
+            $"SELECT * FROM {RedirectEntry.TableName} WHERE IsActive = 1 AND IsRegex = 0 AND OldUrl NOT LIKE '%*%'");
+        scope.Complete();
+
+        var normalizedDomain = DomainNormalizer.Normalize(domain);
+        var inScope = candidates.Where(c =>
+            string.IsNullOrEmpty(c.Domain) ||
+            string.IsNullOrEmpty(normalizedDomain) ||
+            string.Equals(c.Domain, normalizedDomain, StringComparison.OrdinalIgnoreCase));
+
+        Regex pattern;
+        try
+        {
+            pattern = new Regex(
+                isRegex ? oldUrl : WildcardPatternBuilder.BuildRegexPattern(oldUrl),
+                RegexOptions.CultureInvariant | RegexOptions.IgnoreCase,
+                RegexTimeout);
+        }
+        catch (ArgumentException)
+        {
+            return Enumerable.Empty<RedirectEntry>();
+        }
+
+        var overlaps = new List<RedirectEntry>();
+        foreach (var candidate in inScope)
+        {
+            try
+            {
+                if (pattern.IsMatch(candidate.OldUrl))
+                    overlaps.Add(candidate);
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                // Skip this candidate rather than fail the whole save; this is a
+                // best-effort, non-blocking warning, not a correctness guarantee.
+            }
+        }
+
+        return overlaps;
     }
 
     public IReadOnlyDictionary<int, (int Last7, int Last30)> GetHitWindowCounts()
