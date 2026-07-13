@@ -28,7 +28,7 @@ public class RedirectMiddlewareTests
         var resolver = cultureResolver ?? Substitute.For<IRedirectCultureResolver>();
         if (cultureResolver == null)
         {
-            resolver.ResolveCulture(Arg.Any<string?>()).Returns((string?)null);
+            resolver.ResolveCultureAsync(Arg.Any<string?>()).Returns(Task.FromResult<string?>(null));
         }
 
         return new RedirectMiddleware(
@@ -318,7 +318,7 @@ public class RedirectMiddlewareTests
     public async Task InvokeAsync_CultureScopedRule_MatchesWhenResolvedCultureMatches()
     {
         var cultureResolver = Substitute.For<IRedirectCultureResolver>();
-        cultureResolver.ResolveCulture(Arg.Any<string?>()).Returns("tr-tr");
+        cultureResolver.ResolveCultureAsync(Arg.Any<string?>()).Returns(Task.FromResult<string?>("tr-tr"));
         var middleware = CreateMiddleware(cultureResolver: cultureResolver);
         var redirectService = Substitute.For<IRedirectService>();
         var rule = new RedirectEntry { Id = 1, OldUrl = "/eski-sayfa", NewUrl = "/yeni-sayfa", StatusCode = 301, IsActive = true, Culture = "tr-tr" };
@@ -335,7 +335,7 @@ public class RedirectMiddlewareTests
     public async Task InvokeAsync_ResolvedCulture_IsPassedThroughToGetByOldUrl()
     {
         var cultureResolver = Substitute.For<IRedirectCultureResolver>();
-        cultureResolver.ResolveCulture(Arg.Any<string?>()).Returns("en-us");
+        cultureResolver.ResolveCultureAsync(Arg.Any<string?>()).Returns(Task.FromResult<string?>("en-us"));
         var middleware = CreateMiddleware(cultureResolver: cultureResolver);
         var redirectService = Substitute.For<IRedirectService>();
         redirectService.GetByOldUrl(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>()).Returns((RedirectEntry?)null);
@@ -352,7 +352,7 @@ public class RedirectMiddlewareTests
     public async Task InvokeAsync_CultureAgnosticRule_MatchesRegardlessOfResolvedCulture()
     {
         var cultureResolver = Substitute.For<IRedirectCultureResolver>();
-        cultureResolver.ResolveCulture(Arg.Any<string?>()).Returns("tr-tr");
+        cultureResolver.ResolveCultureAsync(Arg.Any<string?>()).Returns(Task.FromResult<string?>("tr-tr"));
         var middleware = CreateMiddleware(cultureResolver: cultureResolver);
         var redirectService = Substitute.For<IRedirectService>();
         var rule = new RedirectEntry { Id = 1, OldUrl = "/old-page", NewUrl = "/new-page", StatusCode = 301, IsActive = true, Culture = null };

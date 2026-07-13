@@ -16,38 +16,49 @@ public class RedirectCultureResolver : IRedirectCultureResolver
         _memoryCache = memoryCache;
     }
 
-    public string? ResolveCulture(string? domain)
+    public async Task<string?> ResolveCultureAsync(string? domain)
     {
         var normalizedDomain = DomainNormalizer.Normalize(domain);
         if (normalizedDomain == null)
             return null;
 
-        var map = GetDomainCultureMap();
+        var map = await GetDomainCultureMapAsync();
         return map.TryGetValue(normalizedDomain, out var culture) ? culture : null;
     }
 
-    private IReadOnlyDictionary<string, string> GetDomainCultureMap()
+    private async Task<IReadOnlyDictionary<string, string>> GetDomainCultureMapAsync()
     {
-        return _memoryCache.GetOrCreate(DomainCultureMapCacheKey, entry =>
+        if (_memoryCache.TryGetValue(DomainCultureMapCacheKey, out IReadOnlyDictionary<string, string>? cached) && cached != null)
+            return cached;
+
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        // Umbraco.Cms.Core's synchronous IDomainService.GetAll(bool) was obsoleted
+        // in 17.1.0 and removed entirely in 18.0.1 -- GetAllAsync is the only
+        // overload guaranteed to exist at runtime on this TFM, even though this
+        // project compiles net10.0 against the 17.1.0 reference (which still has
+        // both). net8.0 targets 13.9.2, which never had GetAllAsync.
+#if NET10_0_OR_GREATER
+        var registeredDomains = await _domainService.GetAllAsync(false);
+#else
+        var registeredDomains = await Task.FromResult(_domainService.GetAll(false));
+#endif
+
+        // false: exclude wildcard domains. A wildcard domain represents a
+        // content node's default culture assignment (its DomainName is a
+        // node ID, not a real hostname) -- not meaningful for matching
+        // against an incoming HTTP Host header.
+        foreach (var registeredDomain in registeredDomains)
         {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30);
+            var normalized = DomainNormalizer.Normalize(registeredDomain.DomainName);
+            if (normalized == null || string.IsNullOrWhiteSpace(registeredDomain.LanguageIsoCode))
+                continue;
 
-            var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            map[normalized] = registeredDomain.LanguageIsoCode.Trim().ToLowerInvariant();
+        }
 
-            // false: exclude wildcard domains. A wildcard domain represents a
-            // content node's default culture assignment (its DomainName is a
-            // node ID, not a real hostname) -- not meaningful for matching
-            // against an incoming HTTP Host header.
-            foreach (var registeredDomain in _domainService.GetAll(false))
-            {
-                var normalized = DomainNormalizer.Normalize(registeredDomain.DomainName);
-                if (normalized == null || string.IsNullOrWhiteSpace(registeredDomain.LanguageIsoCode))
-                    continue;
-
-                map[normalized] = registeredDomain.LanguageIsoCode.Trim().ToLowerInvariant();
-            }
-
-            return (IReadOnlyDictionary<string, string>)map;
-        }) ?? new Dictionary<string, string>();
+        var result = (IReadOnlyDictionary<string, string>)map;
+        _memoryCache.Set(DomainCultureMapCacheKey, result, TimeSpan.FromSeconds(30));
+        return result;
     }
 }

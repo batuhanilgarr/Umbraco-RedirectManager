@@ -604,6 +604,7 @@ class RedirectManagerDashboard extends UmbLitElement {
             }
             .redirect-manager-modal-root .form-group .req { color: #d42054; }
             .redirect-manager-modal-root .form-group input[type="text"],
+            .redirect-manager-modal-root .form-group input[type="datetime-local"],
             .redirect-manager-modal-root .form-group select,
             .redirect-manager-modal-root .form-group textarea {
                 width: 100%; padding: 9px 11px; border: 1px solid #e0e0e0; border-radius: 6px;
@@ -611,13 +612,31 @@ class RedirectManagerDashboard extends UmbLitElement {
                 transition: border-color 0.15s ease, box-shadow 0.15s ease; background: #fff;
             }
             .redirect-manager-modal-root .form-group input[type="text"]:focus,
+            .redirect-manager-modal-root .form-group input[type="datetime-local"]:focus,
             .redirect-manager-modal-root .form-group select:focus,
             .redirect-manager-modal-root .form-group textarea:focus {
                 outline: none; border-color: #3544b1; box-shadow: 0 0 0 3px rgba(53,68,177,0.12); background: #fafbff;
             }
             .redirect-manager-modal-root .form-group input[type="text"]::placeholder,
             .redirect-manager-modal-root .form-group textarea::placeholder { color: #bbb; }
-            .redirect-manager-modal-root .form-group select { cursor: pointer; }
+            .redirect-manager-modal-root .form-group input[type="datetime-local"] {
+                cursor: text; color-scheme: light;
+            }
+            .redirect-manager-modal-root .form-group input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+                cursor: pointer; opacity: 0.5; border-radius: 4px; padding: 3px; margin-left: 4px;
+                transition: opacity 0.15s ease, background-color 0.15s ease;
+            }
+            .redirect-manager-modal-root .form-group input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+                opacity: 1; background-color: rgba(53,68,177,0.1);
+            }
+            .redirect-manager-modal-root .form-group select {
+                cursor: pointer; appearance: none; -webkit-appearance: none; -moz-appearance: none;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23888888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 7l5 5 5-5'/%3E%3C/svg%3E");
+                background-repeat: no-repeat; background-position: right 12px center; background-size: 12px;
+            }
+            .redirect-manager-modal-root .form-group select:focus {
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%233544b1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 7l5 5 5-5'/%3E%3C/svg%3E");
+            }
             .redirect-manager-modal-root .form-group textarea { resize: vertical; min-height: 72px; }
             .redirect-manager-modal-root .form-group small {
                 display: block; margin-top: 5px; color: #999; font-size: 11px; line-height: 1.5;
@@ -634,7 +653,9 @@ class RedirectManagerDashboard extends UmbLitElement {
                 .redirect-manager-modal-root .form-row { flex-direction: column; }
             }
             .redirect-manager-modal-root .status-select-wrap { position: relative; }
-            .redirect-manager-modal-root .status-select-wrap select { padding-right: 90px; }
+            .redirect-manager-modal-root .status-select-wrap select {
+                padding-right: 112px; background-position: right 86px center;
+            }
             .redirect-manager-modal-root .status-float-badge {
                 position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
                 padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;

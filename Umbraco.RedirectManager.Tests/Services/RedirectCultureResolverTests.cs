@@ -18,48 +18,48 @@ public class RedirectCultureResolverTests
     }
 
     [Fact]
-    public void ResolveCulture_RegisteredDomain_ReturnsItsCultureLowercased()
+    public async Task ResolveCulture_RegisteredDomain_ReturnsItsCultureLowercased()
     {
         var domainService = Substitute.For<IDomainService>();
         var registeredDomains = new[] { CreateDomain("tr.example.com", "tr-TR") };
-        domainService.GetAll(false).Returns(registeredDomains);
+        domainService.GetAllAsync(false).Returns(Task.FromResult<IEnumerable<IDomain>>(registeredDomains));
         var resolver = new RedirectCultureResolver(domainService, new MemoryCache(new MemoryCacheOptions()));
 
-        Assert.Equal("tr-tr", resolver.ResolveCulture("tr.example.com"));
+        Assert.Equal("tr-tr", await resolver.ResolveCultureAsync("tr.example.com"));
     }
 
     [Fact]
-    public void ResolveCulture_UnregisteredDomain_ReturnsNull()
+    public async Task ResolveCulture_UnregisteredDomain_ReturnsNull()
     {
         var domainService = Substitute.For<IDomainService>();
         var registeredDomains = new[] { CreateDomain("tr.example.com", "tr-TR") };
-        domainService.GetAll(false).Returns(registeredDomains);
+        domainService.GetAllAsync(false).Returns(Task.FromResult<IEnumerable<IDomain>>(registeredDomains));
         var resolver = new RedirectCultureResolver(domainService, new MemoryCache(new MemoryCacheOptions()));
 
-        Assert.Null(resolver.ResolveCulture("other.example.com"));
+        Assert.Null(await resolver.ResolveCultureAsync("other.example.com"));
     }
 
     [Fact]
-    public void ResolveCulture_NullDomain_ReturnsNull()
+    public async Task ResolveCulture_NullDomain_ReturnsNull()
     {
         var domainService = Substitute.For<IDomainService>();
         var registeredDomains = new[] { CreateDomain("tr.example.com", "tr-TR") };
-        domainService.GetAll(false).Returns(registeredDomains);
+        domainService.GetAllAsync(false).Returns(Task.FromResult<IEnumerable<IDomain>>(registeredDomains));
         var resolver = new RedirectCultureResolver(domainService, new MemoryCache(new MemoryCacheOptions()));
 
-        Assert.Null(resolver.ResolveCulture(null));
+        Assert.Null(await resolver.ResolveCultureAsync(null));
     }
 
     [Fact]
-    public void ResolveCulture_QueriesDomainServiceExcludingWildcards()
+    public async Task ResolveCulture_QueriesDomainServiceExcludingWildcards()
     {
         var domainService = Substitute.For<IDomainService>();
         var registeredDomains = new[] { CreateDomain("tr.example.com", "tr-TR") };
-        domainService.GetAll(false).Returns(registeredDomains);
+        domainService.GetAllAsync(false).Returns(Task.FromResult<IEnumerable<IDomain>>(registeredDomains));
         var resolver = new RedirectCultureResolver(domainService, new MemoryCache(new MemoryCacheOptions()));
 
-        resolver.ResolveCulture("tr.example.com");
+        await resolver.ResolveCultureAsync("tr.example.com");
 
-        domainService.Received(1).GetAll(false);
+        await domainService.Received(1).GetAllAsync(false);
     }
 }

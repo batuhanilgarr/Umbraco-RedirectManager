@@ -6,5 +6,5 @@ public interface IRedirectCultureResolver
     // Umbraco's own Settings > Culture and Hostnames configuration
     // (Umbraco.Cms.Core.Services.IDomainService), or null if no such binding
     // is registered -- meaning only culture-agnostic rules will match.
-    string? ResolveCulture(string? domain);
+    Task<string?> ResolveCultureAsync(string? domain);
 }

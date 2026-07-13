@@ -47,7 +47,7 @@ public class RedirectMiddleware
     {
         var path = context.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
         var domain = DomainNormalizer.Normalize(context.Request.Host.Value);
-        var culture = _cultureResolver.ResolveCulture(domain);
+        var culture = await _cultureResolver.ResolveCultureAsync(domain);
 
         if (ShouldSkipRedirect(path))
         {
