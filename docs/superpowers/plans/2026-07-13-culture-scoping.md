@@ -460,10 +460,60 @@ EOF
 ### Task 3: Thread `culture` through `RedirectService`'s matching/duplicate-check/overlap methods
 
 **Files:**
+- Modify: `Models/RedirectEntryDto.cs`
 - Modify: `Services/IRedirectService.cs`
 - Modify: `Services/RedirectService.cs`
+- Modify: `Controllers/RedirectApiController.cs`
 
-- [ ] **Step 1: Update the interface**
+**Sequencing note (found during implementation of an earlier draft of this plan):** `RedirectService.Create`/`.Update` need to read `dto.Culture`, and `RedirectApiController.BuildOverlapWarnings` calls `FindOverlappingExactRules` (which, like `FindOverlappingExactRules`'s own pre-existing `domain` parameter, has no default value for the new `culture` parameter). Both of these would break the main package's own build the moment this task's interface/service changes land, if left for Task 5 as originally structured. So this task pulls in two small, self-contained slices that would otherwise create a temporarily-broken main build: adding `Culture` to `CreateRedirectEntryDto`/`UpdateRedirectEntryDto` (Step 1 below), and fixing `BuildOverlapWarnings`'s one call site (Step 9 below). Task 5 still does the rest of the DTO/controller work (`RedirectEntryDto.Culture`, `ToDto` mapping, and threading `dto.Culture` into the `Create`/`Update` duplicate-check calls) — none of which are required for the main csproj to build after this task.
+
+- [ ] **Step 1: Add `Culture` to `CreateRedirectEntryDto` and `UpdateRedirectEntryDto`**
+
+Current (`Models/RedirectEntryDto.cs`):
+```csharp
+public class CreateRedirectEntryDto
+{
+    public string OldUrl { get; set; } = string.Empty;
+    public string? NewUrl { get; set; }
+    public string? Domain { get; set; }
+    public string? Description { get; set; }
+```
+
+Replace with:
+```csharp
+public class CreateRedirectEntryDto
+{
+    public string OldUrl { get; set; } = string.Empty;
+    public string? NewUrl { get; set; }
+    public string? Domain { get; set; }
+    public string? Culture { get; set; }
+    public string? Description { get; set; }
+```
+
+Current:
+```csharp
+public class UpdateRedirectEntryDto
+{
+    public string OldUrl { get; set; } = string.Empty;
+    public string? NewUrl { get; set; }
+    public string? Domain { get; set; }
+    public string? Description { get; set; }
+```
+
+Replace with:
+```csharp
+public class UpdateRedirectEntryDto
+{
+    public string OldUrl { get; set; } = string.Empty;
+    public string? NewUrl { get; set; }
+    public string? Domain { get; set; }
+    public string? Culture { get; set; }
+    public string? Description { get; set; }
+```
+
+(Leave `RedirectEntryDto` — the response DTO — untouched here; its `Culture` property and `ToDto` mapping are added in Task 5, since nothing in this task's compile path needs it.)
+
+- [ ] **Step 2: Update the interface**
 
 Current (`Services/IRedirectService.cs`):
 ```csharp
@@ -519,7 +569,7 @@ public interface IRedirectService
 
 Note: `culture` has a default value (`= null`) on `GetByOldUrl`/`GetByOldUrlAndIsRegex`, matching how `domain` already does — existing call sites (including this file's own existing test stubs, which never anticipate a culture argument) keep compiling and behaving identically. `FindOverlappingExactRules` deliberately has **no** default for `culture`, matching how its own `domain` parameter already has no default either — existing call sites (including the 6 pre-existing `FindOverlappingExactRules` stub configurations in `RedirectApiControllerTests.cs`) will need a 4th argument added, which Task 6 handles.
 
-- [ ] **Step 2: `GetByOldUrl` — add culture as an additional filter alongside the existing domain fallback**
+- [ ] **Step 3: `GetByOldUrl` — add culture as an additional filter alongside the existing domain fallback**
 
 Current (`Services/RedirectService.cs`):
 ```csharp
@@ -580,7 +630,7 @@ Replace with:
     }
 ```
 
-- [ ] **Step 3: `GetByOldUrlAndIsRegex` — add culture as a strict-equality duplicate-check dimension**
+- [ ] **Step 4: `GetByOldUrlAndIsRegex` — add culture as a strict-equality duplicate-check dimension**
 
 Current:
 ```csharp
@@ -639,7 +689,7 @@ Replace with:
 
 Note the different comparison style here versus `GetByOldUrl`: this method is the **hard duplicate check** (does an identical rule already exist?), so culture must match via strict tuple equality (a rule with `Culture = "tr-tr"` and one with `Culture = null` are NOT duplicates of each other, even at the same `OldUrl`/`IsRegex`/`Domain`) — `(Culture IS NULL AND @param IS NULL) OR Culture = @param` correctly treats "both null" as equal, and only compares non-null values otherwise. This is different from `GetByOldUrl`'s live-matching semantics, where a `Culture = null` rule is intentionally a wildcard that matches *any* request culture.
 
-- [ ] **Step 4: `FindOverlappingExactRules` — add culture to the in-scope check**
+- [ ] **Step 5: `FindOverlappingExactRules` — add culture to the in-scope check**
 
 Current:
 ```csharp
@@ -679,7 +729,7 @@ Replace with:
 
 (The rest of the method — pattern compilation and matching — is unchanged.)
 
-- [ ] **Step 5: Persist `Culture` in `Create`**
+- [ ] **Step 6: Persist `Culture` in `Create`**
 
 Current:
 ```csharp
@@ -702,7 +752,7 @@ Replace with:
             Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim(),
 ```
 
-- [ ] **Step 6: Persist `Culture` in `Update`**
+- [ ] **Step 7: Persist `Culture` in `Update`**
 
 Current:
 ```csharp
@@ -723,7 +773,7 @@ Replace with:
         existing.Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim();
 ```
 
-- [ ] **Step 7: Add the `NormalizeCulture` helper**
+- [ ] **Step 8: Add the `NormalizeCulture` helper**
 
 Current:
 ```csharp
@@ -768,18 +818,32 @@ Replace with:
     private static int ValidateStatusCode(int statusCode)
 ```
 
-- [ ] **Step 8: Build the main csproj to confirm both TFMs still compile**
+- [ ] **Step 9: Fix `BuildOverlapWarnings`'s call site in `RedirectApiController.cs` (otherwise the main csproj itself fails to build, not just the test project)**
+
+Current (`Controllers/RedirectApiController.cs`):
+```csharp
+        var overlaps = _redirectService.FindOverlappingExactRules(redirect.OldUrl, redirect.IsRegex, redirect.Domain).ToList();
+```
+
+Replace with:
+```csharp
+        var overlaps = _redirectService.FindOverlappingExactRules(redirect.OldUrl, redirect.IsRegex, redirect.Domain, redirect.Culture).ToList();
+```
+
+`redirect` here is a `RedirectEntry` (not a DTO), and `RedirectEntry.Culture` already exists from Task 1, so this compiles regardless of Task 5's DTO/`ToDto` work not having happened yet.
+
+- [ ] **Step 10: Build the main csproj to confirm both TFMs still compile**
 
 ```bash
 dotnet build Umbraco.RedirectManager.csproj -c Release
 ```
 
-Expected: `Build succeeded.` with 0 errors on both `net8.0` and `net10.0`. (The test project is expected to fail to build at this point — see the plan's sequencing note. Build only the main csproj.)
+Expected: `Build succeeded.` with 0 errors on both `net8.0` and `net10.0` — the **main csproj** must build cleanly after this task (Steps 1 and 9 above exist specifically to make that true). Only the **test project** (`Umbraco.RedirectManager.Tests`) is expected to still fail to build at this point (its `RedirectApiControllerTests.cs` stubs `FindOverlappingExactRules` with the old 3-arg signature) — that's fixed in Task 6, not this one. Build only the main csproj, not the test project.
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
-git add Services/IRedirectService.cs Services/RedirectService.cs
+git add Models/RedirectEntryDto.cs Services/IRedirectService.cs Services/RedirectService.cs Controllers/RedirectApiController.cs
 git commit -m "$(cat <<'EOF'
 feat: thread culture through RedirectService's matching and duplicate-check queries
 
@@ -1146,6 +1210,8 @@ EOF
 - Modify: `Models/RedirectEntryDto.cs`
 - Modify: `Controllers/RedirectApiController.cs`
 
+**Note:** `CreateRedirectEntryDto.Culture`/`UpdateRedirectEntryDto.Culture` and `BuildOverlapWarnings`'s `FindOverlappingExactRules` call were already added in Task 3 (a sequencing fix made necessary so the main csproj would build after Task 3 — see that task's note). This task only adds `RedirectEntryDto.Culture` (the response DTO) and threads `dto.Culture` into the `Create`/`Update` duplicate-check calls.
+
 - [ ] **Step 1: Add `Culture` to `RedirectEntryDto`**
 
 Current (`Models/RedirectEntryDto.cs`):
@@ -1171,53 +1237,7 @@ public class RedirectEntryDto
     public string? Description { get; set; }
 ```
 
-- [ ] **Step 2: Add `Culture` to `CreateRedirectEntryDto`**
-
-Current:
-```csharp
-public class CreateRedirectEntryDto
-{
-    public string OldUrl { get; set; } = string.Empty;
-    public string? NewUrl { get; set; }
-    public string? Domain { get; set; }
-    public string? Description { get; set; }
-```
-
-Replace with:
-```csharp
-public class CreateRedirectEntryDto
-{
-    public string OldUrl { get; set; } = string.Empty;
-    public string? NewUrl { get; set; }
-    public string? Domain { get; set; }
-    public string? Culture { get; set; }
-    public string? Description { get; set; }
-```
-
-- [ ] **Step 3: Add `Culture` to `UpdateRedirectEntryDto`**
-
-Current:
-```csharp
-public class UpdateRedirectEntryDto
-{
-    public string OldUrl { get; set; } = string.Empty;
-    public string? NewUrl { get; set; }
-    public string? Domain { get; set; }
-    public string? Description { get; set; }
-```
-
-Replace with:
-```csharp
-public class UpdateRedirectEntryDto
-{
-    public string OldUrl { get; set; } = string.Empty;
-    public string? NewUrl { get; set; }
-    public string? Domain { get; set; }
-    public string? Culture { get; set; }
-    public string? Description { get; set; }
-```
-
-- [ ] **Step 4: Map `Culture` in `ToDto`**
+- [ ] **Step 2: Map `Culture` in `ToDto`**
 
 Current (`Controllers/RedirectApiController.cs`):
 ```csharp
@@ -1246,7 +1266,7 @@ Replace with:
             Description = r.Description,
 ```
 
-- [ ] **Step 5: Pass `dto.Culture` into the duplicate check and `BuildOverlapWarnings`, in `Create`**
+- [ ] **Step 3: Pass `dto.Culture` into the duplicate check in `Create`**
 
 Current:
 ```csharp
@@ -1300,7 +1320,7 @@ Replace with:
     }
 ```
 
-- [ ] **Step 6: Same for `Update`**
+- [ ] **Step 4: Same for `Update`**
 
 Current:
 ```csharp
@@ -1360,35 +1380,7 @@ Replace with:
     }
 ```
 
-- [ ] **Step 7: Pass `redirect.Culture` into `FindOverlappingExactRules` in `BuildOverlapWarnings`**
-
-Current:
-```csharp
-    private List<string>? BuildOverlapWarnings(RedirectEntry redirect)
-    {
-        var isBroadMatcher = redirect.IsRegex || redirect.OldUrl.Contains('*');
-        if (!redirect.IsActive || !isBroadMatcher)
-            return null;
-
-        var overlaps = _redirectService.FindOverlappingExactRules(redirect.OldUrl, redirect.IsRegex, redirect.Domain).ToList();
-        if (overlaps.Count == 0)
-            return null;
-```
-
-Replace with:
-```csharp
-    private List<string>? BuildOverlapWarnings(RedirectEntry redirect)
-    {
-        var isBroadMatcher = redirect.IsRegex || redirect.OldUrl.Contains('*');
-        if (!redirect.IsActive || !isBroadMatcher)
-            return null;
-
-        var overlaps = _redirectService.FindOverlappingExactRules(redirect.OldUrl, redirect.IsRegex, redirect.Domain, redirect.Culture).ToList();
-        if (overlaps.Count == 0)
-            return null;
-```
-
-- [ ] **Step 8: Build the main csproj to confirm both TFMs still compile**
+- [ ] **Step 5: Build the main csproj to confirm both TFMs still compile**
 
 ```bash
 dotnet build Umbraco.RedirectManager.csproj -c Release
@@ -1396,7 +1388,7 @@ dotnet build Umbraco.RedirectManager.csproj -c Release
 
 Expected: `Build succeeded.` with 0 errors on both `net8.0` and `net10.0`. (This is the last task in the sequence that leaves the test project non-building — Task 6 fixes it.)
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 git add Models/RedirectEntryDto.cs Controllers/RedirectApiController.cs
