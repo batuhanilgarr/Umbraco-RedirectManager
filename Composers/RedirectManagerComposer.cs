@@ -27,6 +27,9 @@ public class RedirectManagerComposer : IComposer
         builder.Services.AddSingleton<IVariantBHitTracker, VariantBHitTracker>();
         builder.Services.AddHostedService<VariantBHitFlushService>();
 
+        builder.Services.Configure<RedirectRateLimitOptions>(builder.Config.GetSection("RedirectManager:RateLimit"));
+        builder.Services.AddSingleton<IRedirectRateLimiter, RedirectRateLimiter>();
+
         builder.Services.AddHttpClient();
         builder.Services.AddSingleton<IRedirectTelemetrySettingsStore, RedirectTelemetrySettingsStore>();
         builder.Services.AddSingleton<IRedirectTelemetryPinger, RedirectTelemetryPinger>();

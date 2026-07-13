@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
+using Umbraco.RedirectManager.Models;
 using Umbraco.RedirectManager.Services;
 
 namespace Umbraco.RedirectManager.Middleware;
@@ -13,6 +15,8 @@ public class RedirectMiddleware
     private readonly IRedirectHitTracker _hitTracker;
     private readonly IVariantBHitTracker _variantBHitTracker;
     private readonly IMissedRequestTracker _missedRequestTracker;
+    private readonly IOptions<RedirectRateLimitOptions> _rateLimitOptions;
+    private readonly IRedirectRateLimiter _rateLimiter;
 
     private static readonly ConcurrentDictionary<string, Regex> RegexCache = new();
     private static readonly ConcurrentDictionary<string, Regex> WildcardRegexCache = new();
@@ -23,13 +27,17 @@ public class RedirectMiddleware
         ILogger<RedirectMiddleware> logger,
         IRedirectHitTracker hitTracker,
         IVariantBHitTracker variantBHitTracker,
-        IMissedRequestTracker missedRequestTracker)
+        IMissedRequestTracker missedRequestTracker,
+        IOptions<RedirectRateLimitOptions> rateLimitOptions,
+        IRedirectRateLimiter rateLimiter)
     {
         _next = next;
         _logger = logger;
         _hitTracker = hitTracker;
         _variantBHitTracker = variantBHitTracker;
         _missedRequestTracker = missedRequestTracker;
+        _rateLimitOptions = rateLimitOptions;
+        _rateLimiter = rateLimiter;
     }
 
     public async Task InvokeAsync(HttpContext context, IRedirectService redirectService)
@@ -63,6 +71,9 @@ public class RedirectMiddleware
 
         if (redirect != null && redirect.IsActive)
         {
+            if (TryApplyRateLimit(context))
+                return;
+
             _logger.LogDebug("Redirect found for {OldUrl} -> {NewUrl} ({StatusCode})",
                 redirect.OldUrl, redirect.NewUrl, redirect.StatusCode);
 
@@ -93,6 +104,9 @@ public class RedirectMiddleware
         var wildcardRedirect = FindWildcardRedirect(path, domain, redirectService);
         if (wildcardRedirect != null)
         {
+            if (TryApplyRateLimit(context))
+                return;
+
             _logger.LogDebug("Wildcard redirect found for {OldUrl} -> {NewUrl} ({StatusCode})",
                 wildcardRedirect.Entry.OldUrl, wildcardRedirect.ComputedNewUrl, wildcardRedirect.Entry.StatusCode);
             _hitTracker.RecordHit(wildcardRedirect.Entry.Id);
@@ -126,6 +140,9 @@ public class RedirectMiddleware
         var regexRedirect = FindRegexRedirect(path, domain, redirectService);
         if (regexRedirect != null)
         {
+            if (TryApplyRateLimit(context))
+                return;
+
             _logger.LogDebug("Regex redirect found for {OldUrl} -> {NewUrl} ({StatusCode})",
                 regexRedirect.Entry.OldUrl, regexRedirect.ComputedNewUrl, regexRedirect.Entry.StatusCode);
             _hitTracker.RecordHit(regexRedirect.Entry.Id);
@@ -162,6 +179,33 @@ public class RedirectMiddleware
         {
             _missedRequestTracker.RecordMiss(path);
         }
+    }
+
+    // Returns true (and writes a 429 response) when this matched-redirect
+    // request pushes its client IP over the configured threshold in Block
+    // mode. In LogOnly mode (the default once enabled), it only logs a
+    // warning and always returns false, so the redirect is still served
+    // normally. Disabled entirely (the overall default) unless configured.
+    private bool TryApplyRateLimit(HttpContext context)
+    {
+        if (!_rateLimitOptions.Value.Enabled)
+            return false;
+
+        var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        if (!_rateLimiter.ShouldRateLimit(clientIp, DateTime.UtcNow))
+            return false;
+
+        if (_rateLimitOptions.Value.Mode == RateLimitMode.Block)
+        {
+            context.Response.StatusCode = 429;
+            context.Response.Headers["Retry-After"] = _rateLimitOptions.Value.WindowSeconds.ToString();
+            return true;
+        }
+
+        _logger.LogWarning(
+            "Redirect rate limit exceeded for {ClientIp} (more than {MaxRequestsPerWindow} redirect requests in {WindowSeconds}s)",
+            clientIp, _rateLimitOptions.Value.MaxRequestsPerWindow, _rateLimitOptions.Value.WindowSeconds);
+        return false;
     }
 
     // A/B test resolution for an exact-match 301/302 rule. Not applied to
