@@ -17,6 +17,7 @@ public class RedirectMiddleware
     private readonly IMissedRequestTracker _missedRequestTracker;
     private readonly IOptions<RedirectRateLimitOptions> _rateLimitOptions;
     private readonly IRedirectRateLimiter _rateLimiter;
+    private readonly IRedirectCultureResolver _cultureResolver;
 
     private static readonly ConcurrentDictionary<string, Regex> RegexCache = new();
     private static readonly ConcurrentDictionary<string, Regex> WildcardRegexCache = new();
@@ -29,7 +30,8 @@ public class RedirectMiddleware
         IVariantBHitTracker variantBHitTracker,
         IMissedRequestTracker missedRequestTracker,
         IOptions<RedirectRateLimitOptions> rateLimitOptions,
-        IRedirectRateLimiter rateLimiter)
+        IRedirectRateLimiter rateLimiter,
+        IRedirectCultureResolver cultureResolver)
     {
         _next = next;
         _logger = logger;
@@ -38,12 +40,14 @@ public class RedirectMiddleware
         _missedRequestTracker = missedRequestTracker;
         _rateLimitOptions = rateLimitOptions;
         _rateLimiter = rateLimiter;
+        _cultureResolver = cultureResolver;
     }
 
     public async Task InvokeAsync(HttpContext context, IRedirectService redirectService)
     {
         var path = context.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
         var domain = DomainNormalizer.Normalize(context.Request.Host.Value);
+        var culture = _cultureResolver.ResolveCulture(domain);
 
         if (ShouldSkipRedirect(path))
         {
@@ -59,14 +63,14 @@ public class RedirectMiddleware
             pathAndQuery = path + (query!.StartsWith("?", StringComparison.Ordinal) ? query : "?" + query);
         }
 
-        var redirect = redirectService.GetByOldUrl(pathAndQuery, domain);
+        var redirect = redirectService.GetByOldUrl(pathAndQuery, domain, culture);
         if (redirect == null && pathAndQuery != path)
-            redirect = redirectService.GetByOldUrl(path, domain);
+            redirect = redirectService.GetByOldUrl(path, domain, culture);
         if (redirect == null)
         {
             var toggledPath = ToggleTrailingSlash(path);
             if (toggledPath != null)
-                redirect = redirectService.GetByOldUrl(toggledPath, domain);
+                redirect = redirectService.GetByOldUrl(toggledPath, domain, culture);
         }
 
         if (redirect != null && redirect.IsActive)
@@ -101,7 +105,7 @@ public class RedirectMiddleware
             }
         }
 
-        var wildcardRedirect = FindWildcardRedirect(path, domain, redirectService);
+        var wildcardRedirect = FindWildcardRedirect(path, domain, culture, redirectService);
         if (wildcardRedirect != null)
         {
             if (TryApplyRateLimit(context))
@@ -137,7 +141,7 @@ public class RedirectMiddleware
             }
         }
 
-        var regexRedirect = FindRegexRedirect(path, domain, redirectService);
+        var regexRedirect = FindRegexRedirect(path, domain, culture, redirectService);
         if (regexRedirect != null)
         {
             if (TryApplyRateLimit(context))
@@ -254,7 +258,7 @@ public class RedirectMiddleware
         return redirect.NewUrl;
     }
 
-    private RedirectMatch? FindRegexRedirect(string path, string? domain, IRedirectService redirectService)
+    private RedirectMatch? FindRegexRedirect(string path, string? domain, string? culture, IRedirectService redirectService)
     {
         try
         {
@@ -266,12 +270,12 @@ public class RedirectMiddleware
 
             if (domain != null)
             {
-                var domainMatch = FindRegexMatchIn(entries.Where(r => r.Domain == domain), path);
+                var domainMatch = FindRegexMatchIn(entries.Where(r => r.Domain == domain && IsCultureInScope(r.Culture, culture)), path);
                 if (domainMatch != null)
                     return domainMatch;
             }
 
-            return FindRegexMatchIn(entries.Where(r => string.IsNullOrEmpty(r.Domain)), path);
+            return FindRegexMatchIn(entries.Where(r => string.IsNullOrEmpty(r.Domain) && IsCultureInScope(r.Culture, culture)), path);
         }
         catch (RegexMatchTimeoutException ex)
         {
@@ -318,7 +322,7 @@ public class RedirectMiddleware
         return null;
     }
 
-    private RedirectMatch? FindWildcardRedirect(string path, string? domain, IRedirectService redirectService)
+    private RedirectMatch? FindWildcardRedirect(string path, string? domain, string? culture, IRedirectService redirectService)
     {
         try
         {
@@ -326,12 +330,12 @@ public class RedirectMiddleware
 
             if (domain != null)
             {
-                var domainMatch = FindWildcardMatchIn(entries.Where(r => r.Domain == domain), path);
+                var domainMatch = FindWildcardMatchIn(entries.Where(r => r.Domain == domain && IsCultureInScope(r.Culture, culture)), path);
                 if (domainMatch != null)
                     return domainMatch;
             }
 
-            return FindWildcardMatchIn(entries.Where(r => string.IsNullOrEmpty(r.Domain)), path);
+            return FindWildcardMatchIn(entries.Where(r => string.IsNullOrEmpty(r.Domain) && IsCultureInScope(r.Culture, culture)), path);
         }
         catch (RegexMatchTimeoutException ex)
         {
@@ -388,6 +392,19 @@ public class RedirectMiddleware
 
         public Umbraco.RedirectManager.Models.RedirectEntry Entry { get; }
         public string? ComputedNewUrl { get; }
+    }
+
+    // A candidate rule with no Culture set applies regardless of the
+    // request's resolved culture (culture-agnostic, the default for every
+    // existing rule). A candidate scoped to a specific culture only matches
+    // when it equals the request's resolved culture -- including when the
+    // request's culture couldn't be resolved at all (null), in which case
+    // only culture-agnostic rules pass, mirroring how an unresolved domain
+    // already only lets global/no-domain rules through.
+    private static bool IsCultureInScope(string? candidateCulture, string? requestCulture)
+    {
+        return string.IsNullOrEmpty(candidateCulture) ||
+               string.Equals(candidateCulture, requestCulture, StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool ShouldSkipRedirect(string path)
