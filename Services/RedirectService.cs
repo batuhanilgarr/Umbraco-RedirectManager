@@ -77,50 +77,52 @@ public class RedirectService : IRedirectService
         return result;
     }
 
-    public RedirectEntry? GetByOldUrl(string oldUrl, string? domain = null)
+    public RedirectEntry? GetByOldUrl(string oldUrl, string? domain = null, string? culture = null)
     {
         using var scope = _scopeProvider.CreateScope();
         var normalizedUrl = NormalizeUrl(oldUrl);
         var normalizedDomain = DomainNormalizer.Normalize(domain);
+        var normalizedCulture = NormalizeCulture(culture);
         var now = DateTime.UtcNow;
 
         RedirectEntry? result = null;
         if (normalizedDomain != null)
         {
             result = scope.Database.SingleOrDefault<RedirectEntry>(
-                $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND Domain = @1 AND IsActive = 1 AND IsRegex = 0 AND (ValidFrom IS NULL OR ValidFrom <= @2) AND (ValidUntil IS NULL OR ValidUntil >= @2)",
-                normalizedUrl, normalizedDomain, now);
+                $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND Domain = @1 AND IsActive = 1 AND IsRegex = 0 AND (ValidFrom IS NULL OR ValidFrom <= @2) AND (ValidUntil IS NULL OR ValidUntil >= @2) AND (Culture = @3 OR Culture IS NULL OR Culture = '')",
+                normalizedUrl, normalizedDomain, now, normalizedCulture);
         }
 
         if (result == null)
         {
             result = scope.Database.SingleOrDefault<RedirectEntry>(
-                $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND (Domain IS NULL OR Domain = '') AND IsActive = 1 AND IsRegex = 0 AND (ValidFrom IS NULL OR ValidFrom <= @1) AND (ValidUntil IS NULL OR ValidUntil >= @1)",
-                normalizedUrl, now);
+                $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND (Domain IS NULL OR Domain = '') AND IsActive = 1 AND IsRegex = 0 AND (ValidFrom IS NULL OR ValidFrom <= @1) AND (ValidUntil IS NULL OR ValidUntil >= @1) AND (Culture = @2 OR Culture IS NULL OR Culture = '')",
+                normalizedUrl, now, normalizedCulture);
         }
 
         scope.Complete();
         return result;
     }
 
-    public RedirectEntry? GetByOldUrlAndIsRegex(string oldUrl, bool isRegex, string? domain = null)
+    public RedirectEntry? GetByOldUrlAndIsRegex(string oldUrl, bool isRegex, string? domain = null, string? culture = null)
     {
         using var scope = _scopeProvider.CreateScope();
         var value = NormalizeOldUrl(oldUrl, isRegex);
         var normalizedDomain = DomainNormalizer.Normalize(domain);
+        var normalizedCulture = NormalizeCulture(culture);
 
         RedirectEntry? result;
         if (normalizedDomain != null)
         {
             result = scope.Database.SingleOrDefault<RedirectEntry>(
-                $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND IsRegex = @1 AND Domain = @2",
-                value, isRegex ? 1 : 0, normalizedDomain);
+                $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND IsRegex = @1 AND Domain = @2 AND ((Culture IS NULL AND @3 IS NULL) OR Culture = @3)",
+                value, isRegex ? 1 : 0, normalizedDomain, normalizedCulture);
         }
         else
         {
             result = scope.Database.SingleOrDefault<RedirectEntry>(
-                $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND IsRegex = @1 AND (Domain IS NULL OR Domain = '')",
-                value, isRegex ? 1 : 0);
+                $"SELECT * FROM {RedirectEntry.TableName} WHERE OldUrl = @0 AND IsRegex = @1 AND (Domain IS NULL OR Domain = '') AND ((Culture IS NULL AND @2 IS NULL) OR Culture = @2)",
+                value, isRegex ? 1 : 0, normalizedCulture);
         }
 
         scope.Complete();
@@ -159,7 +161,7 @@ public class RedirectService : IRedirectService
         }) ?? Enumerable.Empty<RedirectEntry>();
     }
 
-    public IEnumerable<RedirectEntry> FindOverlappingExactRules(string oldUrl, bool isRegex, string? domain)
+    public IEnumerable<RedirectEntry> FindOverlappingExactRules(string oldUrl, bool isRegex, string? domain, string? culture)
     {
         using var scope = _scopeProvider.CreateScope();
         var candidates = scope.Database.Fetch<RedirectEntry>(
@@ -167,10 +169,14 @@ public class RedirectService : IRedirectService
         scope.Complete();
 
         var normalizedDomain = DomainNormalizer.Normalize(domain);
+        var normalizedCulture = NormalizeCulture(culture);
         var inScope = candidates.Where(c =>
-            string.IsNullOrEmpty(c.Domain) ||
-            string.IsNullOrEmpty(normalizedDomain) ||
-            string.Equals(c.Domain, normalizedDomain, StringComparison.OrdinalIgnoreCase));
+            (string.IsNullOrEmpty(c.Domain) ||
+             string.IsNullOrEmpty(normalizedDomain) ||
+             string.Equals(c.Domain, normalizedDomain, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrEmpty(c.Culture) ||
+             string.IsNullOrEmpty(normalizedCulture) ||
+             string.Equals(c.Culture, normalizedCulture, StringComparison.OrdinalIgnoreCase)));
 
         Regex pattern;
         try
@@ -263,6 +269,7 @@ public class RedirectService : IRedirectService
             OldUrl = NormalizeOldUrl(dto.OldUrl, isRegex),
             NewUrl = string.IsNullOrWhiteSpace(dto.NewUrl) ? null : NormalizeNewUrl(dto.NewUrl, isRegex),
             Domain = DomainNormalizer.Normalize(dto.Domain),
+            Culture = NormalizeCulture(dto.Culture),
             Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim(),
             StatusCode = ValidateStatusCode(dto.StatusCode),
             IsActive = dto.IsActive,
@@ -303,6 +310,7 @@ public class RedirectService : IRedirectService
         existing.OldUrl = NormalizeOldUrl(dto.OldUrl, existing.IsRegex);
         existing.NewUrl = string.IsNullOrWhiteSpace(dto.NewUrl) ? null : NormalizeNewUrl(dto.NewUrl, existing.IsRegex);
         existing.Domain = DomainNormalizer.Normalize(dto.Domain);
+        existing.Culture = NormalizeCulture(dto.Culture);
         existing.Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim();
         existing.StatusCode = ValidateStatusCode(dto.StatusCode);
         existing.IsActive = dto.IsActive;
@@ -419,6 +427,19 @@ public class RedirectService : IRedirectService
         }
 
         return NormalizeUrl(newUrl);
+    }
+
+    // Trimmed and lowercased -- unlike Domain, culture codes have no
+    // port/IPv6-style structural quirks to handle, so a dedicated normalizer
+    // class isn't needed. Lowercasing keeps comparisons collation-agnostic
+    // across the DB providers this package supports (SQLite's default TEXT
+    // comparison is case-sensitive, unlike SQL Server's common default
+    // collation) -- both the persisted value and RedirectCultureResolver's
+    // resolved value are lowercased, so comparisons never depend on DB
+    // collation behavior.
+    private static string? NormalizeCulture(string? culture)
+    {
+        return string.IsNullOrWhiteSpace(culture) ? null : culture.Trim().ToLowerInvariant();
     }
 
     private static int ValidateStatusCode(int statusCode)

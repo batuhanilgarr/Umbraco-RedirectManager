@@ -633,7 +633,7 @@ public class RedirectApiController : Controller
         if (!redirect.IsActive || !isBroadMatcher)
             return null;
 
-        var overlaps = _redirectService.FindOverlappingExactRules(redirect.OldUrl, redirect.IsRegex, redirect.Domain).ToList();
+        var overlaps = _redirectService.FindOverlappingExactRules(redirect.OldUrl, redirect.IsRegex, redirect.Domain, redirect.Culture).ToList();
         if (overlaps.Count == 0)
             return null;
 

@@ -7,11 +7,11 @@ public interface IRedirectService
     IEnumerable<RedirectEntry> GetAll();
     IEnumerable<RedirectEntry> GetAllFiltered(string? query, int? statusCode, bool? isActive, bool? isRegex);
     RedirectEntry? GetById(int id);
-    RedirectEntry? GetByOldUrl(string oldUrl, string? domain = null);
-    RedirectEntry? GetByOldUrlAndIsRegex(string oldUrl, bool isRegex, string? domain = null);
+    RedirectEntry? GetByOldUrl(string oldUrl, string? domain = null, string? culture = null);
+    RedirectEntry? GetByOldUrlAndIsRegex(string oldUrl, bool isRegex, string? domain = null, string? culture = null);
     IEnumerable<RedirectEntry> GetActiveRegexEntries();
     IEnumerable<RedirectEntry> GetActiveWildcardEntries();
-    IEnumerable<RedirectEntry> FindOverlappingExactRules(string oldUrl, bool isRegex, string? domain);
+    IEnumerable<RedirectEntry> FindOverlappingExactRules(string oldUrl, bool isRegex, string? domain, string? culture);
     RedirectEntry Create(CreateRedirectEntryDto dto, string? actorName);
     RedirectEntry? Update(int id, UpdateRedirectEntryDto dto, string? actorName);
     bool Delete(int id);
