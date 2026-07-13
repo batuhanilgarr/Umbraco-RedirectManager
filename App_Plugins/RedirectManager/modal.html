@@ -72,6 +72,14 @@
                        placeholder="example.com">
             </umb-control-group>
 
+            <umb-control-group label="Culture"
+                               description="Leave blank to apply this redirect to all cultures. Resolved from Umbraco's Culture and Hostnames configuration for the request's domain.">
+                <input type="text"
+                       ng-model="model.redirect.culture"
+                       class="umb-property-editor umb-textstring"
+                       placeholder="tr-TR">
+            </umb-control-group>
+
             <umb-control-group label="Valid from"
                                description="Leave blank to make this redirect active immediately.">
                 <input type="datetime-local"

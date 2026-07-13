@@ -123,6 +123,7 @@
                             <th>Old URL</th>
                             <th>New URL</th>
                             <th>Domain</th>
+                            <th>Culture</th>
                             <th>Notes</th>
                             <th style="text-align:center;">Match</th>
                             <th style="text-align:center;">Active</th>
@@ -146,6 +147,12 @@
                                       class="domain-pill">{{redirect.domain}}</span>
                                 <span ng-if="!redirect.domain"
                                       class="domain-pill all-domains">All domains</span>
+                            </td>
+                            <td>
+                                <span ng-if="redirect.culture"
+                                      class="domain-pill">{{redirect.culture}}</span>
+                                <span ng-if="!redirect.culture"
+                                      class="domain-pill all-domains">All cultures</span>
                             </td>
                             <td class="redirect-notes" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#888;">
                                 {{redirect.description || '—'}}
