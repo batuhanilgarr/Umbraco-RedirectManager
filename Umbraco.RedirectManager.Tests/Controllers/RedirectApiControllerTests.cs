@@ -95,7 +95,7 @@ public class RedirectApiControllerTests
     public void Create_DuplicateExists_ReturnsConflict()
     {
         var dto = ValidCreateDto();
-        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, dto.Culture)
             .Returns(new RedirectEntry { Id = 99, OldUrl = dto.OldUrl });
 
         var result = _controller.Create(dto);
@@ -107,7 +107,7 @@ public class RedirectApiControllerTests
     public void Create_ValidNoDuplicate_ReturnsOkAndCallsCreate()
     {
         var dto = ValidCreateDto();
-        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, dto.Culture)
             .Returns((RedirectEntry?)null);
         var created = new RedirectEntry { Id = 1, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode };
         _redirectService.Create(dto, Arg.Any<string?>()).Returns(created);
@@ -146,7 +146,7 @@ public class RedirectApiControllerTests
     public void Update_DuplicateExistsForDifferentId_ReturnsConflict()
     {
         var dto = ValidUpdateDto();
-        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, dto.Culture)
             .Returns(new RedirectEntry { Id = 99, OldUrl = dto.OldUrl });
 
         var result = _controller.Update(1, dto);
@@ -158,7 +158,7 @@ public class RedirectApiControllerTests
     public void Update_DuplicateIsTheSameRowBeingEdited_DoesNotReturnConflict()
     {
         var dto = ValidUpdateDto();
-        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, dto.Culture)
             .Returns(new RedirectEntry { Id = 1, OldUrl = dto.OldUrl });
         var updated = new RedirectEntry { Id = 1, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode };
         _redirectService.Update(1, dto, Arg.Any<string?>()).Returns(updated);
@@ -172,7 +172,7 @@ public class RedirectApiControllerTests
     public void Update_RowDoesNotExist_ReturnsNotFound()
     {
         var dto = ValidUpdateDto();
-        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, dto.Culture)
             .Returns((RedirectEntry?)null);
         _redirectService.Update(1, dto, Arg.Any<string?>()).Returns((RedirectEntry?)null);
 
@@ -185,7 +185,7 @@ public class RedirectApiControllerTests
     public void Update_ValidNoDuplicate_ReturnsOkAndCallsUpdate()
     {
         var dto = ValidUpdateDto();
-        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, dto.Culture)
             .Returns((RedirectEntry?)null);
         var updated = new RedirectEntry { Id = 1, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode };
         _redirectService.Update(1, dto, Arg.Any<string?>()).Returns(updated);
@@ -201,11 +201,11 @@ public class RedirectApiControllerTests
     {
         var dto = ValidCreateDto();
         dto.OldUrl = "/blog/*";
-        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, dto.Culture)
             .Returns((RedirectEntry?)null);
-        var created = new RedirectEntry { Id = 1, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = true, IsRegex = false, Domain = dto.Domain };
+        var created = new RedirectEntry { Id = 1, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = true, IsRegex = false, Domain = dto.Domain, Culture = dto.Culture };
         _redirectService.Create(dto, Arg.Any<string?>()).Returns(created);
-        _redirectService.FindOverlappingExactRules(created.OldUrl, created.IsRegex, created.Domain)
+        _redirectService.FindOverlappingExactRules(created.OldUrl, created.IsRegex, created.Domain, created.Culture)
             .Returns(new[] { new RedirectEntry { Id = 10, OldUrl = "/blog/post-1" } });
 
         var result = _controller.Create(dto);
@@ -221,11 +221,11 @@ public class RedirectApiControllerTests
         var dto = ValidCreateDto();
         dto.OldUrl = "^/archive/(.+)$";
         dto.IsRegex = true;
-        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, dto.Culture)
             .Returns((RedirectEntry?)null);
-        var created = new RedirectEntry { Id = 2, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = true, IsRegex = true, Domain = dto.Domain };
+        var created = new RedirectEntry { Id = 2, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = true, IsRegex = true, Domain = dto.Domain, Culture = dto.Culture };
         _redirectService.Create(dto, Arg.Any<string?>()).Returns(created);
-        _redirectService.FindOverlappingExactRules(created.OldUrl, created.IsRegex, created.Domain)
+        _redirectService.FindOverlappingExactRules(created.OldUrl, created.IsRegex, created.Domain, created.Culture)
             .Returns(Array.Empty<RedirectEntry>());
 
         var result = _controller.Create(dto);
@@ -239,15 +239,15 @@ public class RedirectApiControllerTests
     public void Create_ExactRule_DoesNotCallFindOverlappingExactRules()
     {
         var dto = ValidCreateDto();
-        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, dto.Culture)
             .Returns((RedirectEntry?)null);
-        var created = new RedirectEntry { Id = 3, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = true, IsRegex = false, Domain = dto.Domain };
+        var created = new RedirectEntry { Id = 3, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = true, IsRegex = false, Domain = dto.Domain, Culture = dto.Culture };
         _redirectService.Create(dto, Arg.Any<string?>()).Returns(created);
 
         var result = _controller.Create(dto);
 
         Assert.IsType<OkObjectResult>(result);
-        _redirectService.DidNotReceive().FindOverlappingExactRules(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<string?>());
+        _redirectService.DidNotReceive().FindOverlappingExactRules(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<string?>(), Arg.Any<string?>());
     }
 
     [Fact]
@@ -256,15 +256,15 @@ public class RedirectApiControllerTests
         var dto = ValidCreateDto();
         dto.OldUrl = "/blog/*";
         dto.IsActive = false;
-        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, dto.Culture)
             .Returns((RedirectEntry?)null);
-        var created = new RedirectEntry { Id = 4, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = false, IsRegex = false, Domain = dto.Domain };
+        var created = new RedirectEntry { Id = 4, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = false, IsRegex = false, Domain = dto.Domain, Culture = dto.Culture };
         _redirectService.Create(dto, Arg.Any<string?>()).Returns(created);
 
         var result = _controller.Create(dto);
 
         Assert.IsType<OkObjectResult>(result);
-        _redirectService.DidNotReceive().FindOverlappingExactRules(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<string?>());
+        _redirectService.DidNotReceive().FindOverlappingExactRules(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<string?>(), Arg.Any<string?>());
     }
 
     [Fact]
@@ -272,14 +272,14 @@ public class RedirectApiControllerTests
     {
         var dto = ValidCreateDto();
         dto.OldUrl = "/blog/*";
-        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, dto.Culture)
             .Returns((RedirectEntry?)null);
-        var created = new RedirectEntry { Id = 5, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = true, IsRegex = false, Domain = dto.Domain };
+        var created = new RedirectEntry { Id = 5, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = true, IsRegex = false, Domain = dto.Domain, Culture = dto.Culture };
         _redirectService.Create(dto, Arg.Any<string?>()).Returns(created);
         var overlaps = Enumerable.Range(1, 7)
             .Select(i => new RedirectEntry { Id = 100 + i, OldUrl = $"/blog/post-{i}" })
             .ToArray();
-        _redirectService.FindOverlappingExactRules(created.OldUrl, created.IsRegex, created.Domain)
+        _redirectService.FindOverlappingExactRules(created.OldUrl, created.IsRegex, created.Domain, created.Culture)
             .Returns(overlaps);
 
         var result = _controller.Create(dto);
@@ -299,11 +299,11 @@ public class RedirectApiControllerTests
     {
         var dto = ValidUpdateDto();
         dto.OldUrl = "/blog/*";
-        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain)
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, dto.Culture)
             .Returns((RedirectEntry?)null);
-        var updated = new RedirectEntry { Id = 1, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = true, IsRegex = false, Domain = dto.Domain };
+        var updated = new RedirectEntry { Id = 1, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = true, IsRegex = false, Domain = dto.Domain, Culture = dto.Culture };
         _redirectService.Update(1, dto, Arg.Any<string?>()).Returns(updated);
-        _redirectService.FindOverlappingExactRules(updated.OldUrl, updated.IsRegex, updated.Domain)
+        _redirectService.FindOverlappingExactRules(updated.OldUrl, updated.IsRegex, updated.Domain, updated.Culture)
             .Returns(new[] { new RedirectEntry { Id = 20, OldUrl = "/blog/post-9" } });
 
         var result = _controller.Update(1, dto);
@@ -311,5 +311,92 @@ public class RedirectApiControllerTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var resultDto = Assert.IsType<RedirectEntryDto>(ok.Value);
         Assert.Equal(new[] { "/blog/post-9" }, resultDto.OverlapWarnings);
+    }
+
+    [Fact]
+    public void Create_ValidWithCulture_ReturnsResultWithCulture()
+    {
+        var dto = ValidCreateDto();
+        dto.Culture = "tr-TR";
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, dto.Culture)
+            .Returns((RedirectEntry?)null);
+        var created = new RedirectEntry { Id = 1, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, Culture = "tr-tr" };
+        _redirectService.Create(dto, Arg.Any<string?>()).Returns(created);
+
+        var result = _controller.Create(dto);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var resultDto = Assert.IsType<RedirectEntryDto>(ok.Value);
+        Assert.Equal("tr-tr", resultDto.Culture);
+    }
+
+    [Fact]
+    public void Create_DuplicateExistsForSameCulture_ReturnsConflict()
+    {
+        var dto = ValidCreateDto();
+        dto.Culture = "tr-TR";
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, dto.Culture)
+            .Returns(new RedirectEntry { Id = 99, OldUrl = dto.OldUrl, Culture = dto.Culture });
+
+        var result = _controller.Create(dto);
+
+        Assert.IsType<ConflictObjectResult>(result);
+    }
+
+    [Fact]
+    public void Create_ExistingDuplicateIsForDifferentCulture_DoesNotReturnConflict()
+    {
+        var dto = ValidCreateDto();
+        dto.Culture = "tr-TR";
+        // Stub configured for a DIFFERENT culture ("en-US") than what dto
+        // actually carries ("tr-TR") -- if the controller correctly threads
+        // dto.Culture through to GetByOldUrlAndIsRegex, this stub simply won't
+        // match, proving culture (not just OldUrl/IsRegex/Domain) genuinely
+        // differentiates rules.
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, "en-US")
+            .Returns(new RedirectEntry { Id = 99, OldUrl = dto.OldUrl, Culture = "en-US" });
+        var created = new RedirectEntry { Id = 1, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, Culture = dto.Culture };
+        _redirectService.Create(dto, Arg.Any<string?>()).Returns(created);
+
+        var result = _controller.Create(dto);
+
+        Assert.IsType<OkObjectResult>(result);
+    }
+
+    [Fact]
+    public void Create_WildcardRuleWithCulture_PassesCultureToFindOverlappingExactRules()
+    {
+        var dto = ValidCreateDto();
+        dto.OldUrl = "/blog/*";
+        dto.Culture = "tr-TR";
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, dto.Culture)
+            .Returns((RedirectEntry?)null);
+        var created = new RedirectEntry { Id = 1, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, IsActive = true, IsRegex = false, Domain = dto.Domain, Culture = dto.Culture };
+        _redirectService.Create(dto, Arg.Any<string?>()).Returns(created);
+        _redirectService.FindOverlappingExactRules(created.OldUrl, created.IsRegex, created.Domain, created.Culture)
+            .Returns(new[] { new RedirectEntry { Id = 10, OldUrl = "/blog/post-1" } });
+
+        var result = _controller.Create(dto);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var resultDto = Assert.IsType<RedirectEntryDto>(ok.Value);
+        Assert.Equal(new[] { "/blog/post-1" }, resultDto.OverlapWarnings);
+    }
+
+    [Fact]
+    public void Update_ValidWithCulture_ReturnsResultWithCulture()
+    {
+        var dto = ValidUpdateDto();
+        dto.Culture = "tr-TR";
+        _redirectService.GetByOldUrlAndIsRegex(dto.OldUrl, dto.IsRegex, dto.Domain, dto.Culture)
+            .Returns((RedirectEntry?)null);
+        var updated = new RedirectEntry { Id = 1, OldUrl = dto.OldUrl, NewUrl = dto.NewUrl, StatusCode = dto.StatusCode, Culture = "tr-tr" };
+        _redirectService.Update(1, dto, Arg.Any<string?>()).Returns(updated);
+
+        var result = _controller.Update(1, dto);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        var resultDto = Assert.IsType<RedirectEntryDto>(ok.Value);
+        Assert.Equal("tr-tr", resultDto.Culture);
     }
 }
