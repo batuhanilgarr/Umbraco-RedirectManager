@@ -30,6 +30,8 @@ public class RedirectManagerComposer : IComposer
         builder.Services.Configure<RedirectRateLimitOptions>(builder.Config.GetSection("RedirectManager:RateLimit"));
         builder.Services.AddSingleton<IRedirectRateLimiter, RedirectRateLimiter>();
 
+        builder.Services.AddSingleton<IRedirectCultureResolver, RedirectCultureResolver>();
+
         builder.Services.AddHttpClient();
         builder.Services.AddSingleton<IRedirectTelemetrySettingsStore, RedirectTelemetrySettingsStore>();
         builder.Services.AddSingleton<IRedirectTelemetryPinger, RedirectTelemetryPinger>();
