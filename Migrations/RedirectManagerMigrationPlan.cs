@@ -22,6 +22,7 @@ public class RedirectManagerPackageMigrationPlan : PackageMigrationPlan
         To<AddPreserveQueryStringColumn>(new Guid("9C4F2A18-5E7B-4D3A-8F16-2C9E7B4A6D31"));
         To<AddValidityWindowColumns>(new Guid("A2E5F8C1-3B6D-4A9E-8F17-5C0D9E4B7A63"));
         To<AddAuditFieldColumns>(new Guid("D3B6A947-8F2C-4E15-9A03-6D7B1C5E9F82"));
+        To<AddCultureColumn>(new Guid("E4F7A208-3C5B-46D2-9A81-7F0C3E6B4D95"));
     }
 }
 
@@ -267,6 +268,28 @@ public class AddAuditFieldColumns : AsyncMigrationBase
     }
 }
 
+public class AddCultureColumn : AsyncMigrationBase
+{
+    public AddCultureColumn(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override Task MigrateAsync()
+    {
+        if (TableExists(RedirectEntry.TableName) == false)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "Culture") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "Culture");
+        }
+
+        return Task.CompletedTask;
+    }
+}
+
 #else
 
 public class CreateRedirectManagerTable : MigrationBase
@@ -485,6 +508,26 @@ public class AddAuditFieldColumns : MigrationBase
         if (ColumnExists(RedirectEntry.TableName, "ModifiedBy") == false)
         {
             AddColumn<RedirectEntry>(RedirectEntry.TableName, "ModifiedBy");
+        }
+    }
+}
+
+public class AddCultureColumn : MigrationBase
+{
+    public AddCultureColumn(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override void Migrate()
+    {
+        if (TableExists(RedirectEntry.TableName) == false)
+        {
+            return;
+        }
+
+        if (ColumnExists(RedirectEntry.TableName, "Culture") == false)
+        {
+            AddColumn<RedirectEntry>(RedirectEntry.TableName, "Culture");
         }
     }
 }

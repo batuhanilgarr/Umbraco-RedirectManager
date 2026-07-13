@@ -28,6 +28,11 @@ public class RedirectEntry
     [Length(255)]
     public string? Domain { get; set; }
 
+    [Column("Culture")]
+    [NullSetting(NullSetting = NullSettings.Null)]
+    [Length(50)]
+    public string? Culture { get; set; }
+
     [Column("Description")]
     [NullSetting(NullSetting = NullSettings.Null)]
     [Length(2048)]
