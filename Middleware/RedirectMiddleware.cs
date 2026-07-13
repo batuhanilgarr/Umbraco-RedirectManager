@@ -46,14 +46,50 @@ public class RedirectMiddleware
     public async Task InvokeAsync(HttpContext context, IRedirectService redirectService)
     {
         var path = context.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
-        var domain = DomainNormalizer.Normalize(context.Request.Host.Value);
-        var culture = await _cultureResolver.ResolveCultureAsync(domain);
 
         if (ShouldSkipRedirect(path))
         {
             await _next(context);
             return;
         }
+
+        if (await TryHandleRedirectAsync(context, redirectService, path))
+        {
+            return;
+        }
+
+        await _next(context);
+
+        if (context.Response.StatusCode == StatusCodes.Status404NotFound)
+        {
+            _missedRequestTracker.RecordMiss(path);
+        }
+    }
+
+    // Wraps all redirect-matching DB/lookup work so a transient failure -- most
+    // notably a pending package migration leaving the schema briefly out of
+    // sync with this build right after an update -- degrades to "no redirect
+    // matched" instead of crashing the entire request. Returns true if a
+    // response was already written (caller should return immediately).
+    private async Task<bool> TryHandleRedirectAsync(HttpContext context, IRedirectService redirectService, string path)
+    {
+        try
+        {
+            return await MatchAndApplyRedirectAsync(context, redirectService, path);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Redirect matching failed for {Path} -- likely a database schema pending migration after an update, or a transient error. Passing the request through unmodified.",
+                path);
+            return false;
+        }
+    }
+
+    private async Task<bool> MatchAndApplyRedirectAsync(HttpContext context, IRedirectService redirectService, string path)
+    {
+        var domain = DomainNormalizer.Normalize(context.Request.Host.Value);
+        var culture = await _cultureResolver.ResolveCultureAsync(domain);
 
         // Path + query string (e.g. /raporlar.aspx?type=11) so rules with query string match
         var pathAndQuery = path;
@@ -76,7 +112,7 @@ public class RedirectMiddleware
         if (redirect != null && redirect.IsActive)
         {
             if (TryApplyRateLimit(context))
-                return;
+                return true;
 
             _logger.LogDebug("Redirect found for {OldUrl} -> {NewUrl} ({StatusCode})",
                 redirect.OldUrl, redirect.NewUrl, redirect.StatusCode);
@@ -89,19 +125,19 @@ public class RedirectMiddleware
                         ResolveRedirectTarget(context, redirect), redirect.PreserveQueryString, context.Request.QueryString);
                     context.Response.StatusCode = redirect.StatusCode;
                     context.Response.Headers.Location = targetUrl ?? "/";
-                    return;
+                    return true;
 
                 case 404:
                     _hitTracker.RecordHit(redirect.Id);
                     context.Response.StatusCode = 404;
                     await context.Response.WriteAsync("Not Found");
-                    return;
+                    return true;
 
                 case 410:
                     _hitTracker.RecordHit(redirect.Id);
                     context.Response.StatusCode = 410;
                     await context.Response.WriteAsync("Gone");
-                    return;
+                    return true;
             }
         }
 
@@ -109,7 +145,7 @@ public class RedirectMiddleware
         if (wildcardRedirect != null)
         {
             if (TryApplyRateLimit(context))
-                return;
+                return true;
 
             _logger.LogDebug("Wildcard redirect found for {OldUrl} -> {NewUrl} ({StatusCode})",
                 wildcardRedirect.Entry.OldUrl, wildcardRedirect.ComputedNewUrl, wildcardRedirect.Entry.StatusCode);
@@ -121,23 +157,23 @@ public class RedirectMiddleware
                     context.Response.StatusCode = 301;
                     context.Response.Headers.Location = AppendPreservedQueryString(
                         wildcardRedirect.ComputedNewUrl, wildcardRedirect.Entry.PreserveQueryString, context.Request.QueryString) ?? "/";
-                    return;
+                    return true;
 
                 case 302:
                     context.Response.StatusCode = 302;
                     context.Response.Headers.Location = AppendPreservedQueryString(
                         wildcardRedirect.ComputedNewUrl, wildcardRedirect.Entry.PreserveQueryString, context.Request.QueryString) ?? "/";
-                    return;
+                    return true;
 
                 case 404:
                     context.Response.StatusCode = 404;
                     await context.Response.WriteAsync("Not Found");
-                    return;
+                    return true;
 
                 case 410:
                     context.Response.StatusCode = 410;
                     await context.Response.WriteAsync("Gone");
-                    return;
+                    return true;
             }
         }
 
@@ -145,7 +181,7 @@ public class RedirectMiddleware
         if (regexRedirect != null)
         {
             if (TryApplyRateLimit(context))
-                return;
+                return true;
 
             _logger.LogDebug("Regex redirect found for {OldUrl} -> {NewUrl} ({StatusCode})",
                 regexRedirect.Entry.OldUrl, regexRedirect.ComputedNewUrl, regexRedirect.Entry.StatusCode);
@@ -157,32 +193,27 @@ public class RedirectMiddleware
                     context.Response.StatusCode = 301;
                     context.Response.Headers.Location = AppendPreservedQueryString(
                         regexRedirect.ComputedNewUrl, regexRedirect.Entry.PreserveQueryString, context.Request.QueryString) ?? "/";
-                    return;
+                    return true;
 
                 case 302:
                     context.Response.StatusCode = 302;
                     context.Response.Headers.Location = AppendPreservedQueryString(
                         regexRedirect.ComputedNewUrl, regexRedirect.Entry.PreserveQueryString, context.Request.QueryString) ?? "/";
-                    return;
+                    return true;
 
                 case 404:
                     context.Response.StatusCode = 404;
                     await context.Response.WriteAsync("Not Found");
-                    return;
+                    return true;
 
                 case 410:
                     context.Response.StatusCode = 410;
                     await context.Response.WriteAsync("Gone");
-                    return;
+                    return true;
             }
         }
 
-        await _next(context);
-
-        if (context.Response.StatusCode == StatusCodes.Status404NotFound)
-        {
-            _missedRequestTracker.RecordMiss(path);
-        }
+        return false;
     }
 
     // Returns true (and writes a 429 response) when this matched-redirect

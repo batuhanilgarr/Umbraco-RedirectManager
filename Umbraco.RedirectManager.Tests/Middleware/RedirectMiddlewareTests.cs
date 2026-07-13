@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Umbraco.RedirectManager.Middleware;
 using Umbraco.RedirectManager.Models;
 using Umbraco.RedirectManager.Services;
@@ -363,5 +364,39 @@ public class RedirectMiddlewareTests
 
         Assert.Equal(301, context.Response.StatusCode);
         Assert.Equal("/new-page", context.Response.Headers.Location.ToString());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_RedirectServiceThrows_PassesThroughToNextInsteadOfCrashing()
+    {
+        var nextCalled = false;
+        var middleware = CreateMiddleware(next: _ => { nextCalled = true; return Task.CompletedTask; });
+        var redirectService = Substitute.For<IRedirectService>();
+        redirectService.GetByOldUrl(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>())
+            .Throws(new InvalidOperationException("Invalid column name 'Culture' -- pending migration"));
+        var context = CreateContext("/some-page");
+
+        await middleware.InvokeAsync(context, redirectService);
+
+        Assert.True(nextCalled);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_CultureResolverThrows_PassesThroughToNextInsteadOfCrashing()
+    {
+        var nextCalled = false;
+        var cultureResolver = Substitute.For<IRedirectCultureResolver>();
+        cultureResolver.ResolveCultureAsync(Arg.Any<string?>())
+            .Returns(Task.FromException<string?>(new InvalidOperationException("Simulated schema mismatch")));
+        var middleware = CreateMiddleware(
+            next: _ => { nextCalled = true; return Task.CompletedTask; },
+            cultureResolver: cultureResolver);
+        var redirectService = Substitute.For<IRedirectService>();
+        var context = CreateContext("/some-page");
+
+        await middleware.InvokeAsync(context, redirectService);
+
+        Assert.True(nextCalled);
+        redirectService.DidNotReceive().GetByOldUrl(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>());
     }
 }
