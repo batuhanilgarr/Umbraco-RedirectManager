@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using Umbraco.RedirectManager.Middleware;
 using Umbraco.RedirectManager.Models;
@@ -14,14 +15,18 @@ public class RedirectMiddlewareTests
         RequestDelegate? next = null,
         IRedirectHitTracker? hitTracker = null,
         IVariantBHitTracker? variantBHitTracker = null,
-        IMissedRequestTracker? missedRequestTracker = null)
+        IMissedRequestTracker? missedRequestTracker = null,
+        RedirectRateLimitOptions? rateLimitOptions = null,
+        IRedirectRateLimiter? rateLimiter = null)
     {
         return new RedirectMiddleware(
             next ?? (_ => Task.CompletedTask),
             NullLogger<RedirectMiddleware>.Instance,
             hitTracker ?? Substitute.For<IRedirectHitTracker>(),
             variantBHitTracker ?? Substitute.For<IVariantBHitTracker>(),
-            missedRequestTracker ?? Substitute.For<IMissedRequestTracker>());
+            missedRequestTracker ?? Substitute.For<IMissedRequestTracker>(),
+            Options.Create(rateLimitOptions ?? new RedirectRateLimitOptions()),
+            rateLimiter ?? Substitute.For<IRedirectRateLimiter>());
     }
 
     private static DefaultHttpContext CreateContext(string path, string? queryString = null, string host = "example.com")
@@ -197,5 +202,102 @@ public class RedirectMiddlewareTests
         await middleware.InvokeAsync(context, redirectService);
 
         missedTracker.DidNotReceive().RecordMiss(Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_RateLimitDisabled_NeverConsultsLimiterEvenIfWouldBlock()
+    {
+        var rateLimiter = Substitute.For<IRedirectRateLimiter>();
+        rateLimiter.ShouldRateLimit(Arg.Any<string>(), Arg.Any<DateTime>()).Returns(true);
+        var middleware = CreateMiddleware(
+            rateLimitOptions: new RedirectRateLimitOptions { Enabled = false },
+            rateLimiter: rateLimiter);
+        var redirectService = Substitute.For<IRedirectService>();
+        var rule = ExactRule("/old-page", "/new-page", statusCode: 301);
+        redirectService.GetByOldUrl("/old-page", Arg.Any<string?>()).Returns(rule);
+        var context = CreateContext("/old-page");
+
+        await middleware.InvokeAsync(context, redirectService);
+
+        Assert.Equal(301, context.Response.StatusCode);
+        rateLimiter.DidNotReceive().ShouldRateLimit(Arg.Any<string>(), Arg.Any<DateTime>());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_RateLimitEnabledBlockMode_OverLimit_Returns429WithRetryAfter()
+    {
+        var rateLimiter = Substitute.For<IRedirectRateLimiter>();
+        rateLimiter.ShouldRateLimit(Arg.Any<string>(), Arg.Any<DateTime>()).Returns(true);
+        var hitTracker = Substitute.For<IRedirectHitTracker>();
+        var middleware = CreateMiddleware(
+            hitTracker: hitTracker,
+            rateLimitOptions: new RedirectRateLimitOptions { Enabled = true, Mode = RateLimitMode.Block, WindowSeconds = 60 },
+            rateLimiter: rateLimiter);
+        var redirectService = Substitute.For<IRedirectService>();
+        var rule = ExactRule("/gone-page", null, statusCode: 410);
+        redirectService.GetByOldUrl("/gone-page", Arg.Any<string?>()).Returns(rule);
+        var context = CreateContext("/gone-page");
+
+        await middleware.InvokeAsync(context, redirectService);
+
+        Assert.Equal(429, context.Response.StatusCode);
+        Assert.Equal("60", context.Response.Headers["Retry-After"].ToString());
+        hitTracker.DidNotReceive().RecordHit(Arg.Any<int>());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_RateLimitEnabledLogOnlyMode_OverLimit_StillRedirectsNormally()
+    {
+        var rateLimiter = Substitute.For<IRedirectRateLimiter>();
+        rateLimiter.ShouldRateLimit(Arg.Any<string>(), Arg.Any<DateTime>()).Returns(true);
+        var middleware = CreateMiddleware(
+            rateLimitOptions: new RedirectRateLimitOptions { Enabled = true, Mode = RateLimitMode.LogOnly },
+            rateLimiter: rateLimiter);
+        var redirectService = Substitute.For<IRedirectService>();
+        var rule = ExactRule("/old-page", "/new-page", statusCode: 301);
+        redirectService.GetByOldUrl("/old-page", Arg.Any<string?>()).Returns(rule);
+        var context = CreateContext("/old-page");
+
+        await middleware.InvokeAsync(context, redirectService);
+
+        Assert.Equal(301, context.Response.StatusCode);
+        Assert.Equal("/new-page", context.Response.Headers.Location.ToString());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_RateLimitEnabledUnderLimit_RedirectsNormallyAndConsultsLimiter()
+    {
+        var rateLimiter = Substitute.For<IRedirectRateLimiter>();
+        rateLimiter.ShouldRateLimit(Arg.Any<string>(), Arg.Any<DateTime>()).Returns(false);
+        var middleware = CreateMiddleware(
+            rateLimitOptions: new RedirectRateLimitOptions { Enabled = true },
+            rateLimiter: rateLimiter);
+        var redirectService = Substitute.For<IRedirectService>();
+        var rule = ExactRule("/old-page", "/new-page", statusCode: 301);
+        redirectService.GetByOldUrl("/old-page", Arg.Any<string?>()).Returns(rule);
+        var context = CreateContext("/old-page");
+
+        await middleware.InvokeAsync(context, redirectService);
+
+        Assert.Equal(301, context.Response.StatusCode);
+        rateLimiter.Received(1).ShouldRateLimit(Arg.Any<string>(), Arg.Any<DateTime>());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_NoMatch_NeverConsultsRateLimiter()
+    {
+        var rateLimiter = Substitute.For<IRedirectRateLimiter>();
+        var middleware = CreateMiddleware(
+            rateLimitOptions: new RedirectRateLimitOptions { Enabled = true },
+            rateLimiter: rateLimiter);
+        var redirectService = Substitute.For<IRedirectService>();
+        redirectService.GetByOldUrl(Arg.Any<string>(), Arg.Any<string?>()).Returns((RedirectEntry?)null);
+        redirectService.GetActiveWildcardEntries().Returns(Array.Empty<RedirectEntry>());
+        redirectService.GetActiveRegexEntries().Returns(Array.Empty<RedirectEntry>());
+        var context = CreateContext("/does-not-exist");
+
+        await middleware.InvokeAsync(context, redirectService);
+
+        rateLimiter.DidNotReceive().ShouldRateLimit(Arg.Any<string>(), Arg.Any<DateTime>());
     }
 }
