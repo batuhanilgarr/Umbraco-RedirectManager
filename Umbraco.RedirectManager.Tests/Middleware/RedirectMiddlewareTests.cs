@@ -17,8 +17,20 @@ public class RedirectMiddlewareTests
         IVariantBHitTracker? variantBHitTracker = null,
         IMissedRequestTracker? missedRequestTracker = null,
         RedirectRateLimitOptions? rateLimitOptions = null,
-        IRedirectRateLimiter? rateLimiter = null)
+        IRedirectRateLimiter? rateLimiter = null,
+        IRedirectCultureResolver? cultureResolver = null)
     {
+        // NSubstitute returns string.Empty (not null) from an unconfigured
+        // member with a string? return type, so the default resolver is
+        // explicitly configured to return null -- matching the "no culture
+        // resolved" behavior every pre-existing test in this file implicitly
+        // relies on.
+        var resolver = cultureResolver ?? Substitute.For<IRedirectCultureResolver>();
+        if (cultureResolver == null)
+        {
+            resolver.ResolveCulture(Arg.Any<string?>()).Returns((string?)null);
+        }
+
         return new RedirectMiddleware(
             next ?? (_ => Task.CompletedTask),
             NullLogger<RedirectMiddleware>.Instance,
@@ -26,7 +38,8 @@ public class RedirectMiddlewareTests
             variantBHitTracker ?? Substitute.For<IVariantBHitTracker>(),
             missedRequestTracker ?? Substitute.For<IMissedRequestTracker>(),
             Options.Create(rateLimitOptions ?? new RedirectRateLimitOptions()),
-            rateLimiter ?? Substitute.For<IRedirectRateLimiter>());
+            rateLimiter ?? Substitute.For<IRedirectRateLimiter>(),
+            resolver);
     }
 
     private static DefaultHttpContext CreateContext(string path, string? queryString = null, string host = "example.com")
@@ -299,5 +312,56 @@ public class RedirectMiddlewareTests
         await middleware.InvokeAsync(context, redirectService);
 
         rateLimiter.DidNotReceive().ShouldRateLimit(Arg.Any<string>(), Arg.Any<DateTime>());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_CultureScopedRule_MatchesWhenResolvedCultureMatches()
+    {
+        var cultureResolver = Substitute.For<IRedirectCultureResolver>();
+        cultureResolver.ResolveCulture(Arg.Any<string?>()).Returns("tr-tr");
+        var middleware = CreateMiddleware(cultureResolver: cultureResolver);
+        var redirectService = Substitute.For<IRedirectService>();
+        var rule = new RedirectEntry { Id = 1, OldUrl = "/eski-sayfa", NewUrl = "/yeni-sayfa", StatusCode = 301, IsActive = true, Culture = "tr-tr" };
+        redirectService.GetByOldUrl("/eski-sayfa", Arg.Any<string?>(), "tr-tr").Returns(rule);
+        var context = CreateContext("/eski-sayfa");
+
+        await middleware.InvokeAsync(context, redirectService);
+
+        Assert.Equal(301, context.Response.StatusCode);
+        Assert.Equal("/yeni-sayfa", context.Response.Headers.Location.ToString());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_ResolvedCulture_IsPassedThroughToGetByOldUrl()
+    {
+        var cultureResolver = Substitute.For<IRedirectCultureResolver>();
+        cultureResolver.ResolveCulture(Arg.Any<string?>()).Returns("en-us");
+        var middleware = CreateMiddleware(cultureResolver: cultureResolver);
+        var redirectService = Substitute.For<IRedirectService>();
+        redirectService.GetByOldUrl(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>()).Returns((RedirectEntry?)null);
+        redirectService.GetActiveWildcardEntries().Returns(Array.Empty<RedirectEntry>());
+        redirectService.GetActiveRegexEntries().Returns(Array.Empty<RedirectEntry>());
+        var context = CreateContext("/some-page");
+
+        await middleware.InvokeAsync(context, redirectService);
+
+        redirectService.Received().GetByOldUrl(Arg.Any<string>(), Arg.Any<string?>(), "en-us");
+    }
+
+    [Fact]
+    public async Task InvokeAsync_CultureAgnosticRule_MatchesRegardlessOfResolvedCulture()
+    {
+        var cultureResolver = Substitute.For<IRedirectCultureResolver>();
+        cultureResolver.ResolveCulture(Arg.Any<string?>()).Returns("tr-tr");
+        var middleware = CreateMiddleware(cultureResolver: cultureResolver);
+        var redirectService = Substitute.For<IRedirectService>();
+        var rule = new RedirectEntry { Id = 1, OldUrl = "/old-page", NewUrl = "/new-page", StatusCode = 301, IsActive = true, Culture = null };
+        redirectService.GetByOldUrl("/old-page", Arg.Any<string?>(), "tr-tr").Returns(rule);
+        var context = CreateContext("/old-page");
+
+        await middleware.InvokeAsync(context, redirectService);
+
+        Assert.Equal(301, context.Response.StatusCode);
+        Assert.Equal("/new-page", context.Response.Headers.Location.ToString());
     }
 }
