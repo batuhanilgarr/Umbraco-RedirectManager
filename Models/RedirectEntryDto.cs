@@ -6,6 +6,7 @@ public class RedirectEntryDto
     public string OldUrl { get; set; } = string.Empty;
     public string? NewUrl { get; set; }
     public string? Domain { get; set; }
+    public string? Culture { get; set; }
     public string? Description { get; set; }
     public int StatusCode { get; set; } = 301;
     public bool IsActive { get; set; } = true;
