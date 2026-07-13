@@ -875,6 +875,7 @@ class RedirectManagerDashboard extends UmbLitElement {
             oldUrl: '',
             newUrl: '',
             domain: '',
+            culture: '',
             description: '',
             statusCode: 301,
             isActive: true,
@@ -980,6 +981,7 @@ class RedirectManagerDashboard extends UmbLitElement {
             oldUrl: redirect.oldUrl,
             newUrl: redirect.newUrl || '',
             domain: redirect.domain || '',
+            culture: redirect.culture || '',
             description: redirect.description || '',
             statusCode: redirect.statusCode,
             isActive: redirect.isActive,
@@ -1483,6 +1485,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                                     <th>Old URL</th>
                                     <th>New URL</th>
                                     <th>Domain</th>
+                                    <th>Culture</th>
                                     <th>Notes</th>
                                     <th class="center">Match</th>
                                     <th class="center">Active</th>
@@ -1523,6 +1526,11 @@ class RedirectManagerDashboard extends UmbLitElement {
                                             ${redirect.domain
                                                 ? html`<span class="domain-pill">${redirect.domain}</span>`
                                                 : html`<span class="domain-pill all-domains">All domains</span>`}
+                                        </td>
+                                        <td>
+                                            ${redirect.culture
+                                                ? html`<span class="domain-pill">${redirect.culture}</span>`
+                                                : html`<span class="domain-pill all-domains">All cultures</span>`}
                                         </td>
                                         <td title="${redirect.description || ''}">
                                             <span class="notes-val">${redirect.description || '—'}</span>
@@ -1891,6 +1899,17 @@ class RedirectManagerDashboard extends UmbLitElement {
                                            @input=${this.handleInputChange}
                                            placeholder="e.g. shop.example.com" />
                                     <small>Leave blank to apply to all domains. Domain-specific rules take precedence.</small>
+                                </div>
+
+                                <!-- Culture -->
+                                <div class="form-group">
+                                    <label>Culture <span class="lbl-opt">(optional)</span></label>
+                                    <input type="text"
+                                           name="culture"
+                                           .value=${this.formData.culture}
+                                           @input=${this.handleInputChange}
+                                           placeholder="e.g. tr-TR" />
+                                    <small>Leave blank to apply to all cultures. Resolved from Umbraco's Culture and Hostnames configuration for the request's domain.</small>
                                 </div>
 
                                 <!-- Valid from / Valid until -->
