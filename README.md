@@ -1,6 +1,6 @@
 # BT Redirect Manager
 
-A URL redirect manager plugin for Umbraco CMS **13, 17, and 18**. Manage 301, 302, 404, and 410 redirects directly from the Umbraco backoffice with a redesigned modern dashboard, CSV import/export, regex support, domain scoping, windowed (7d/30d) hit-count analytics, A/B testing, scheduled backups, and a built-in test tool.
+A URL redirect manager plugin for Umbraco CMS **13, 17, and 18**. Manage 301, 302, 404, and 410 redirects directly from the Umbraco backoffice with a redesigned modern dashboard, CSV import/export, regex and wildcard support, domain/culture scoping, scheduled (valid from/until) redirects, windowed (7d/30d) hit-count analytics, A/B testing, scheduled backups, per-IP rate limiting, and a built-in test tool.
 
 ## Screenshots
 
@@ -15,7 +15,14 @@ A URL redirect manager plugin for Umbraco CMS **13, 17, and 18**. Manage 301, 30
 - **Multiple status codes**: 301 (Permanent), 302 (Temporary), 404 (Not Found), and 410 (Gone) — each with a distinct soft-color badge in the dashboard.
 - **Redesigned backoffice dashboard**: Clean, modern UI built with Lit (Umbraco 17/18) and AngularJS (Umbraco 13). Compact status legend, search bar, filters, bulk selection, and tab-based navigation all in one view.
 - **Domain-scoped redirects**: Scope a redirect to a specific hostname for multi-site installs. The same Old URL can point to a different New URL per domain, with domain-specific rules taking precedence over global ones. Leave the Domain field blank to apply a redirect to all domains.
-- **Regex and exact match**: Support for both exact path redirects and regex rules with `$1` capture groups. Regex rules are highlighted with a purple pill in the dashboard.
+- **Culture-scoped redirects**: Scope a redirect to a specific culture (e.g. `tr-TR`) for multilingual/multi-site installs — resolved automatically from Umbraco's own Culture and Hostnames configuration for the request's domain, no extra setup needed. Leave the Culture field blank to apply to all cultures.
+- **Regex and wildcard match**: Support for exact path redirects, `*` wildcard patterns (e.g. `/blog/*`), and full regex rules with `$1` capture groups. Regex and wildcard rules are each highlighted with their own pill in the dashboard.
+- **Scheduled redirects**: Optional Valid from / Valid until dates — a rule only matches within its active window, with a Scheduled/Expired badge shown in the dashboard outside that window.
+- **Preserve query string**: Optionally append the incoming request's query string (e.g. `?utm_source=...`) to the redirect target on 301/302 rules.
+- **Duplicate/overlap warnings**: Creating or updating a rule flags when it overlaps an existing broader wildcard/regex rule already in place, so conflicting redirects don't silently shadow each other.
+- **Audit trail**: Each redirect records who created and who last modified it (the authenticated backoffice user), shown as a tooltip on its row.
+- **Per-IP rate limiting** (opt-in): Protect the redirect middleware from abusive traffic with a configurable per-IP request cap, in either log-only or block mode.
+- **Health check integration**: A check under Umbraco's **Settings → Health Check** dashboard confirms the plugin's database table is reachable.
 - **Hit-count analytics**: Every redirect tracks how many times it has fired and when it was last hit, plus rolling 7-day and 30-day totals, visible directly in the redirect list — useful for spotting stale redirects to retire or rules that aren't firing when they should.
 - **404 log with one-click redirect creation**: Genuine 404s are logged automatically with hit count, first seen, and last seen dates. Turn any frequent 404 into a redirect in a single click.
 - **CSV import/export**: Migrate or bulk-edit redirects via CSV files.
@@ -47,14 +54,15 @@ After installation, restart your Umbraco application and open the **Redirect Man
 
 1. Navigate to **Settings → Redirect Manager** in the Umbraco backoffice.
 2. Click **+ Add redirect** to create a new redirect rule.
-3. Fill in the Old URL, New URL, status code, and optionally a domain and notes.
+3. Fill in the Old URL, New URL, status code, and optionally a domain, culture, and notes.
 4. Toggle **Active** to enable or disable the rule without deleting it.
-5. Enable **Regex match** to use regular expression patterns and `$1` capture groups in the New URL.
-6. Use the **Test** button on any row to verify a redirect resolves as expected.
-7. Switch to the **404 Log** tab to review unmatched requests and convert them to redirects with one click.
-8. Use **Export CSV** / **Import CSV** for bulk operations.
-9. For a 301/302 exact-match rule, enable **A/B test** to split traffic between New URL and a second Variant B URL by percentage — visitors are assigned once and stay on their variant via a cookie.
-10. Switch to the **Overview** tab for totals, the top 10 most-used redirects, and active redirects with zero hits in the last 30 days — exportable as CSV.
+5. Enable **Regex match** to use regular expression patterns and `$1` capture groups in the New URL, or use a `*` wildcard in Old URL (e.g. `/blog/*`) for simple prefix/suffix matching without regex.
+6. Set **Valid from** / **Valid until** to schedule when a rule is active — leave either blank for "immediately" / "indefinitely".
+7. Use the **Test** button on any row to verify a redirect resolves as expected.
+8. Switch to the **404 Log** tab to review unmatched requests and convert them to redirects with one click.
+9. Use **Export CSV** / **Import CSV** for bulk operations.
+10. For a 301/302 exact-match rule, enable **A/B test** to split traffic between New URL and a second Variant B URL by percentage — visitors are assigned once and stay on their variant via a cookie.
+11. Switch to the **Overview** tab for totals, the top 10 most-used redirects, and active redirects with zero hits in the last 30 days — exportable as CSV.
 
 ## Status Codes
 
@@ -77,6 +85,7 @@ The plugin creates three tables automatically:
 | OldUrl | nvarchar | Path or regex pattern |
 | NewUrl | nvarchar | Target path (nullable for 404/410) |
 | Domain | nvarchar | Hostname filter — null/blank applies to all domains |
+| Culture | nvarchar | Culture filter (e.g. `tr-TR`) — null/blank applies to all cultures |
 | Description | nvarchar | Optional notes |
 | StatusCode | int | 301, 302, 404, or 410 |
 | IsActive | bit | Enable/disable without deleting |
@@ -87,6 +96,11 @@ The plugin creates three tables automatically:
 | VariantBWeight | int | % of visitors sent to Variant B |
 | VariantBHitCount | int | Total number of times Variant B fired |
 | VariantBLastHitDate | datetime | Timestamp of the most recent Variant B hit |
+| PreserveQueryString | bit | Append the incoming request's query string to NewUrl on redirect |
+| ValidFrom | datetime | Rule only matches at/after this UTC time — null means no lower bound |
+| ValidUntil | datetime | Rule only matches before this UTC time — null means no upper bound |
+| CreatedBy | nvarchar | Backoffice user who created the rule |
+| ModifiedBy | nvarchar | Backoffice user who last modified the rule |
 | CreatedDate | datetime | |
 | UpdatedDate | datetime | |
 
@@ -138,6 +152,31 @@ Email delivery (both the raw backup and the overview report) uses Umbraco's
 own SMTP configuration (`Umbraco:CMS:Global:Smtp`, standard for any Umbraco
 site) — a `From` address must be set there, or email delivery is skipped
 with a warning in the log.
+
+### Rate limiting (opt-in, off by default)
+
+Per-IP rate limiting for the redirect middleware is configured under
+`RedirectManager:RateLimit`:
+
+```json
+{
+  "RedirectManager": {
+    "RateLimit": {
+      "Enabled": false,
+      "MaxRequestsPerWindow": 30,
+      "WindowSeconds": 60,
+      "Mode": "LogOnly"
+    }
+  }
+}
+```
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `Enabled` | `false` | Turns on per-IP rate limiting. |
+| `MaxRequestsPerWindow` | `30` | Requests allowed per IP within `WindowSeconds` before the limit kicks in. |
+| `WindowSeconds` | `60` | Length of the fixed rate-limit window, in seconds. |
+| `Mode` | `LogOnly` | `LogOnly` logs requests over the limit without blocking them; `Block` also returns a rate-limit response. |
 
 ## Telemetry (opt-in, off by default)
 
