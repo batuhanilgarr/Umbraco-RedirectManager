@@ -1588,22 +1588,42 @@ class RedirectManagerDashboard extends UmbLitElement {
                                     <th style="width:36px;">
                                         <input type="checkbox" .checked=${this.allSelected} @change=${this.toggleSelectAll} />
                                     </th>
-                                    <th style="width:60px;" class="center">Status</th>
-                                    <th>Old URL</th>
-                                    <th>New URL</th>
-                                    <th>Domain</th>
-                                    <th>Culture</th>
-                                    <th>Notes</th>
+                                    <th style="width:60px;" class="center sortable" @click=${() => this.onSortClick('redirectsSort', 'statusCode', 'number')}>
+                                        Status<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'statusCode')}</span>
+                                    </th>
+                                    <th class="sortable" @click=${() => this.onSortClick('redirectsSort', 'oldUrl', 'string')}>
+                                        Old URL<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'oldUrl')}</span>
+                                    </th>
+                                    <th class="sortable" @click=${() => this.onSortClick('redirectsSort', 'newUrl', 'string')}>
+                                        New URL<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'newUrl')}</span>
+                                    </th>
+                                    <th class="sortable" @click=${() => this.onSortClick('redirectsSort', 'domain', 'string')}>
+                                        Domain<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'domain')}</span>
+                                    </th>
+                                    <th class="sortable" @click=${() => this.onSortClick('redirectsSort', 'culture', 'string')}>
+                                        Culture<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'culture')}</span>
+                                    </th>
+                                    <th class="sortable" @click=${() => this.onSortClick('redirectsSort', 'description', 'string')}>
+                                        Notes<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'description')}</span>
+                                    </th>
                                     <th class="center">Match</th>
-                                    <th class="center">Active</th>
-                                    <th class="center" title="Hit count">Hits</th>
-                                    <th class="center" title="Hits in the last 7 days">7d</th>
-                                    <th class="center" title="Hits in the last 30 days">30d</th>
+                                    <th class="center sortable" @click=${() => this.onSortClick('redirectsSort', 'isActive', 'number')}>
+                                        Active<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'isActive')}</span>
+                                    </th>
+                                    <th class="center sortable" title="Hit count" @click=${() => this.onSortClick('redirectsSort', 'hitCount', 'number')}>
+                                        Hits<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'hitCount')}</span>
+                                    </th>
+                                    <th class="center sortable" title="Hits in the last 7 days" @click=${() => this.onSortClick('redirectsSort', 'hits7d', 'number')}>
+                                        7d<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'hits7d')}</span>
+                                    </th>
+                                    <th class="center sortable" title="Hits in the last 30 days" @click=${() => this.onSortClick('redirectsSort', 'hits30d', 'number')}>
+                                        30d<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'hits30d')}</span>
+                                    </th>
                                     <th></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${this.redirects.map(redirect => html`
+                                ${this.sortedRedirects.map(redirect => html`
                                     <tr class="${this.selectedIds.includes(redirect.id) ? 'row-selected' : ''}" title="${this.getAuditTitle(redirect)}">
                                         <td>
                                             <input type="checkbox"
