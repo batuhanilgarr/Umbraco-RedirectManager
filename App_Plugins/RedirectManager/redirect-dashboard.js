@@ -28,7 +28,11 @@ class RedirectManagerDashboard extends UmbLitElement {
         showTelemetryPrompt: { type: Boolean },
         updateAvailable: { type: Boolean },
         currentVersion: { type: String },
-        latestVersion: { type: String }
+        latestVersion: { type: String },
+        redirectsSort: { type: Object },
+        missedSort: { type: Object },
+        topRedirectsSort: { type: Object },
+        staleRedirectsSort: { type: Object }
     };
 
     static styles = css`
@@ -753,6 +757,10 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.updateAvailable = false;
         this.currentVersion = '';
         this.latestVersion = '';
+        this.redirectsSort = { column: null, direction: 'asc', type: 'string' };
+        this.missedSort = { column: null, direction: 'asc', type: 'string' };
+        this.topRedirectsSort = { column: null, direction: 'asc', type: 'string' };
+        this.staleRedirectsSort = { column: null, direction: 'asc', type: 'string' };
     }
 
     showMessage(text, type = 'info') {
@@ -799,6 +807,63 @@ class RedirectManagerDashboard extends UmbLitElement {
             headers.set('Authorization', `Bearer ${token}`);
         }
         return fetch(url, { ...options, headers, credentials: 'include' });
+    }
+
+    sortRows(rows, column, direction, type) {
+        const sign = direction === 'asc' ? 1 : -1;
+        return [...rows].sort((a, b) => {
+            let av = a[column];
+            let bv = b[column];
+            if (type === 'date') {
+                av = av ? new Date(av).getTime() : 0;
+                bv = bv ? new Date(bv).getTime() : 0;
+                return sign * (av - bv);
+            }
+            if (type === 'number') {
+                av = Number(av) || 0;
+                bv = Number(bv) || 0;
+                return sign * (av - bv);
+            }
+            av = (av ?? '').toString().toLowerCase();
+            bv = (bv ?? '').toString().toLowerCase();
+            return sign * (av < bv ? -1 : (av > bv ? 1 : 0));
+        });
+    }
+
+    onSortClick(stateProp, column, type) {
+        const state = this[stateProp];
+        const direction = (state.column === column && state.direction === 'asc') ? 'desc' : 'asc';
+        this[stateProp] = { column, direction, type };
+    }
+
+    sortIndicator(stateProp, column) {
+        const state = this[stateProp];
+        if (state.column !== column) {
+            return '';
+        }
+        return state.direction === 'asc' ? '▲' : '▼';
+    }
+
+    get sortedRedirects() {
+        const { column, direction, type } = this.redirectsSort;
+        return column ? this.sortRows(this.redirects, column, direction, type) : this.redirects;
+    }
+
+    get sortedMissedRequests() {
+        const { column, direction, type } = this.missedSort;
+        return column ? this.sortRows(this.missedRequests, column, direction, type) : this.missedRequests;
+    }
+
+    get sortedTopRedirects() {
+        const { column, direction, type } = this.topRedirectsSort;
+        const rows = this.stats?.topRedirects || [];
+        return column ? this.sortRows(rows, column, direction, type) : rows;
+    }
+
+    get sortedStaleRedirects() {
+        const { column, direction, type } = this.staleRedirectsSort;
+        const rows = this.stats?.staleRedirects || [];
+        return column ? this.sortRows(rows, column, direction, type) : rows;
     }
 
     async testRedirect(path) {
