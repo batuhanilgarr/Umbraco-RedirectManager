@@ -390,7 +390,8 @@ class RedirectManagerDashboard extends UmbLitElement {
         table {
             width: 100%;
             min-width: 900px;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             background: white;
         }
 
@@ -405,6 +406,26 @@ class RedirectManagerDashboard extends UmbLitElement {
             white-space: nowrap;
             text-transform: uppercase;
             letter-spacing: 0.04em;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th.sortable:hover {
+            color: #555;
+        }
+
+        .sort-indicator {
+            display: inline-block;
+            width: 10px;
+            margin-left: 2px;
+            font-size: 9px;
+            color: #4a6fdc;
         }
 
         th.center, td.center { text-align: center; }
