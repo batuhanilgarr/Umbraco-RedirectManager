@@ -319,6 +319,11 @@
                 redirectResource.create(redirect).then(function (response) {
                     notificationsService.success("Success", "Redirect created successfully");
                     vm.notifyOverlapWarnings(response.data);
+                    vm.missedRequests = vm.missedRequests.filter(function (m) {
+                        var samePath = (m.path || "").toLowerCase() === (response.data.oldUrl || "").toLowerCase();
+                        var sameDomain = (m.domain || "").toLowerCase() === (response.data.domain || "").toLowerCase();
+                        return !(samePath && sameDomain);
+                    });
                     vm.closeModal();
                     vm.loadRedirects();
                 }, function (error) {
