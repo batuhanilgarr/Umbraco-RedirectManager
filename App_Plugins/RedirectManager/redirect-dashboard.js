@@ -1731,15 +1731,23 @@ class RedirectManagerDashboard extends UmbLitElement {
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Path</th>
-                                    <th class="center">Hits</th>
-                                    <th class="center">First seen</th>
-                                    <th class="center">Last seen</th>
+                                    <th class="sortable" @click=${() => this.onSortClick('missedSort', 'path', 'string')}>
+                                        Path<span class="sort-indicator">${this.sortIndicator('missedSort', 'path')}</span>
+                                    </th>
+                                    <th class="center sortable" @click=${() => this.onSortClick('missedSort', 'hitCount', 'number')}>
+                                        Hits<span class="sort-indicator">${this.sortIndicator('missedSort', 'hitCount')}</span>
+                                    </th>
+                                    <th class="center sortable" @click=${() => this.onSortClick('missedSort', 'firstSeenDate', 'date')}>
+                                        First seen<span class="sort-indicator">${this.sortIndicator('missedSort', 'firstSeenDate')}</span>
+                                    </th>
+                                    <th class="center sortable" @click=${() => this.onSortClick('missedSort', 'lastSeenDate', 'date')}>
+                                        Last seen<span class="sort-indicator">${this.sortIndicator('missedSort', 'lastSeenDate')}</span>
+                                    </th>
                                     <th></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${this.missedRequests.map(item => html`
+                                ${this.sortedMissedRequests.map(item => html`
                                     <tr>
                                         <td class="url-cell" title="${this.getMissedRequestTitle(item)}">
                                             <span class="url-val">${item.path}</span>
