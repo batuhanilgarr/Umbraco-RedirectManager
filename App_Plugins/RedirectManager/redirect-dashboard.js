@@ -1347,6 +1347,11 @@ class RedirectManagerDashboard extends UmbLitElement {
                     this.showMessage(`Redirect updated.${overlapNote}`, overlapNote ? 'warning' : 'success');
                 } else {
                     this.redirects = [saved, ...this.redirects];
+                    this.missedRequests = this.missedRequests.filter(m => {
+                        const samePath = (m.path || '').toLowerCase() === (saved.oldUrl || '').toLowerCase();
+                        const sameDomain = (m.domain || '').toLowerCase() === (saved.domain || '').toLowerCase();
+                        return !(samePath && sameDomain);
+                    });
                     this.showMessage(`Redirect created.${overlapNote}`, overlapNote ? 'warning' : 'success');
                 }
 
