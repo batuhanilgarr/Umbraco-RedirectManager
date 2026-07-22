@@ -21,6 +21,10 @@
         vm.updateAvailable = false;
         vm.currentVersion = '';
         vm.latestVersion = '';
+        vm.redirectsSort = { column: null, direction: 'asc', type: 'string' };
+        vm.missedSort = { column: null, direction: 'asc', type: 'string' };
+        vm.topRedirectsSort = { column: null, direction: 'asc', type: 'string' };
+        vm.staleRedirectsSort = { column: null, direction: 'asc', type: 'string' };
 
         vm.setActiveTab = function (tab) {
             vm.activeTab = tab;
@@ -103,6 +107,63 @@
             var modifiedPart = modified ? "Last modified" + (redirect.modifiedBy ? " by " + redirect.modifiedBy : "") + " on " + modified : "";
 
             return [createdPart, modifiedPart].filter(Boolean).join(" · ");
+        };
+
+        vm.sortRows = function (rows, column, direction, type) {
+            var sign = direction === "asc" ? 1 : -1;
+            return rows.slice().sort(function (a, b) {
+                var av = a[column];
+                var bv = b[column];
+                if (type === "date") {
+                    av = av ? new Date(av).getTime() : 0;
+                    bv = bv ? new Date(bv).getTime() : 0;
+                    return sign * (av - bv);
+                }
+                if (type === "number") {
+                    av = Number(av) || 0;
+                    bv = Number(bv) || 0;
+                    return sign * (av - bv);
+                }
+                av = (av || "").toString().toLowerCase();
+                bv = (bv || "").toString().toLowerCase();
+                return sign * (av < bv ? -1 : (av > bv ? 1 : 0));
+            });
+        };
+
+        vm.sortBy = function (stateName, column, type) {
+            var state = vm[stateName];
+            var direction = (state.column === column && state.direction === "asc") ? "desc" : "asc";
+            vm[stateName] = { column: column, direction: direction, type: type };
+        };
+
+        vm.sortIndicator = function (stateName, column) {
+            var state = vm[stateName];
+            if (state.column !== column) {
+                return "";
+            }
+            return state.direction === "asc" ? "▲" : "▼";
+        };
+
+        vm.sortedRedirects = function () {
+            var s = vm.redirectsSort;
+            return s.column ? vm.sortRows(vm.redirects, s.column, s.direction, s.type) : vm.redirects;
+        };
+
+        vm.sortedMissedRequests = function () {
+            var s = vm.missedSort;
+            return s.column ? vm.sortRows(vm.missedRequests, s.column, s.direction, s.type) : vm.missedRequests;
+        };
+
+        vm.sortedTopRedirects = function () {
+            var s = vm.topRedirectsSort;
+            var rows = (vm.stats && vm.stats.topRedirects) || [];
+            return s.column ? vm.sortRows(rows, s.column, s.direction, s.type) : rows;
+        };
+
+        vm.sortedStaleRedirects = function () {
+            var s = vm.staleRedirectsSort;
+            var rows = (vm.stats && vm.stats.staleRedirects) || [];
+            return s.column ? vm.sortRows(rows, s.column, s.direction, s.type) : rows;
         };
 
         vm.loadRedirects = function () {
