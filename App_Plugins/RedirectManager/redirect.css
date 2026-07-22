@@ -20,7 +20,8 @@
 /* ── Table ── */
 .redirect-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     margin-top: 1px;
 }
 
@@ -41,6 +42,26 @@
     letter-spacing: 0.04em;
     border-bottom: 1px solid #e9e9e9;
     white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.redirect-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.redirect-table th.sortable:hover {
+    color: #555;
+}
+
+.redirect-table .sort-indicator {
+    display: inline-block;
+    width: 10px;
+    margin-left: 2px;
+    font-size: 9px;
+    color: #4a6fdc;
 }
 
 .redirect-table tbody tr:hover { background-color: #fafbff; }
