@@ -119,22 +119,42 @@
                 <table ng-if="!vm.loading && vm.redirects.length > 0" class="redirect-table">
                     <thead>
                         <tr>
-                            <th style="width:60px;text-align:center;">Status</th>
-                            <th>Old URL</th>
-                            <th>New URL</th>
-                            <th>Domain</th>
-                            <th>Culture</th>
-                            <th>Notes</th>
+                            <th class="sortable" style="width:60px;text-align:center;" ng-click="vm.sortBy('redirectsSort', 'statusCode', 'number')">
+                                Status<span class="sort-indicator">{{vm.sortIndicator('redirectsSort', 'statusCode')}}</span>
+                            </th>
+                            <th class="sortable" ng-click="vm.sortBy('redirectsSort', 'oldUrl', 'string')">
+                                Old URL<span class="sort-indicator">{{vm.sortIndicator('redirectsSort', 'oldUrl')}}</span>
+                            </th>
+                            <th class="sortable" ng-click="vm.sortBy('redirectsSort', 'newUrl', 'string')">
+                                New URL<span class="sort-indicator">{{vm.sortIndicator('redirectsSort', 'newUrl')}}</span>
+                            </th>
+                            <th class="sortable" ng-click="vm.sortBy('redirectsSort', 'domain', 'string')">
+                                Domain<span class="sort-indicator">{{vm.sortIndicator('redirectsSort', 'domain')}}</span>
+                            </th>
+                            <th class="sortable" ng-click="vm.sortBy('redirectsSort', 'culture', 'string')">
+                                Culture<span class="sort-indicator">{{vm.sortIndicator('redirectsSort', 'culture')}}</span>
+                            </th>
+                            <th class="sortable" ng-click="vm.sortBy('redirectsSort', 'description', 'string')">
+                                Notes<span class="sort-indicator">{{vm.sortIndicator('redirectsSort', 'description')}}</span>
+                            </th>
                             <th style="text-align:center;">Match</th>
-                            <th style="text-align:center;">Active</th>
-                            <th style="text-align:center;" title="Hit count">Hits</th>
-                            <th style="text-align:center;" title="Hits in the last 7 days">7d</th>
-                            <th style="text-align:center;" title="Hits in the last 30 days">30d</th>
+                            <th class="sortable" style="text-align:center;" ng-click="vm.sortBy('redirectsSort', 'isActive', 'number')">
+                                Active<span class="sort-indicator">{{vm.sortIndicator('redirectsSort', 'isActive')}}</span>
+                            </th>
+                            <th class="sortable" style="text-align:center;" title="Hit count" ng-click="vm.sortBy('redirectsSort', 'hitCount', 'number')">
+                                Hits<span class="sort-indicator">{{vm.sortIndicator('redirectsSort', 'hitCount')}}</span>
+                            </th>
+                            <th class="sortable" style="text-align:center;" title="Hits in the last 7 days" ng-click="vm.sortBy('redirectsSort', 'hits7d', 'number')">
+                                7d<span class="sort-indicator">{{vm.sortIndicator('redirectsSort', 'hits7d')}}</span>
+                            </th>
+                            <th class="sortable" style="text-align:center;" title="Hits in the last 30 days" ng-click="vm.sortBy('redirectsSort', 'hits30d', 'number')">
+                                30d<span class="sort-indicator">{{vm.sortIndicator('redirectsSort', 'hits30d')}}</span>
+                            </th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr ng-repeat="redirect in vm.redirects" title="{{vm.getAuditTitle(redirect)}}">
+                        <tr ng-repeat="redirect in vm.sortedRedirects()" title="{{vm.getAuditTitle(redirect)}}">
                             <td style="text-align:center;">
                                 <span class="redirect-status redirect-status-{{redirect.statusCode}}">
                                     {{redirect.statusCode}}
@@ -235,15 +255,23 @@
                 <table ng-if="!vm.missedLoading && vm.missedRequests.length > 0" class="redirect-table">
                     <thead>
                         <tr>
-                            <th>Path</th>
-                            <th style="text-align:center;">Hits</th>
-                            <th style="text-align:center;">First seen</th>
-                            <th style="text-align:center;">Last seen</th>
+                            <th class="sortable" ng-click="vm.sortBy('missedSort', 'path', 'string')">
+                                Path<span class="sort-indicator">{{vm.sortIndicator('missedSort', 'path')}}</span>
+                            </th>
+                            <th class="sortable" style="text-align:center;" ng-click="vm.sortBy('missedSort', 'hitCount', 'number')">
+                                Hits<span class="sort-indicator">{{vm.sortIndicator('missedSort', 'hitCount')}}</span>
+                            </th>
+                            <th class="sortable" style="text-align:center;" ng-click="vm.sortBy('missedSort', 'firstSeenDate', 'date')">
+                                First seen<span class="sort-indicator">{{vm.sortIndicator('missedSort', 'firstSeenDate')}}</span>
+                            </th>
+                            <th class="sortable" style="text-align:center;" ng-click="vm.sortBy('missedSort', 'lastSeenDate', 'date')">
+                                Last seen<span class="sort-indicator">{{vm.sortIndicator('missedSort', 'lastSeenDate')}}</span>
+                            </th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr ng-repeat="item in vm.missedRequests">
+                        <tr ng-repeat="item in vm.sortedMissedRequests()">
                             <td class="redirect-url">{{item.path}}</td>
                             <td style="text-align:center;">
                                 <span class="hit-count live">{{item.hitCount}}</span>
@@ -313,13 +341,19 @@
                         <table ng-if="vm.stats.topRedirects.length > 0" class="redirect-table">
                             <thead>
                                 <tr>
-                                    <th>Old URL</th>
-                                    <th>New URL</th>
-                                    <th style="text-align:center;">Hits</th>
+                                    <th class="sortable" ng-click="vm.sortBy('topRedirectsSort', 'oldUrl', 'string')">
+                                        Old URL<span class="sort-indicator">{{vm.sortIndicator('topRedirectsSort', 'oldUrl')}}</span>
+                                    </th>
+                                    <th class="sortable" ng-click="vm.sortBy('topRedirectsSort', 'newUrl', 'string')">
+                                        New URL<span class="sort-indicator">{{vm.sortIndicator('topRedirectsSort', 'newUrl')}}</span>
+                                    </th>
+                                    <th class="sortable" style="text-align:center;" ng-click="vm.sortBy('topRedirectsSort', 'hitCount', 'number')">
+                                        Hits<span class="sort-indicator">{{vm.sortIndicator('topRedirectsSort', 'hitCount')}}</span>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr ng-repeat="r in vm.stats.topRedirects">
+                                <tr ng-repeat="r in vm.sortedTopRedirects()">
                                     <td class="redirect-url">{{r.oldUrl}}</td>
                                     <td class="redirect-url">{{r.newUrl || '—'}}</td>
                                     <td style="text-align:center;">
@@ -339,14 +373,22 @@
                         <table ng-if="vm.stats.staleRedirects.length > 0" class="redirect-table">
                             <thead>
                                 <tr>
-                                    <th>Old URL</th>
-                                    <th>New URL</th>
-                                    <th style="text-align:center;">All-time hits</th>
-                                    <th style="text-align:center;">Last hit</th>
+                                    <th class="sortable" ng-click="vm.sortBy('staleRedirectsSort', 'oldUrl', 'string')">
+                                        Old URL<span class="sort-indicator">{{vm.sortIndicator('staleRedirectsSort', 'oldUrl')}}</span>
+                                    </th>
+                                    <th class="sortable" ng-click="vm.sortBy('staleRedirectsSort', 'newUrl', 'string')">
+                                        New URL<span class="sort-indicator">{{vm.sortIndicator('staleRedirectsSort', 'newUrl')}}</span>
+                                    </th>
+                                    <th class="sortable" style="text-align:center;" ng-click="vm.sortBy('staleRedirectsSort', 'hitCount', 'number')">
+                                        All-time hits<span class="sort-indicator">{{vm.sortIndicator('staleRedirectsSort', 'hitCount')}}</span>
+                                    </th>
+                                    <th class="sortable" style="text-align:center;" ng-click="vm.sortBy('staleRedirectsSort', 'lastHitDate', 'date')">
+                                        Last hit<span class="sort-indicator">{{vm.sortIndicator('staleRedirectsSort', 'lastHitDate')}}</span>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr ng-repeat="r in vm.stats.staleRedirects">
+                                <tr ng-repeat="r in vm.sortedStaleRedirects()">
                                     <td class="redirect-url">{{r.oldUrl}}</td>
                                     <td class="redirect-url">{{r.newUrl || '—'}}</td>
                                     <td style="text-align:center;">

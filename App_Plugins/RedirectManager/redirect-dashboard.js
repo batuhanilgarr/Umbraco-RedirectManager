@@ -28,7 +28,11 @@ class RedirectManagerDashboard extends UmbLitElement {
         showTelemetryPrompt: { type: Boolean },
         updateAvailable: { type: Boolean },
         currentVersion: { type: String },
-        latestVersion: { type: String }
+        latestVersion: { type: String },
+        redirectsSort: { type: Object },
+        missedSort: { type: Object },
+        topRedirectsSort: { type: Object },
+        staleRedirectsSort: { type: Object }
     };
 
     static styles = css`
@@ -390,7 +394,8 @@ class RedirectManagerDashboard extends UmbLitElement {
         table {
             width: 100%;
             min-width: 900px;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             background: white;
         }
 
@@ -405,6 +410,26 @@ class RedirectManagerDashboard extends UmbLitElement {
             white-space: nowrap;
             text-transform: uppercase;
             letter-spacing: 0.04em;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th.sortable:hover {
+            color: #555;
+        }
+
+        .sort-indicator {
+            display: inline-block;
+            width: 10px;
+            margin-left: 2px;
+            font-size: 9px;
+            color: #4a6fdc;
         }
 
         th.center, td.center { text-align: center; }
@@ -732,6 +757,10 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.updateAvailable = false;
         this.currentVersion = '';
         this.latestVersion = '';
+        this.redirectsSort = { column: null, direction: 'asc', type: 'string' };
+        this.missedSort = { column: null, direction: 'asc', type: 'string' };
+        this.topRedirectsSort = { column: null, direction: 'asc', type: 'string' };
+        this.staleRedirectsSort = { column: null, direction: 'asc', type: 'string' };
     }
 
     showMessage(text, type = 'info') {
@@ -778,6 +807,63 @@ class RedirectManagerDashboard extends UmbLitElement {
             headers.set('Authorization', `Bearer ${token}`);
         }
         return fetch(url, { ...options, headers, credentials: 'include' });
+    }
+
+    sortRows(rows, column, direction, type) {
+        const sign = direction === 'asc' ? 1 : -1;
+        return [...rows].sort((a, b) => {
+            let av = a[column];
+            let bv = b[column];
+            if (type === 'date') {
+                av = av ? new Date(av).getTime() : 0;
+                bv = bv ? new Date(bv).getTime() : 0;
+                return sign * (av - bv);
+            }
+            if (type === 'number') {
+                av = Number(av) || 0;
+                bv = Number(bv) || 0;
+                return sign * (av - bv);
+            }
+            av = (av ?? '').toString().toLowerCase();
+            bv = (bv ?? '').toString().toLowerCase();
+            return sign * (av < bv ? -1 : (av > bv ? 1 : 0));
+        });
+    }
+
+    onSortClick(stateProp, column, type) {
+        const state = this[stateProp];
+        const direction = (state.column === column && state.direction === 'asc') ? 'desc' : 'asc';
+        this[stateProp] = { column, direction, type };
+    }
+
+    sortIndicator(stateProp, column) {
+        const state = this[stateProp];
+        if (state.column !== column) {
+            return '';
+        }
+        return state.direction === 'asc' ? '▲' : '▼';
+    }
+
+    get sortedRedirects() {
+        const { column, direction, type } = this.redirectsSort;
+        return column ? this.sortRows(this.redirects, column, direction, type) : this.redirects;
+    }
+
+    get sortedMissedRequests() {
+        const { column, direction, type } = this.missedSort;
+        return column ? this.sortRows(this.missedRequests, column, direction, type) : this.missedRequests;
+    }
+
+    get sortedTopRedirects() {
+        const { column, direction, type } = this.topRedirectsSort;
+        const rows = this.stats?.topRedirects || [];
+        return column ? this.sortRows(rows, column, direction, type) : rows;
+    }
+
+    get sortedStaleRedirects() {
+        const { column, direction, type } = this.staleRedirectsSort;
+        const rows = this.stats?.staleRedirects || [];
+        return column ? this.sortRows(rows, column, direction, type) : rows;
     }
 
     async testRedirect(path) {
@@ -1261,6 +1347,11 @@ class RedirectManagerDashboard extends UmbLitElement {
                     this.showMessage(`Redirect updated.${overlapNote}`, overlapNote ? 'warning' : 'success');
                 } else {
                     this.redirects = [saved, ...this.redirects];
+                    this.missedRequests = this.missedRequests.filter(m => {
+                        const samePath = (m.path || '').toLowerCase() === (saved.oldUrl || '').toLowerCase();
+                        const sameDomain = (m.domain || '').toLowerCase() === (saved.domain || '').toLowerCase();
+                        return !(samePath && sameDomain);
+                    });
                     this.showMessage(`Redirect created.${overlapNote}`, overlapNote ? 'warning' : 'success');
                 }
 
@@ -1502,22 +1593,42 @@ class RedirectManagerDashboard extends UmbLitElement {
                                     <th style="width:36px;">
                                         <input type="checkbox" .checked=${this.allSelected} @change=${this.toggleSelectAll} />
                                     </th>
-                                    <th style="width:60px;" class="center">Status</th>
-                                    <th>Old URL</th>
-                                    <th>New URL</th>
-                                    <th>Domain</th>
-                                    <th>Culture</th>
-                                    <th>Notes</th>
+                                    <th style="width:60px;" class="center sortable" @click=${() => this.onSortClick('redirectsSort', 'statusCode', 'number')}>
+                                        Status<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'statusCode')}</span>
+                                    </th>
+                                    <th class="sortable" @click=${() => this.onSortClick('redirectsSort', 'oldUrl', 'string')}>
+                                        Old URL<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'oldUrl')}</span>
+                                    </th>
+                                    <th class="sortable" @click=${() => this.onSortClick('redirectsSort', 'newUrl', 'string')}>
+                                        New URL<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'newUrl')}</span>
+                                    </th>
+                                    <th class="sortable" @click=${() => this.onSortClick('redirectsSort', 'domain', 'string')}>
+                                        Domain<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'domain')}</span>
+                                    </th>
+                                    <th class="sortable" @click=${() => this.onSortClick('redirectsSort', 'culture', 'string')}>
+                                        Culture<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'culture')}</span>
+                                    </th>
+                                    <th class="sortable" @click=${() => this.onSortClick('redirectsSort', 'description', 'string')}>
+                                        Notes<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'description')}</span>
+                                    </th>
                                     <th class="center">Match</th>
-                                    <th class="center">Active</th>
-                                    <th class="center" title="Hit count">Hits</th>
-                                    <th class="center" title="Hits in the last 7 days">7d</th>
-                                    <th class="center" title="Hits in the last 30 days">30d</th>
+                                    <th class="center sortable" @click=${() => this.onSortClick('redirectsSort', 'isActive', 'number')}>
+                                        Active<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'isActive')}</span>
+                                    </th>
+                                    <th class="center sortable" title="Hit count" @click=${() => this.onSortClick('redirectsSort', 'hitCount', 'number')}>
+                                        Hits<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'hitCount')}</span>
+                                    </th>
+                                    <th class="center sortable" title="Hits in the last 7 days" @click=${() => this.onSortClick('redirectsSort', 'hits7d', 'number')}>
+                                        7d<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'hits7d')}</span>
+                                    </th>
+                                    <th class="center sortable" title="Hits in the last 30 days" @click=${() => this.onSortClick('redirectsSort', 'hits30d', 'number')}>
+                                        30d<span class="sort-indicator">${this.sortIndicator('redirectsSort', 'hits30d')}</span>
+                                    </th>
                                     <th></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${this.redirects.map(redirect => html`
+                                ${this.sortedRedirects.map(redirect => html`
                                     <tr class="${this.selectedIds.includes(redirect.id) ? 'row-selected' : ''}" title="${this.getAuditTitle(redirect)}">
                                         <td>
                                             <input type="checkbox"
@@ -1625,15 +1736,23 @@ class RedirectManagerDashboard extends UmbLitElement {
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Path</th>
-                                    <th class="center">Hits</th>
-                                    <th class="center">First seen</th>
-                                    <th class="center">Last seen</th>
+                                    <th class="sortable" @click=${() => this.onSortClick('missedSort', 'path', 'string')}>
+                                        Path<span class="sort-indicator">${this.sortIndicator('missedSort', 'path')}</span>
+                                    </th>
+                                    <th class="center sortable" @click=${() => this.onSortClick('missedSort', 'hitCount', 'number')}>
+                                        Hits<span class="sort-indicator">${this.sortIndicator('missedSort', 'hitCount')}</span>
+                                    </th>
+                                    <th class="center sortable" @click=${() => this.onSortClick('missedSort', 'firstSeenDate', 'date')}>
+                                        First seen<span class="sort-indicator">${this.sortIndicator('missedSort', 'firstSeenDate')}</span>
+                                    </th>
+                                    <th class="center sortable" @click=${() => this.onSortClick('missedSort', 'lastSeenDate', 'date')}>
+                                        Last seen<span class="sort-indicator">${this.sortIndicator('missedSort', 'lastSeenDate')}</span>
+                                    </th>
                                     <th></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${this.missedRequests.map(item => html`
+                                ${this.sortedMissedRequests.map(item => html`
                                     <tr>
                                         <td class="url-cell" title="${this.getMissedRequestTitle(item)}">
                                             <span class="url-val">${item.path}</span>
@@ -1701,13 +1820,19 @@ class RedirectManagerDashboard extends UmbLitElement {
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th>Old URL</th>
-                                            <th>New URL</th>
-                                            <th class="center">Hits</th>
+                                            <th class="sortable" @click=${() => this.onSortClick('topRedirectsSort', 'oldUrl', 'string')}>
+                                                Old URL<span class="sort-indicator">${this.sortIndicator('topRedirectsSort', 'oldUrl')}</span>
+                                            </th>
+                                            <th class="sortable" @click=${() => this.onSortClick('topRedirectsSort', 'newUrl', 'string')}>
+                                                New URL<span class="sort-indicator">${this.sortIndicator('topRedirectsSort', 'newUrl')}</span>
+                                            </th>
+                                            <th class="center sortable" @click=${() => this.onSortClick('topRedirectsSort', 'hitCount', 'number')}>
+                                                Hits<span class="sort-indicator">${this.sortIndicator('topRedirectsSort', 'hitCount')}</span>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${this.stats.topRedirects.map(r => html`
+                                        ${this.sortedTopRedirects.map(r => html`
                                             <tr>
                                                 <td class="url-cell" title="${r.oldUrl}"><span class="url-val">${r.oldUrl}</span></td>
                                                 <td class="url-cell" title="${r.newUrl || ''}"><span class="url-val">${r.newUrl || '—'}</span></td>
@@ -1730,14 +1855,22 @@ class RedirectManagerDashboard extends UmbLitElement {
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th>Old URL</th>
-                                            <th>New URL</th>
-                                            <th class="center">All-time hits</th>
-                                            <th class="center">Last hit</th>
+                                            <th class="sortable" @click=${() => this.onSortClick('staleRedirectsSort', 'oldUrl', 'string')}>
+                                                Old URL<span class="sort-indicator">${this.sortIndicator('staleRedirectsSort', 'oldUrl')}</span>
+                                            </th>
+                                            <th class="sortable" @click=${() => this.onSortClick('staleRedirectsSort', 'newUrl', 'string')}>
+                                                New URL<span class="sort-indicator">${this.sortIndicator('staleRedirectsSort', 'newUrl')}</span>
+                                            </th>
+                                            <th class="center sortable" @click=${() => this.onSortClick('staleRedirectsSort', 'hitCount', 'number')}>
+                                                All-time hits<span class="sort-indicator">${this.sortIndicator('staleRedirectsSort', 'hitCount')}</span>
+                                            </th>
+                                            <th class="center sortable" @click=${() => this.onSortClick('staleRedirectsSort', 'lastHitDate', 'date')}>
+                                                Last hit<span class="sort-indicator">${this.sortIndicator('staleRedirectsSort', 'lastHitDate')}</span>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${this.stats.staleRedirects.map(r => html`
+                                        ${this.sortedStaleRedirects.map(r => html`
                                             <tr>
                                                 <td class="url-cell" title="${r.oldUrl}"><span class="url-val">${r.oldUrl}</span></td>
                                                 <td class="url-cell" title="${r.newUrl || ''}"><span class="url-val">${r.newUrl || '—'}</span></td>
