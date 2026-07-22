@@ -1815,13 +1815,19 @@ class RedirectManagerDashboard extends UmbLitElement {
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th>Old URL</th>
-                                            <th>New URL</th>
-                                            <th class="center">Hits</th>
+                                            <th class="sortable" @click=${() => this.onSortClick('topRedirectsSort', 'oldUrl', 'string')}>
+                                                Old URL<span class="sort-indicator">${this.sortIndicator('topRedirectsSort', 'oldUrl')}</span>
+                                            </th>
+                                            <th class="sortable" @click=${() => this.onSortClick('topRedirectsSort', 'newUrl', 'string')}>
+                                                New URL<span class="sort-indicator">${this.sortIndicator('topRedirectsSort', 'newUrl')}</span>
+                                            </th>
+                                            <th class="center sortable" @click=${() => this.onSortClick('topRedirectsSort', 'hitCount', 'number')}>
+                                                Hits<span class="sort-indicator">${this.sortIndicator('topRedirectsSort', 'hitCount')}</span>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${this.stats.topRedirects.map(r => html`
+                                        ${this.sortedTopRedirects.map(r => html`
                                             <tr>
                                                 <td class="url-cell" title="${r.oldUrl}"><span class="url-val">${r.oldUrl}</span></td>
                                                 <td class="url-cell" title="${r.newUrl || ''}"><span class="url-val">${r.newUrl || '—'}</span></td>
@@ -1844,14 +1850,22 @@ class RedirectManagerDashboard extends UmbLitElement {
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th>Old URL</th>
-                                            <th>New URL</th>
-                                            <th class="center">All-time hits</th>
-                                            <th class="center">Last hit</th>
+                                            <th class="sortable" @click=${() => this.onSortClick('staleRedirectsSort', 'oldUrl', 'string')}>
+                                                Old URL<span class="sort-indicator">${this.sortIndicator('staleRedirectsSort', 'oldUrl')}</span>
+                                            </th>
+                                            <th class="sortable" @click=${() => this.onSortClick('staleRedirectsSort', 'newUrl', 'string')}>
+                                                New URL<span class="sort-indicator">${this.sortIndicator('staleRedirectsSort', 'newUrl')}</span>
+                                            </th>
+                                            <th class="center sortable" @click=${() => this.onSortClick('staleRedirectsSort', 'hitCount', 'number')}>
+                                                All-time hits<span class="sort-indicator">${this.sortIndicator('staleRedirectsSort', 'hitCount')}</span>
+                                            </th>
+                                            <th class="center sortable" @click=${() => this.onSortClick('staleRedirectsSort', 'lastHitDate', 'date')}>
+                                                Last hit<span class="sort-indicator">${this.sortIndicator('staleRedirectsSort', 'lastHitDate')}</span>
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${this.stats.staleRedirects.map(r => html`
+                                        ${this.sortedStaleRedirects.map(r => html`
                                             <tr>
                                                 <td class="url-cell" title="${r.oldUrl}"><span class="url-val">${r.oldUrl}</span></td>
                                                 <td class="url-cell" title="${r.newUrl || ''}"><span class="url-val">${r.newUrl || '—'}</span></td>
