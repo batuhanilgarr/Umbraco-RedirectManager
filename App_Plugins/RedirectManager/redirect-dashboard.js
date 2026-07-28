@@ -17,6 +17,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         importInProgress: { type: Boolean },
         messageText: { type: String },
         messageType: { type: String },
+        modalError: { type: String },
         activeTab: { type: String },
         missedRequests: { type: Array },
         missedLoading: { type: Boolean },
@@ -747,6 +748,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.importInProgress = false;
         this.messageText = '';
         this.messageType = 'info';
+        this.modalError = '';
         this.activeTab = 'redirects';
         this.missedRequests = [];
         this.missedLoading = false;
@@ -849,9 +851,16 @@ class RedirectManagerDashboard extends UmbLitElement {
         return column ? this.sortRows(this.redirects, column, direction, type) : this.redirects;
     }
 
+    get filteredMissedRequests() {
+        const q = this.query.trim().toLowerCase();
+        if (!q) return this.missedRequests;
+        return this.missedRequests.filter(item => (item.path || '').toLowerCase().includes(q));
+    }
+
     get sortedMissedRequests() {
         const { column, direction, type } = this.missedSort;
-        return column ? this.sortRows(this.missedRequests, column, direction, type) : this.missedRequests;
+        const rows = this.filteredMissedRequests;
+        return column ? this.sortRows(rows, column, direction, type) : rows;
     }
 
     get sortedTopRedirects() {
@@ -1079,6 +1088,7 @@ class RedirectManagerDashboard extends UmbLitElement {
     openAddModal(prefillOldUrl = '') {
         this.editingRedirect = null;
         this.formData = { ...this.getEmptyFormData(), oldUrl: prefillOldUrl };
+        this.modalError = '';
         this.showModal = true;
     }
 
@@ -1100,6 +1110,7 @@ class RedirectManagerDashboard extends UmbLitElement {
             validFrom: this.toDatetimeLocalValue(redirect.validFrom),
             validUntil: this.toDatetimeLocalValue(redirect.validUntil)
         };
+        this.modalError = '';
         this.showModal = true;
     }
 
@@ -1107,6 +1118,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.showModal = false;
         this.editingRedirect = null;
         this.formData = this.getEmptyFormData();
+        this.modalError = '';
     }
 
     handleInputChange(e) {
@@ -1282,33 +1294,35 @@ class RedirectManagerDashboard extends UmbLitElement {
     }
 
     async saveRedirect() {
+        this.modalError = '';
+
         if (!this.formData.oldUrl) {
-            this.showMessage('Old URL is required', 'error');
+            this.modalError = 'Old URL is required';
             return;
         }
 
         if (!this.formData.isRegex && (this.formData.oldUrl.match(/\*/g) || []).length > 1) {
-            this.showMessage('Old URL can only contain one wildcard (*)', 'error');
+            this.modalError = 'Old URL can only contain one wildcard (*)';
             return;
         }
 
         if ((this.formData.statusCode === 301 || this.formData.statusCode === 302) && !this.formData.newUrl) {
-            this.showMessage('New URL is required for redirect status codes', 'error');
+            this.modalError = 'New URL is required for redirect status codes';
             return;
         }
 
         if (!this.formData.isRegex && (this.formData.newUrl.match(/\*/g) || []).length > 1) {
-            this.showMessage('New URL can only contain one wildcard (*)', 'error');
+            this.modalError = 'New URL can only contain one wildcard (*)';
             return;
         }
 
         if (this.formData.abTestEnabled && !this.formData.variantBUrl) {
-            this.showMessage('Variant B URL is required when A/B test is enabled', 'error');
+            this.modalError = 'Variant B URL is required when A/B test is enabled';
             return;
         }
 
         if (this.formData.validFrom && this.formData.validUntil && new Date(this.formData.validUntil) < new Date(this.formData.validFrom)) {
-            this.showMessage('Valid until must be after Valid from', 'error');
+            this.modalError = 'Valid until must be after Valid from';
             return;
         }
 
@@ -1358,11 +1372,11 @@ class RedirectManagerDashboard extends UmbLitElement {
                 this.closeModal();
             } else {
                 const error = await response.text();
-                this.showMessage(error || 'Failed to save redirect', 'error');
+                this.modalError = error || 'Failed to save redirect';
             }
         } catch (error) {
             console.error('Failed to save redirect:', error);
-            this.showMessage('Failed to save redirect', 'error');
+            this.modalError = 'Failed to save redirect';
         }
     }
 
@@ -1459,6 +1473,19 @@ class RedirectManagerDashboard extends UmbLitElement {
 
     getMissedRequestTitle(item) {
         return `First seen: ${new Date(item.firstSeenDate).toLocaleString()}`;
+    }
+
+    // A redirect "covers" a 404 path if the old URL matches exactly and the
+    // domain either matches or the redirect applies to all domains — the
+    // same rule the server uses to reject a duplicate create.
+    existingRedirectFor(item) {
+        const path = (item.path || '').toLowerCase();
+        const domain = (item.domain || '').toLowerCase();
+        return this.redirects.find(r => {
+            if ((r.oldUrl || '').toLowerCase() !== path) return false;
+            const rDomain = (r.domain || '').toLowerCase();
+            return !rDomain || rDomain === domain;
+        }) || null;
     }
 
     render() {
@@ -1752,10 +1779,17 @@ class RedirectManagerDashboard extends UmbLitElement {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${this.sortedMissedRequests.map(item => html`
+                                ${this.sortedMissedRequests.map(item => {
+                                    const existing = this.existingRedirectFor(item);
+                                    return html`
                                     <tr>
                                         <td class="url-cell" title="${this.getMissedRequestTitle(item)}">
                                             <span class="url-val">${item.path}</span>
+                                            ${existing ? html`
+                                                <span class="schedule-badge scheduled" title="A redirect to ${existing.newUrl || '—'} already exists for this path">
+                                                    Redirect exists
+                                                </span>
+                                            ` : ''}
                                         </td>
                                         <td class="center">
                                             <span class="hit-count ${item.hitCount > 0 ? 'has-hits' : ''}">${item.hitCount}</span>
@@ -1768,16 +1802,22 @@ class RedirectManagerDashboard extends UmbLitElement {
                                         </td>
                                         <td>
                                             <div class="act-group">
-                                                <button class="btn btn-sm btn-success-sm" @click=${() => this.createRedirectFromMissed(item)}>
-                                                    Create redirect
-                                                </button>
+                                                ${existing ? html`
+                                                    <button class="btn btn-sm btn-info" @click=${() => this.openEditModal(existing)}>
+                                                        Edit redirect
+                                                    </button>
+                                                ` : html`
+                                                    <button class="btn btn-sm btn-success-sm" @click=${() => this.createRedirectFromMissed(item)}>
+                                                        Create redirect
+                                                    </button>
+                                                `}
                                                 <button class="btn btn-sm btn-danger" @click=${() => this.dismissMissedRequest(item)}>
                                                     Dismiss
                                                 </button>
                                             </div>
                                         </td>
-                                    </tr>
-                                `)}
+                                    </tr>`;
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -1943,6 +1983,9 @@ class RedirectManagerDashboard extends UmbLitElement {
                             </div>
 
                             <div class="form-body">
+                                ${this.modalError ? html`
+                                    <div class="notif notif-error" style="margin-bottom:16px;">${this.modalError}</div>
+                                ` : ''}
                                 <!-- Status code -->
                                 <div class="form-group">
                                     <label>Status code</label>

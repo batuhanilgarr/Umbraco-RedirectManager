@@ -8,7 +8,7 @@
     
     <!-- Package Info -->
     <PackageId>BT.RedirectManager</PackageId>
-    <Version>1.9.0</Version>
+    <Version>1.9.1</Version>
     <Authors>BT</Authors>
     <Company>BT</Company>
     <Description>A URL redirect manager plugin for Umbraco CMS 13, 17, and 18. Supports 301, 302, 404, and 410 status codes with backoffice management, domain-scoped redirects, windowed (7d/30d) hit-count analytics, A/B testing, scheduled CSV backups, and automatic 404 logging.</Description>
