@@ -109,10 +109,11 @@ public class MissedRequestFlushService : BackgroundService
         {
             try
             {
+                var category = MissedRequestClassifier.Classify(truncatedPath);
                 db.Execute(
-                    $@"INSERT INTO {MissedRequest.TableName} (Path, PathHash, HitCount, FirstSeenDate, LastSeenDate)
-                       VALUES (@0, @1, @2, @3, @4)",
-                    truncatedPath, pathHash, miss.Count, miss.FirstSeenUtc, miss.LastSeenUtc);
+                    $@"INSERT INTO {MissedRequest.TableName} (Path, PathHash, HitCount, FirstSeenDate, LastSeenDate, Category)
+                       VALUES (@0, @1, @2, @3, @4, @5)",
+                    truncatedPath, pathHash, miss.Count, miss.FirstSeenUtc, miss.LastSeenUtc, category.ToString());
             }
             catch (Exception)
             {
