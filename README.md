@@ -113,7 +113,7 @@ automatically.
 
 **`RedirectManagerMissedRequests`**
 
-Logs genuine 404 responses (path, hit count, first seen, last seen). Entries older than 90 days are cleaned up automatically.
+Logs genuine 404 responses (path, hit count, first seen, last seen, and a triage `Category` — `Unclassified`, `MaliciousScanner`, `MissingAsset`, `RedirectNeeded`, `Gone`, `TypoMalformed`, or `NeedsInvestigation`). Entries older than 90 days are cleaned up automatically.
 
 ## Configuration
 
