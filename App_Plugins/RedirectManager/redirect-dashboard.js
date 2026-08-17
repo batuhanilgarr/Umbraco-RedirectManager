@@ -394,6 +394,27 @@ class RedirectManagerDashboard extends UmbLitElement {
             color: #fff;
         }
 
+        /* ── category select (per-row + bulk-apply) ── */
+        .category-select {
+            padding: 6px 9px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: #fff;
+            font-size: 12px;
+            color: #333;
+            cursor: pointer;
+            line-height: 1.4;
+        }
+
+        .category-select:focus {
+            outline: none;
+            border-color: #3544b1;
+        }
+
+        .bulk-bar .category-select {
+            background: #fff;
+        }
+
         /* ── overview tab ── */
         .stat-cards {
             display: grid;
@@ -1911,7 +1932,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                 ${this.anyMissedSelected ? html`
                     <div class="bulk-bar">
                         <strong>${this.selectedMissedIds.length} selected</strong>
-                        <select @change=${(e) => { if (e.target.value) { this.bulkApplyMissedCategory(e.target.value); e.target.value = ''; } }}>
+                        <select class="category-select" @change=${(e) => { if (e.target.value) { this.bulkApplyMissedCategory(e.target.value); e.target.value = ''; } }}>
                             <option value="">Apply category...</option>
                             ${MISSED_CATEGORIES.map(cat => html`<option value="${cat.value}">${cat.label}</option>`)}
                         </select>
@@ -1968,8 +1989,8 @@ class RedirectManagerDashboard extends UmbLitElement {
                                             ${new Date(item.lastSeenDate).toLocaleDateString()}
                                         </td>
                                         <td>
-                                            <select .value=${item.category} @change=${(e) => this.setMissedCategory(item, e.target.value)}>
-                                                ${MISSED_CATEGORIES.map(cat => html`<option value="${cat.value}">${cat.label}</option>`)}
+                                            <select class="category-select" @change=${(e) => this.setMissedCategory(item, e.target.value)}>
+                                                ${MISSED_CATEGORIES.map(cat => html`<option value="${cat.value}" ?selected=${cat.value === item.category}>${cat.label}</option>`)}
                                             </select>
                                         </td>
                                         <td>
