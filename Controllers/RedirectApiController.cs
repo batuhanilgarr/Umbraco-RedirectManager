@@ -249,7 +249,7 @@ public class RedirectApiController : Controller
     [HttpPut("missed/{id:int}/category")]
     public IActionResult SetMissedCategory(int id, [FromBody] SetCategoryDto dto)
     {
-        if (!Enum.TryParse<MissedRequestCategory>(dto.Category, out var category))
+        if (!Enum.TryParse<MissedRequestCategory>(dto.Category, out var category) || !Enum.IsDefined(typeof(MissedRequestCategory), category))
             return BadRequest("Invalid category");
 
         var result = _missedRequestService.SetCategory(id, category);
@@ -262,7 +262,7 @@ public class RedirectApiController : Controller
     [HttpPost("missed/bulk-category")]
     public IActionResult BulkSetMissedCategory([FromBody] BulkCategoryDto dto)
     {
-        if (!Enum.TryParse<MissedRequestCategory>(dto.Category, out var category))
+        if (!Enum.TryParse<MissedRequestCategory>(dto.Category, out var category) || !Enum.IsDefined(typeof(MissedRequestCategory), category))
             return BadRequest("Invalid category");
 
         var updated = _missedRequestService.BulkSetCategory(dto.Ids, category);

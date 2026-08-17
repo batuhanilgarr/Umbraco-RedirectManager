@@ -55,7 +55,7 @@ public class RedirectApiControllerMissedCategoryTests
     [Fact]
     public void BulkSetMissedCategory_returns_updated_count()
     {
-        _missedRequestService.BulkSetCategory(Arg.Any<IEnumerable<int>>(), MissedRequestCategory.MaliciousScanner).Returns(3);
+        _missedRequestService.BulkSetCategory(Arg.Is<IEnumerable<int>>(ids => ids.SequenceEqual(new[] { 1, 2, 3 })), MissedRequestCategory.MaliciousScanner).Returns(3);
 
         var result = _controller.BulkSetMissedCategory(new RedirectApiController.BulkCategoryDto
         {
