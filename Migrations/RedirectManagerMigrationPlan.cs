@@ -23,6 +23,7 @@ public class RedirectManagerPackageMigrationPlan : PackageMigrationPlan
         To<AddValidityWindowColumns>(new Guid("A2E5F8C1-3B6D-4A9E-8F17-5C0D9E4B7A63"));
         To<AddAuditFieldColumns>(new Guid("D3B6A947-8F2C-4E15-9A03-6D7B1C5E9F82"));
         To<AddCultureColumn>(new Guid("E4F7A208-3C5B-46D2-9A81-7F0C3E6B4D95"));
+        To<AddMissedRequestCategoryColumn>(new Guid("F5A8B319-4D6C-47E3-A092-8B1D4F7C5E06"));
     }
 }
 
@@ -290,6 +291,28 @@ public class AddCultureColumn : AsyncMigrationBase
     }
 }
 
+public class AddMissedRequestCategoryColumn : AsyncMigrationBase
+{
+    public AddMissedRequestCategoryColumn(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override async Task MigrateAsync()
+    {
+        if (TableExists(MissedRequest.TableName) == false)
+        {
+            return;
+        }
+
+        if (ColumnExists(MissedRequest.TableName, "Category") == false)
+        {
+            AddColumn<MissedRequest>(MissedRequest.TableName, "Category");
+            await Database.ExecuteAsync(
+                $"UPDATE {MissedRequest.TableName} SET Category = 'Unclassified' WHERE Category IS NULL");
+        }
+    }
+}
+
 #else
 
 public class CreateRedirectManagerTable : MigrationBase
@@ -528,6 +551,28 @@ public class AddCultureColumn : MigrationBase
         if (ColumnExists(RedirectEntry.TableName, "Culture") == false)
         {
             AddColumn<RedirectEntry>(RedirectEntry.TableName, "Culture");
+        }
+    }
+}
+
+public class AddMissedRequestCategoryColumn : MigrationBase
+{
+    public AddMissedRequestCategoryColumn(IMigrationContext context) : base(context)
+    {
+    }
+
+    protected override void Migrate()
+    {
+        if (TableExists(MissedRequest.TableName) == false)
+        {
+            return;
+        }
+
+        if (ColumnExists(MissedRequest.TableName, "Category") == false)
+        {
+            AddColumn<MissedRequest>(MissedRequest.TableName, "Category");
+            Database.Execute(
+                $"UPDATE {MissedRequest.TableName} SET Category = 'Unclassified' WHERE Category IS NULL");
         }
     }
 }
