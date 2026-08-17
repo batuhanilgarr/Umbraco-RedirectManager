@@ -2,6 +2,16 @@ import { LitElement, html, css } from '@umbraco-cms/backoffice/external/lit';
 import { UmbLitElement } from '@umbraco-cms/backoffice/lit-element';
 import { UMB_AUTH_CONTEXT } from '@umbraco-cms/backoffice/auth';
 
+const MISSED_CATEGORIES = [
+    { value: 'Unclassified', label: 'Unclassified' },
+    { value: 'MaliciousScanner', label: 'Malicious / scanner' },
+    { value: 'MissingAsset', label: 'Missing asset' },
+    { value: 'RedirectNeeded', label: 'Redirect needed' },
+    { value: 'Gone', label: 'Gone' },
+    { value: 'TypoMalformed', label: 'Typo / malformed' },
+    { value: 'NeedsInvestigation', label: 'Needs investigation' }
+];
+
 class RedirectManagerDashboard extends UmbLitElement {
     static properties = {
         redirects: { type: Array },
@@ -33,7 +43,9 @@ class RedirectManagerDashboard extends UmbLitElement {
         redirectsSort: { type: Object },
         missedSort: { type: Object },
         topRedirectsSort: { type: Object },
-        staleRedirectsSort: { type: Object }
+        staleRedirectsSort: { type: Object },
+        missedCategoryFilter: { type: Array },
+        selectedMissedIds: { type: Array }
     };
 
     static styles = css`
@@ -334,6 +346,52 @@ class RedirectManagerDashboard extends UmbLitElement {
         .tab-count.danger {
             background: #fee2e2;
             color: #991b1b;
+        }
+
+        /* ── category chips ── */
+        .category-chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .category-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border-radius: 14px;
+            border: 1px solid #e0e0e0;
+            background: #fff;
+            font-size: 12px;
+            color: #555;
+            cursor: pointer;
+        }
+
+        .category-chip.active {
+            background: #eef0fb;
+            border-color: #3544b1;
+            color: #3544b1;
+            font-weight: 600;
+        }
+
+        .category-chip .chip-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 4px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.08);
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .category-chip.active .chip-count {
+            background: #3544b1;
+            color: #fff;
         }
 
         /* ── overview tab ── */
@@ -752,6 +810,8 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.activeTab = 'redirects';
         this.missedRequests = [];
         this.missedLoading = false;
+        this.missedCategoryFilter = [];
+        this.selectedMissedIds = [];
         this.telemetryEnabled = false;
         this.telemetryLoading = false;
         this.telemetryDecided = true;
@@ -853,8 +913,32 @@ class RedirectManagerDashboard extends UmbLitElement {
 
     get filteredMissedRequests() {
         const q = this.query.trim().toLowerCase();
-        if (!q) return this.missedRequests;
-        return this.missedRequests.filter(item => (item.path || '').toLowerCase().includes(q));
+        let rows = this.missedRequests;
+        if (q) {
+            rows = rows.filter(item => (item.path || '').toLowerCase().includes(q));
+        }
+        if (this.missedCategoryFilter.length > 0) {
+            rows = rows.filter(item => this.missedCategoryFilter.includes(item.category));
+        }
+        return rows;
+    }
+
+    get missedCategoryCounts() {
+        const counts = {};
+        for (const cat of MISSED_CATEGORIES) counts[cat.value] = 0;
+        for (const item of this.missedRequests) {
+            counts[item.category] = (counts[item.category] || 0) + 1;
+        }
+        return counts;
+    }
+
+    get anyMissedSelected() {
+        return this.selectedMissedIds.length > 0;
+    }
+
+    get allMissedSelected() {
+        const rows = this.sortedMissedRequests;
+        return rows.length > 0 && rows.every(r => this.selectedMissedIds.includes(r.id));
     }
 
     get sortedMissedRequests() {
@@ -1055,17 +1139,76 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.statsLoading = false;
     }
 
-    async dismissMissedRequest(item) {
+    toggleMissedCategoryFilter(value) {
+        if (this.missedCategoryFilter.includes(value)) {
+            this.missedCategoryFilter = this.missedCategoryFilter.filter(v => v !== value);
+        } else {
+            this.missedCategoryFilter = [...this.missedCategoryFilter, value];
+        }
+    }
+
+    toggleSelectAllMissed(e) {
+        const checked = e.target.checked;
+        const rows = this.sortedMissedRequests;
+        if (checked) {
+            const ids = new Set(this.selectedMissedIds);
+            rows.forEach(r => ids.add(r.id));
+            this.selectedMissedIds = [...ids];
+        } else {
+            const rowIds = new Set(rows.map(r => r.id));
+            this.selectedMissedIds = this.selectedMissedIds.filter(id => !rowIds.has(id));
+        }
+    }
+
+    toggleSelectMissedId(id, checked) {
+        if (checked) {
+            if (!this.selectedMissedIds.includes(id)) {
+                this.selectedMissedIds = [...this.selectedMissedIds, id];
+            }
+        } else {
+            this.selectedMissedIds = this.selectedMissedIds.filter(x => x !== id);
+        }
+    }
+
+    async setMissedCategory(item, category) {
         try {
-            const response = await this.authFetch(`/umbraco/api/redirectmanager/missed/${item.id}`, { method: 'DELETE' });
+            const response = await this.authFetch(`/umbraco/api/redirectmanager/missed/${item.id}/category`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ category })
+            });
             if (response.ok) {
-                this.missedRequests = this.missedRequests.filter(m => m.id !== item.id);
+                this.missedRequests = this.missedRequests.map(m => m.id === item.id ? { ...m, category } : m);
             } else {
-                this.showMessage('Failed to dismiss entry', 'error');
+                this.showMessage('Failed to update category', 'error');
             }
         } catch (error) {
-            console.error('Failed to dismiss missed request:', error);
-            this.showMessage('Failed to dismiss entry', 'error');
+            console.error('Failed to set category:', error);
+            this.showMessage('Failed to update category', 'error');
+        }
+    }
+
+    async bulkApplyMissedCategory(category) {
+        if (!this.anyMissedSelected) return;
+
+        try {
+            const response = await this.authFetch('/umbraco/api/redirectmanager/missed/bulk-category', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: this.selectedMissedIds, category })
+            });
+            if (response.ok) {
+                const selected = new Set(this.selectedMissedIds);
+                this.missedRequests = this.missedRequests.map(m => selected.has(m.id) ? { ...m, category } : m);
+                this.selectedMissedIds = [];
+                this.showMessage('Selected entries updated', 'success');
+            } else {
+                const error = await response.text();
+                this.showMessage(error || 'Failed to update selected entries', 'error');
+            }
+        } catch (error) {
+            console.error('Failed to bulk apply category:', error);
+            this.showMessage('Failed to update selected entries', 'error');
         }
     }
 
@@ -1754,6 +1897,27 @@ class RedirectManagerDashboard extends UmbLitElement {
 
             <!-- 404 log tab -->
             ${this.activeTab === 'missed' ? html`
+                <div class="category-chip-row">
+                    ${MISSED_CATEGORIES.map(cat => html`
+                        <button
+                            class="category-chip ${this.missedCategoryFilter.includes(cat.value) ? 'active' : ''}"
+                            @click=${() => this.toggleMissedCategoryFilter(cat.value)}>
+                            ${cat.label}
+                            <span class="chip-count">${this.missedCategoryCounts[cat.value] || 0}</span>
+                        </button>
+                    `)}
+                </div>
+
+                ${this.anyMissedSelected ? html`
+                    <div class="bulk-bar">
+                        <strong>${this.selectedMissedIds.length} selected</strong>
+                        <select @change=${(e) => { if (e.target.value) { this.bulkApplyMissedCategory(e.target.value); e.target.value = ''; } }}>
+                            <option value="">Apply category...</option>
+                            ${MISSED_CATEGORIES.map(cat => html`<option value="${cat.value}">${cat.label}</option>`)}
+                        </select>
+                    </div>
+                ` : ''}
+
                 ${this.missedLoading ? html`
                     <div class="loading">Loading 404 log...</div>
                 ` : this.missedRequests.length === 0 ? html`
@@ -1763,6 +1927,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                         <table>
                             <thead>
                                 <tr>
+                                    <th><input type="checkbox" .checked=${this.allMissedSelected} @change=${this.toggleSelectAllMissed} /></th>
                                     <th class="sortable" @click=${() => this.onSortClick('missedSort', 'path', 'string')}>
                                         Path<span class="sort-indicator">${this.sortIndicator('missedSort', 'path')}</span>
                                     </th>
@@ -1775,6 +1940,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                                     <th class="center sortable" @click=${() => this.onSortClick('missedSort', 'lastSeenDate', 'date')}>
                                         Last seen<span class="sort-indicator">${this.sortIndicator('missedSort', 'lastSeenDate')}</span>
                                     </th>
+                                    <th>Category</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -1783,6 +1949,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                                     const existing = this.existingRedirectFor(item);
                                     return html`
                                     <tr>
+                                        <td><input type="checkbox" .checked=${this.selectedMissedIds.includes(item.id)} @change=${(e) => this.toggleSelectMissedId(item.id, e.target.checked)} /></td>
                                         <td class="url-cell" title="${this.getMissedRequestTitle(item)}">
                                             <span class="url-val">${item.path}</span>
                                             ${existing ? html`
@@ -1801,6 +1968,11 @@ class RedirectManagerDashboard extends UmbLitElement {
                                             ${new Date(item.lastSeenDate).toLocaleDateString()}
                                         </td>
                                         <td>
+                                            <select .value=${item.category} @change=${(e) => this.setMissedCategory(item, e.target.value)}>
+                                                ${MISSED_CATEGORIES.map(cat => html`<option value="${cat.value}">${cat.label}</option>`)}
+                                            </select>
+                                        </td>
+                                        <td>
                                             <div class="act-group">
                                                 ${existing ? html`
                                                     <button class="btn btn-sm btn-info" @click=${() => this.openEditModal(existing)}>
@@ -1811,9 +1983,6 @@ class RedirectManagerDashboard extends UmbLitElement {
                                                         Create redirect
                                                     </button>
                                                 `}
-                                                <button class="btn btn-sm btn-danger" @click=${() => this.dismissMissedRequest(item)}>
-                                                    Dismiss
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>`;
