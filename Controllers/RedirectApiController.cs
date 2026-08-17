@@ -246,6 +246,29 @@ public class RedirectApiController : Controller
         return Ok();
     }
 
+    [HttpPut("missed/{id:int}/category")]
+    public IActionResult SetMissedCategory(int id, [FromBody] SetCategoryDto dto)
+    {
+        if (!Enum.TryParse<MissedRequestCategory>(dto.Category, out var category))
+            return BadRequest("Invalid category");
+
+        var result = _missedRequestService.SetCategory(id, category);
+        if (!result)
+            return NotFound();
+
+        return Ok();
+    }
+
+    [HttpPost("missed/bulk-category")]
+    public IActionResult BulkSetMissedCategory([FromBody] BulkCategoryDto dto)
+    {
+        if (!Enum.TryParse<MissedRequestCategory>(dto.Category, out var category))
+            return BadRequest("Invalid category");
+
+        var updated = _missedRequestService.BulkSetCategory(dto.Ids, category);
+        return Ok(new { updated });
+    }
+
     [HttpGet("test")]
     public IActionResult Test([FromQuery] string path)
     {
@@ -565,6 +588,17 @@ public class RedirectApiController : Controller
     public class BulkIdsDto
     {
         public List<int> Ids { get; set; } = new();
+    }
+
+    public class SetCategoryDto
+    {
+        public string Category { get; set; } = string.Empty;
+    }
+
+    public class BulkCategoryDto
+    {
+        public List<int> Ids { get; set; } = new();
+        public string Category { get; set; } = string.Empty;
     }
 
     // NPoco/ADO.NET providers (Microsoft.Data.Sqlite, Microsoft.Data.SqlClient) return
