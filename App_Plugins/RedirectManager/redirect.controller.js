@@ -25,6 +25,7 @@
         vm.missedCategories = MISSED_CATEGORIES;
         vm.missedCategoryFilter = [];
         vm.selectedMissedIds = [];
+        vm.missedBulkCategory = null;
         vm.stats = null;
         vm.statsLoading = false;
         vm.telemetryEnabled = false;
@@ -58,6 +59,9 @@
             vm.missedLoading = true;
             redirectResource.getMissed().then(function (response) {
                 vm.missedRequests = response.data;
+                vm.missedRequests.forEach(function (item) {
+                    item._previousCategory = item.category;
+                });
                 vm.missedLoading = false;
             }, function () {
                 notificationsService.error("Error", "Failed to load 404 log");
@@ -108,6 +112,13 @@
             }
         };
 
+        vm.allMissedSelected = function () {
+            var rows = vm.sortedMissedRequests();
+            return rows.length > 0 && rows.every(function (r) {
+                return vm.selectedMissedIds.indexOf(r.id) !== -1;
+            });
+        };
+
         vm.toggleSelectMissedId = function (id, checked) {
             var idx = vm.selectedMissedIds.indexOf(id);
             if (checked && idx === -1) {
@@ -118,9 +129,12 @@
         };
 
         vm.setMissedCategory = function (item, category) {
+            var previousCategory = item._previousCategory;
             redirectResource.setMissedCategory(item.id, category).then(function () {
                 item.category = category;
+                item._previousCategory = category;
             }, function () {
+                item.category = previousCategory;
                 notificationsService.error("Error", "Failed to update category");
             });
         };
@@ -132,6 +146,7 @@
                 vm.missedRequests.forEach(function (item) {
                     if (selected.indexOf(item.id) !== -1) {
                         item.category = category;
+                        item._previousCategory = category;
                     }
                 });
                 vm.selectedMissedIds = [];

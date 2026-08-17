@@ -277,7 +277,7 @@
                         <tr>
                             <th>
                                 <input type="checkbox"
-                                       ng-checked="vm.selectedMissedIds.length > 0 && vm.selectedMissedIds.length === vm.sortedMissedRequests().length"
+                                       ng-checked="vm.allMissedSelected()"
                                        ng-click="vm.toggleSelectAllMissed($event.target.checked)" />
                             </th>
                             <th class="sortable" ng-click="vm.sortBy('missedSort', 'path', 'string')">
