@@ -252,9 +252,34 @@
                     <p>No missed requests logged yet.</p>
                 </div>
 
+                <div class="category-chip-row">
+                    <button type="button"
+                            ng-repeat="cat in vm.missedCategories"
+                            class="category-chip"
+                            ng-class="{active: vm.missedCategoryFilter.indexOf(cat.value) !== -1}"
+                            ng-click="vm.toggleMissedCategoryFilter(cat.value)">
+                        {{cat.label}}
+                        <span class="chip-count">{{vm.missedCategoryCounts()[cat.value] || 0}}</span>
+                    </button>
+                </div>
+
+                <div class="bulk-bar" ng-if="vm.selectedMissedIds.length > 0">
+                    <strong>{{vm.selectedMissedIds.length}} selected</strong>
+                    <select ng-model="vm.missedBulkCategory"
+                            ng-options="cat.value as cat.label for cat in vm.missedCategories"
+                            ng-change="vm.bulkApplyMissedCategory(vm.missedBulkCategory); vm.missedBulkCategory = null;">
+                        <option value="">Apply category...</option>
+                    </select>
+                </div>
+
                 <table ng-if="!vm.missedLoading && vm.missedRequests.length > 0" class="redirect-table">
                     <thead>
                         <tr>
+                            <th>
+                                <input type="checkbox"
+                                       ng-checked="vm.selectedMissedIds.length > 0 && vm.selectedMissedIds.length === vm.sortedMissedRequests().length"
+                                       ng-click="vm.toggleSelectAllMissed($event.target.checked)" />
+                            </th>
                             <th class="sortable" ng-click="vm.sortBy('missedSort', 'path', 'string')">
                                 Path<span class="sort-indicator">{{vm.sortIndicator('missedSort', 'path')}}</span>
                             </th>
@@ -267,11 +292,17 @@
                             <th class="sortable" style="text-align:center;" ng-click="vm.sortBy('missedSort', 'lastSeenDate', 'date')">
                                 Last seen<span class="sort-indicator">{{vm.sortIndicator('missedSort', 'lastSeenDate')}}</span>
                             </th>
+                            <th>Category</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr ng-repeat="item in vm.sortedMissedRequests()">
+                            <td>
+                                <input type="checkbox"
+                                       ng-checked="vm.selectedMissedIds.indexOf(item.id) !== -1"
+                                       ng-click="vm.toggleSelectMissedId(item.id, $event.target.checked)" />
+                            </td>
                             <td class="redirect-url">{{item.path}}</td>
                             <td style="text-align:center;">
                                 <span class="hit-count live">{{item.hitCount}}</span>
@@ -282,18 +313,18 @@
                             <td style="text-align:center;font-size:11px;color:#888;">
                                 {{item.lastSeenDate | date:'mediumDate'}}
                             </td>
+                            <td>
+                                <select ng-model="item.category"
+                                        ng-options="cat.value as cat.label for cat in vm.missedCategories"
+                                        ng-change="vm.setMissedCategory(item, item.category)">
+                                </select>
+                            </td>
                             <td class="redirect-actions">
                                 <umb-button type="button"
                                             button-style="success"
                                             size="xs"
                                             label="Create redirect"
                                             action="vm.createRedirectFromMissed(item)">
-                                </umb-button>
-                                <umb-button type="button"
-                                            button-style="danger"
-                                            size="xs"
-                                            label="Dismiss"
-                                            action="vm.dismissMissedRequest(item)">
                                 </umb-button>
                             </td>
                         </tr>

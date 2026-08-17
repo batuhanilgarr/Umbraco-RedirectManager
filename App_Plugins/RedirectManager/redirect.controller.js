@@ -1,6 +1,16 @@
 (function () {
     "use strict";
 
+    var MISSED_CATEGORIES = [
+        { value: 'Unclassified', label: 'Unclassified' },
+        { value: 'MaliciousScanner', label: 'Malicious / scanner' },
+        { value: 'MissingAsset', label: 'Missing asset' },
+        { value: 'RedirectNeeded', label: 'Redirect needed' },
+        { value: 'Gone', label: 'Gone' },
+        { value: 'TypoMalformed', label: 'Typo / malformed' },
+        { value: 'NeedsInvestigation', label: 'Needs investigation' }
+    ];
+
     function DashboardController($scope, $window, redirectResource, notificationsService, overlayService) {
         var vm = this;
 
@@ -12,6 +22,9 @@
         vm.activeTab = 'redirects';
         vm.missedRequests = [];
         vm.missedLoading = false;
+        vm.missedCategories = MISSED_CATEGORIES;
+        vm.missedCategoryFilter = [];
+        vm.selectedMissedIds = [];
         vm.stats = null;
         vm.statsLoading = false;
         vm.telemetryEnabled = false;
@@ -52,11 +65,78 @@
             });
         };
 
-        vm.dismissMissedRequest = function (item) {
-            redirectResource.dismissMissed(item.id).then(function () {
-                vm.missedRequests = vm.missedRequests.filter(function (m) { return m.id !== item.id; });
+        vm.toggleMissedCategoryFilter = function (value) {
+            var idx = vm.missedCategoryFilter.indexOf(value);
+            if (idx === -1) {
+                vm.missedCategoryFilter.push(value);
+            } else {
+                vm.missedCategoryFilter.splice(idx, 1);
+            }
+        };
+
+        vm.missedCategoryCounts = function () {
+            var counts = {};
+            MISSED_CATEGORIES.forEach(function (c) { counts[c.value] = 0; });
+            vm.missedRequests.forEach(function (item) {
+                counts[item.category] = (counts[item.category] || 0) + 1;
+            });
+            return counts;
+        };
+
+        vm.filteredMissedRequests = function () {
+            if (vm.missedCategoryFilter.length === 0) {
+                return vm.missedRequests;
+            }
+            return vm.missedRequests.filter(function (item) {
+                return vm.missedCategoryFilter.indexOf(item.category) !== -1;
+            });
+        };
+
+        vm.toggleSelectAllMissed = function (checked) {
+            var rows = vm.sortedMissedRequests();
+            if (checked) {
+                rows.forEach(function (r) {
+                    if (vm.selectedMissedIds.indexOf(r.id) === -1) {
+                        vm.selectedMissedIds.push(r.id);
+                    }
+                });
+            } else {
+                var rowIds = rows.map(function (r) { return r.id; });
+                vm.selectedMissedIds = vm.selectedMissedIds.filter(function (id) {
+                    return rowIds.indexOf(id) === -1;
+                });
+            }
+        };
+
+        vm.toggleSelectMissedId = function (id, checked) {
+            var idx = vm.selectedMissedIds.indexOf(id);
+            if (checked && idx === -1) {
+                vm.selectedMissedIds.push(id);
+            } else if (!checked && idx !== -1) {
+                vm.selectedMissedIds.splice(idx, 1);
+            }
+        };
+
+        vm.setMissedCategory = function (item, category) {
+            redirectResource.setMissedCategory(item.id, category).then(function () {
+                item.category = category;
             }, function () {
-                notificationsService.error("Error", "Failed to dismiss entry");
+                notificationsService.error("Error", "Failed to update category");
+            });
+        };
+
+        vm.bulkApplyMissedCategory = function (category) {
+            if (vm.selectedMissedIds.length === 0 || !category) return;
+            redirectResource.bulkSetMissedCategory(vm.selectedMissedIds, category).then(function () {
+                var selected = vm.selectedMissedIds;
+                vm.missedRequests.forEach(function (item) {
+                    if (selected.indexOf(item.id) !== -1) {
+                        item.category = category;
+                    }
+                });
+                vm.selectedMissedIds = [];
+            }, function () {
+                notificationsService.error("Error", "Failed to update selected entries");
             });
         };
 
@@ -151,7 +231,8 @@
 
         vm.sortedMissedRequests = function () {
             var s = vm.missedSort;
-            return s.column ? vm.sortRows(vm.missedRequests, s.column, s.direction, s.type) : vm.missedRequests;
+            var rows = vm.filteredMissedRequests();
+            return s.column ? vm.sortRows(rows, s.column, s.direction, s.type) : rows;
         };
 
         vm.sortedTopRedirects = function () {

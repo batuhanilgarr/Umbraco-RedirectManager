@@ -44,6 +44,12 @@
             dismissMissed: function (id) {
                 return $http.delete(baseUrl + "missed/" + id);
             },
+            setMissedCategory: function (id, category) {
+                return $http.put(baseUrl + "missed/" + id + "/category", { category: category });
+            },
+            bulkSetMissedCategory: function (ids, category) {
+                return $http.post(baseUrl + "missed/bulk-category", { ids: ids, category: category });
+            },
             pingTelemetry: function () {
                 return $http.post(baseUrl + "telemetry/ping", null);
             },
