@@ -43,4 +43,9 @@ public class MissedRequest
 
     [Column("LastSeenDate")]
     public DateTime LastSeenDate { get; set; } = DateTime.UtcNow;
+
+    [Column("Category")]
+    [Length(32)]
+    [Constraint(Default = "Unclassified")]
+    public string Category { get; set; } = nameof(MissedRequestCategory.Unclassified);
 }

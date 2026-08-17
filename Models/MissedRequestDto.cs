@@ -8,4 +8,5 @@ public class MissedRequestDto
     public int HitCount { get; set; } = 1;
     public DateTime FirstSeenDate { get; set; }
     public DateTime LastSeenDate { get; set; }
+    public string Category { get; set; } = nameof(MissedRequestCategory.Unclassified);
 }

@@ -654,7 +654,8 @@ public class RedirectApiController : Controller
             Domain = m.Domain,
             HitCount = m.HitCount,
             FirstSeenDate = m.FirstSeenDate,
-            LastSeenDate = m.LastSeenDate
+            LastSeenDate = m.LastSeenDate,
+            Category = m.Category
         };
     }
 
