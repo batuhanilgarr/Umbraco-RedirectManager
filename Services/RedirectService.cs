@@ -344,6 +344,13 @@ public class RedirectService : IRedirectService
         return rowsAffected > 0;
     }
 
+    // SQL Server allows at most 2100 parameters per statement (SQLite's default is
+    // lower still, 999) -- binding every selected id as its own parameter in one
+    // statement throws once a bulk selection is a few thousand rows, which silently
+    // affects zero rows (the whole statement fails). Batching keeps each statement's
+    // parameter count well under any backend's limit.
+    private const int BulkBatchSize = 500;
+
     public int BulkDelete(IEnumerable<int> ids)
     {
         var idList = ids?.Distinct().ToArray() ?? Array.Empty<int>();
@@ -351,9 +358,13 @@ public class RedirectService : IRedirectService
             return 0;
 
         using var scope = _scopeProvider.CreateScope();
-        var placeholders = string.Join(",", idList.Select((_, i) => $"@{i}"));
-        var sql = $"DELETE FROM {RedirectEntry.TableName} WHERE Id IN ({placeholders})";
-        var rowsAffected = scope.Database.Execute(sql, idList.Cast<object>().ToArray());
+        var rowsAffected = 0;
+        foreach (var batch in idList.Chunk(BulkBatchSize))
+        {
+            var placeholders = string.Join(",", batch.Select((_, i) => $"@{i}"));
+            var sql = $"DELETE FROM {RedirectEntry.TableName} WHERE Id IN ({placeholders})";
+            rowsAffected += scope.Database.Execute(sql, batch.Cast<object>().ToArray());
+        }
         scope.Complete();
 
         if (rowsAffected > 0)
@@ -371,15 +382,20 @@ public class RedirectService : IRedirectService
             return 0;
 
         using var scope = _scopeProvider.CreateScope();
-        // actorName may be null here; NPoco maps a null CLR value in the params
-        // array to a parameterized DBNull, the same as any other nullable column
-        // written via Insert/Update elsewhere in this class -- no special-casing
-        // needed for the null case.
-        var args = new List<object> { isActive ? 1 : 0, DateTime.UtcNow, actorName };
-        var placeholders = string.Join(",", idList.Select((_, i) => $"@{i + args.Count}"));
-        args.AddRange(idList.Cast<object>());
-        var sql = $"UPDATE {RedirectEntry.TableName} SET IsActive = @0, UpdatedDate = @1, ModifiedBy = @2 WHERE Id IN ({placeholders})";
-        var rowsAffected = scope.Database.Execute(sql, args.ToArray());
+        var updatedDate = DateTime.UtcNow;
+        var rowsAffected = 0;
+        foreach (var batch in idList.Chunk(BulkBatchSize))
+        {
+            // actorName may be null here; NPoco maps a null CLR value in the params
+            // array to a parameterized DBNull, the same as any other nullable column
+            // written via Insert/Update elsewhere in this class -- no special-casing
+            // needed for the null case.
+            var args = new List<object> { isActive ? 1 : 0, updatedDate, actorName };
+            var placeholders = string.Join(",", batch.Select((_, i) => $"@{i + args.Count}"));
+            args.AddRange(batch.Cast<object>());
+            var sql = $"UPDATE {RedirectEntry.TableName} SET IsActive = @0, UpdatedDate = @1, ModifiedBy = @2 WHERE Id IN ({placeholders})";
+            rowsAffected += scope.Database.Execute(sql, args.ToArray());
+        }
         scope.Complete();
 
         if (rowsAffected > 0)

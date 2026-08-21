@@ -85,6 +85,13 @@ public class MissedRequestService : IMissedRequestService
         return rowsAffected > 0;
     }
 
+    // SQL Server allows at most 2100 parameters per statement (SQLite's default is
+    // lower still, 999) -- a single UPDATE binding every selected id as its own
+    // parameter throws once a bulk-apply selection is a few thousand rows, which
+    // silently updates zero rows (the whole statement fails). Batching keeps each
+    // statement's parameter count well under any backend's limit.
+    private const int BulkBatchSize = 500;
+
     public int BulkSetCategory(IEnumerable<int> ids, MissedRequestCategory category)
     {
         var idList = ids?.Distinct().ToArray() ?? Array.Empty<int>();
@@ -92,11 +99,16 @@ public class MissedRequestService : IMissedRequestService
             return 0;
 
         using var scope = _scopeProvider.CreateScope();
-        var args = new List<object> { category.ToString() };
-        var placeholders = string.Join(",", idList.Select((_, i) => $"@{i + args.Count}"));
-        args.AddRange(idList.Cast<object>());
-        var sql = $"UPDATE {MissedRequest.TableName} SET Category = @0 WHERE Id IN ({placeholders})";
-        var rowsAffected = scope.Database.Execute(sql, args.ToArray());
+        var categoryName = category.ToString();
+        var rowsAffected = 0;
+        foreach (var batch in idList.Chunk(BulkBatchSize))
+        {
+            var args = new List<object> { categoryName };
+            var placeholders = string.Join(",", batch.Select((_, i) => $"@{i + args.Count}"));
+            args.AddRange(batch.Cast<object>());
+            var sql = $"UPDATE {MissedRequest.TableName} SET Category = @0 WHERE Id IN ({placeholders})";
+            rowsAffected += scope.Database.Execute(sql, args.ToArray());
+        }
         scope.Complete();
         return rowsAffected;
     }
