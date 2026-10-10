@@ -40,7 +40,9 @@ public class RedirectTelemetryPinger : IRedirectTelemetryPinger
     // (site owners only see the on/off toggle) — REDIRECTMANAGER_TELEMETRY_ENDPOINT_OVERRIDE
     // / _APIKEY_OVERRIDE below exist only for the maintainer's own local
     // Docker testing and are undocumented for end users.
-    private const string ProductionEndpointUrl = "https://redirectmanager-telemetry.azurewebsites.net/api/ping";
+    // Cloudflare Worker + D1 collector (the earlier Azure host was deleted along
+    // with its subscription). See the RedirectManagerTelemetry repo's worker/.
+    private const string ProductionEndpointUrl = "https://redirectmanager-telemetry.batuhannilgarr.workers.dev/api/ping";
 
     // NOT a secret, by design: this key ships inside the package, so anyone can
     // read it. The collection service only accepts it for POST /api/ping
