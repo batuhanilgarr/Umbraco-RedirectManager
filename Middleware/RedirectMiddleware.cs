@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
+using Umbraco.RedirectManager.Extensibility;
 using Umbraco.RedirectManager.Models;
 using Umbraco.RedirectManager.Services;
 
@@ -18,6 +19,7 @@ public class RedirectMiddleware
     private readonly IOptions<RedirectRateLimitOptions> _rateLimitOptions;
     private readonly IRedirectRateLimiter _rateLimiter;
     private readonly IRedirectCultureResolver _cultureResolver;
+    private readonly IMissedRequestObserverDispatcher _observerDispatcher;
 
     private static readonly ConcurrentDictionary<string, Regex> RegexCache = new();
     private static readonly ConcurrentDictionary<string, Regex> WildcardRegexCache = new();
@@ -31,7 +33,8 @@ public class RedirectMiddleware
         IMissedRequestTracker missedRequestTracker,
         IOptions<RedirectRateLimitOptions> rateLimitOptions,
         IRedirectRateLimiter rateLimiter,
-        IRedirectCultureResolver cultureResolver)
+        IRedirectCultureResolver cultureResolver,
+        IMissedRequestObserverDispatcher observerDispatcher)
     {
         _next = next;
         _logger = logger;
@@ -41,6 +44,7 @@ public class RedirectMiddleware
         _rateLimitOptions = rateLimitOptions;
         _rateLimiter = rateLimiter;
         _cultureResolver = cultureResolver;
+        _observerDispatcher = observerDispatcher;
     }
 
     public async Task InvokeAsync(HttpContext context, IRedirectService redirectService)
@@ -63,6 +67,18 @@ public class RedirectMiddleware
         if (context.Response.StatusCode == StatusCodes.Status404NotFound)
         {
             _missedRequestTracker.RecordMiss(path);
+
+            // Extensions (e.g. a commercial package) may observe the miss. The
+            // dispatcher already isolates observer failures; this guard keeps
+            // even an unexpected dispatcher fault from affecting the request.
+            try
+            {
+                _observerDispatcher.Dispatch(context, path);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Missed-request observer dispatch failed for {Path}", path);
+            }
         }
     }
 

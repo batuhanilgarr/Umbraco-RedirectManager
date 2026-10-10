@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
+using Umbraco.RedirectManager.Extensibility;
 using Umbraco.RedirectManager.Middleware;
 using Umbraco.RedirectManager.Models;
 using Umbraco.RedirectManager.Services;
@@ -19,7 +20,8 @@ public class RedirectMiddlewareTests
         IMissedRequestTracker? missedRequestTracker = null,
         RedirectRateLimitOptions? rateLimitOptions = null,
         IRedirectRateLimiter? rateLimiter = null,
-        IRedirectCultureResolver? cultureResolver = null)
+        IRedirectCultureResolver? cultureResolver = null,
+        IMissedRequestObserverDispatcher? observerDispatcher = null)
     {
         // NSubstitute returns string.Empty (not null) from an unconfigured
         // member with a string? return type, so the default resolver is
@@ -40,7 +42,8 @@ public class RedirectMiddlewareTests
             missedRequestTracker ?? Substitute.For<IMissedRequestTracker>(),
             Options.Create(rateLimitOptions ?? new RedirectRateLimitOptions()),
             rateLimiter ?? Substitute.For<IRedirectRateLimiter>(),
-            resolver);
+            resolver,
+            observerDispatcher ?? Substitute.For<IMissedRequestObserverDispatcher>());
     }
 
     private static DefaultHttpContext CreateContext(string path, string? queryString = null, string host = "example.com")
@@ -398,5 +401,42 @@ public class RedirectMiddlewareTests
 
         Assert.True(nextCalled);
         redirectService.DidNotReceive().GetByOldUrl(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<string?>());
+    }
+
+    [Fact]
+    public async Task Dispatches_to_observers_when_a_404_is_recorded()
+    {
+        var dispatcher = Substitute.For<IMissedRequestObserverDispatcher>();
+        var middleware = CreateMiddleware(
+            next: ctx => { ctx.Response.StatusCode = 404; return Task.CompletedTask; },
+            observerDispatcher: dispatcher);
+        var context = CreateContext("/gone-page");
+
+        await middleware.InvokeAsync(context, Substitute.For<IRedirectService>());
+
+        dispatcher.Received(1).Dispatch(context, "/gone-page");
+    }
+
+    [Fact]
+    public async Task Does_not_dispatch_for_successful_responses()
+    {
+        var dispatcher = Substitute.For<IMissedRequestObserverDispatcher>();
+        var middleware = CreateMiddleware(next: ctx => { ctx.Response.StatusCode = 200; return Task.CompletedTask; }, observerDispatcher: dispatcher);
+
+        await middleware.InvokeAsync(CreateContext("/fine"), Substitute.For<IRedirectService>());
+
+        dispatcher.DidNotReceiveWithAnyArgs().Dispatch(default!, default!);
+    }
+
+    [Fact]
+    public async Task A_dispatcher_failure_never_breaks_the_request()
+    {
+        var dispatcher = Substitute.For<IMissedRequestObserverDispatcher>();
+        dispatcher.When(d => d.Dispatch(Arg.Any<HttpContext>(), Arg.Any<string>())).Do(_ => throw new InvalidOperationException("boom"));
+        var middleware = CreateMiddleware(next: ctx => { ctx.Response.StatusCode = 404; return Task.CompletedTask; }, observerDispatcher: dispatcher);
+
+        var ex = await Record.ExceptionAsync(() => middleware.InvokeAsync(CreateContext("/gone-page"), Substitute.For<IRedirectService>()));
+
+        Assert.Null(ex);
     }
 }
