@@ -272,4 +272,200 @@ public class ExtensibilityServicesTests
         Assert.Single(result);
         Assert.Equal("first-el", result[0].ElementName);
     }
+
+    [Fact]
+    public void Registry_drops_element_names_with_a_trailing_newline()
+    {
+        Assert.Empty(Registry(new FixedProvider(Ext(element: "x-tab\n"))).GetExtensions());
+    }
+
+    [Theory]
+    [InlineData("/App_Plugins/%2e%2e/x.js")]
+    [InlineData("/App_Plugins/x\t.js")]
+    [InlineData("/App_Plugins/x .js")]
+    [InlineData("/App_Plugins\\x.js")]
+    [InlineData("/App_Plugins/x\u0001.js")]
+    public void Registry_drops_obfuscated_module_urls(string module)
+    {
+        Assert.Empty(Registry(new FixedProvider(Ext(module: module))).GetExtensions());
+    }
+
+    [Fact]
+    public void Registry_accepts_a_module_url_with_a_query_string()
+    {
+        Assert.Single(Registry(new FixedProvider(Ext(module: "/App_Plugins/X/x.js?v=1.2"))).GetExtensions());
+    }
+
+    // ---------- review hardening: suggestions ----------
+
+    [Fact]
+    public async Task A_provider_whose_Name_getter_throws_is_ignored_and_the_others_still_answer()
+    {
+        var bad = Substitute.For<IRedirectSuggestionProvider>();
+        bad.Name.Returns(_ => throw new InvalidOperationException("name boom"));
+        bad.SuggestAsync(Arg.Any<RedirectSuggestionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<RedirectSuggestion>>(new[] { new RedirectSuggestion("/bad", 0.5, "r") }));
+        var service = Suggestions(null, 5, bad, Provider("ok", new RedirectSuggestion("/new", 0.8, "r")));
+
+        var result = await service.GetSuggestionsAsync(Request, CancellationToken.None);
+
+        Assert.Contains(result, s => s.TargetUrl == "/new" && s.Source == "ok");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-5)]
+    public async Task A_non_positive_provider_timeout_falls_back_to_the_default(int milliseconds)
+    {
+        var service = Suggestions(TimeSpan.FromMilliseconds(milliseconds), 5, Provider("ok", new RedirectSuggestion("/new", 0.8, "r")));
+
+        var result = await service.GetSuggestionsAsync(Request, CancellationToken.None);
+
+        Assert.Single(result);
+    }
+
+    [Fact]
+    public async Task Non_finite_confidence_is_mapped_to_a_serialisable_value()
+    {
+        var service = Suggestions(null, 5, Provider("A",
+            new RedirectSuggestion("/nan", double.NaN, "r"),
+            new RedirectSuggestion("/pos", double.PositiveInfinity, "r"),
+            new RedirectSuggestion("/neg", double.NegativeInfinity, "r")));
+
+        var result = await service.GetSuggestionsAsync(Request, CancellationToken.None);
+
+        Assert.Equal(0d, result.Single(s => s.TargetUrl == "/nan").Confidence);
+        Assert.Equal(1d, result.Single(s => s.TargetUrl == "/pos").Confidence);
+        Assert.Equal(0d, result.Single(s => s.TargetUrl == "/neg").Confidence);
+        Assert.Null(Record.Exception(() => JsonSerializer.Serialize(result, new JsonSerializerOptions(JsonSerializerDefaults.Web))));
+    }
+
+    [Fact]
+    public async Task A_provider_returning_null_is_handled()
+    {
+        var nullProvider = Substitute.For<IRedirectSuggestionProvider>();
+        nullProvider.Name.Returns("null");
+        nullProvider.SuggestAsync(Arg.Any<RedirectSuggestionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<RedirectSuggestion>>(null!));
+        var service = Suggestions(null, 5, nullProvider, Provider("ok", new RedirectSuggestion("/new", 0.8, "r")));
+
+        var result = await service.GetSuggestionsAsync(Request, CancellationToken.None);
+
+        Assert.Single(result);
+    }
+
+    [Fact]
+    public async Task A_cooperative_provider_sees_its_token_cancelled_after_the_timeout()
+    {
+        var observed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var slow = Substitute.For<IRedirectSuggestionProvider>();
+        slow.Name.Returns("slow");
+        slow.SuggestAsync(Arg.Any<RedirectSuggestionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var token = call.Arg<CancellationToken>();
+                token.Register(() => observed.TrySetResult(true));
+                return Task.Delay(TimeSpan.FromSeconds(10)).ContinueWith(_ => (IReadOnlyList<RedirectSuggestion>)Array.Empty<RedirectSuggestion>());
+            });
+        var service = Suggestions(TimeSpan.FromMilliseconds(50), 5, slow);
+
+        await service.GetSuggestionsAsync(Request, CancellationToken.None);
+
+        Assert.True(await Task.WhenAny(observed.Task, Task.Delay(TimeSpan.FromSeconds(3))) == observed.Task);
+    }
+
+    // ---------- review hardening: enrichment ----------
+
+    private static MissedRequestEnrichmentService Enrichment(TimeSpan timeout, params IMissedRequestEnricher[] enrichers) =>
+        new(enrichers, Options.Create(new RedirectExtensibilityOptions { EnricherTimeout = timeout }),
+            NullLogger<MissedRequestEnrichmentService>.Instance);
+
+    [Fact]
+    public async Task A_timed_out_enricher_cannot_write_into_the_real_rows_later()
+    {
+        var slow = Substitute.For<IMissedRequestEnricher>();
+        slow.EnrichAsync(Arg.Any<IReadOnlyList<MissedRequestDto>>(), Arg.Any<CancellationToken>())
+            .Returns(async call =>
+            {
+                var staged = call.Arg<IReadOnlyList<MissedRequestDto>>();
+                await Task.Delay(300);
+                foreach (var row in staged) row.SetExtension("late", 1);
+            });
+        var service = Enrichment(TimeSpan.FromMilliseconds(50), slow);
+        var rows = new List<MissedRequestDto> { new() { Id = 1, Path = "/a" } };
+
+        var ex = await Record.ExceptionAsync(() => service.EnrichAsync(rows, CancellationToken.None));
+        await Task.Delay(600);
+
+        Assert.Null(ex);
+        Assert.True(rows[0].Extensions is null || !rows[0].Extensions!.ContainsKey("late"));
+    }
+
+    [Fact]
+    public async Task A_good_enricher_still_merges_after_a_previous_one_timed_out()
+    {
+        var slow = Substitute.For<IMissedRequestEnricher>();
+        slow.EnrichAsync(Arg.Any<IReadOnlyList<MissedRequestDto>>(), Arg.Any<CancellationToken>())
+            .Returns(async call =>
+            {
+                var staged = call.Arg<IReadOnlyList<MissedRequestDto>>();
+                await Task.Delay(300);
+                foreach (var row in staged) row.SetExtension("late", 1);
+            });
+        var good = Substitute.For<IMissedRequestEnricher>();
+        good.EnrichAsync(Arg.Any<IReadOnlyList<MissedRequestDto>>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                foreach (var row in call.Arg<IReadOnlyList<MissedRequestDto>>()) row.SetExtension("score", 7);
+                return Task.CompletedTask;
+            });
+        var service = Enrichment(TimeSpan.FromMilliseconds(50), slow, good);
+        var rows = new List<MissedRequestDto> { new() { Id = 1, Path = "/a" }, new() { Id = 2, Path = "/b" } };
+
+        await service.EnrichAsync(rows, CancellationToken.None);
+
+        Assert.All(rows, r => Assert.Equal(7, r.Extensions!["score"]));
+    }
+
+    [Fact]
+    public async Task Enrichers_see_the_row_data_in_their_staging_copies()
+    {
+        var seen = new List<(int Id, string Path, string? Domain, int Hits, string Category)>();
+        var enricher = Substitute.For<IMissedRequestEnricher>();
+        enricher.EnrichAsync(Arg.Any<IReadOnlyList<MissedRequestDto>>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                foreach (var r in call.Arg<IReadOnlyList<MissedRequestDto>>())
+                    seen.Add((r.Id, r.Path, r.Domain, r.HitCount, r.Category));
+                return Task.CompletedTask;
+            });
+        var service = Enrichment(TimeSpan.FromSeconds(2), enricher);
+        var rows = new List<MissedRequestDto>
+        {
+            new() { Id = 5, Path = "/p", Domain = "d.test", HitCount = 9, Category = "Bot" }
+        };
+
+        await service.EnrichAsync(rows, CancellationToken.None);
+
+        Assert.Equal((5, "/p", (string?)"d.test", 9, "Bot"), seen.Single());
+        Assert.Null(rows[0].Extensions);
+    }
+
+    [Fact]
+    public async Task A_cooperative_enricher_sees_its_token_cancelled_after_the_timeout()
+    {
+        var observed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var slow = Substitute.For<IMissedRequestEnricher>();
+        slow.EnrichAsync(Arg.Any<IReadOnlyList<MissedRequestDto>>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                call.Arg<CancellationToken>().Register(() => observed.TrySetResult(true));
+                return Task.Delay(TimeSpan.FromSeconds(10));
+            });
+        var service = Enrichment(TimeSpan.FromMilliseconds(50), slow);
+
+        await service.EnrichAsync(new List<MissedRequestDto> { new() { Id = 1 } }, CancellationToken.None);
+
+        Assert.True(await Task.WhenAny(observed.Task, Task.Delay(TimeSpan.FromSeconds(3))) == observed.Task);
+    }
 }

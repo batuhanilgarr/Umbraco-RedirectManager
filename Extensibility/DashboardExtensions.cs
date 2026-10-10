@@ -36,7 +36,7 @@ public interface IDashboardExtensionRegistry
 public sealed class DashboardExtensionRegistry : IDashboardExtensionRegistry
 {
     private static readonly Regex ElementNamePattern =
-        new(@"^[a-z][a-z0-9]*(-[a-z0-9]+)+$", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
+        new(@"^[a-z][a-z0-9]*(-[a-z0-9]+)+\z", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
 
     private readonly IDashboardExtensionProvider[] _providers;
     private readonly ILogger<DashboardExtensionRegistry> _logger;
@@ -95,7 +95,10 @@ public sealed class DashboardExtensionRegistry : IDashboardExtensionRegistry
         if (string.IsNullOrWhiteSpace(item.Label)) { problem = "Label is required"; return false; }
 
         var url = item.ModuleUrl ?? string.Empty;
+        // Browsers decode %2e%2e and strip tabs/newlines inside URLs, so reject '%',
+        // whitespace and control characters outright (query strings remain allowed).
         if (!url.StartsWith("/App_Plugins/", StringComparison.Ordinal) ||
+            url.Any(c => c == '%' || char.IsControl(c) || char.IsWhiteSpace(c)) ||
             url.Contains("..", StringComparison.Ordinal) ||
             url.Contains("//", StringComparison.Ordinal) ||
             url.Contains('\\'))

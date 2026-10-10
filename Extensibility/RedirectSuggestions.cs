@@ -30,9 +30,18 @@ public interface IRedirectSuggestionService
 
 public sealed class RedirectExtensibilityOptions
 {
-    public TimeSpan SuggestionProviderTimeout { get; set; } = TimeSpan.FromSeconds(2);
-    public TimeSpan EnricherTimeout { get; set; } = TimeSpan.FromSeconds(2);
+    internal static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(2);
+
+    public TimeSpan SuggestionProviderTimeout { get; set; } = DefaultTimeout;
+    public TimeSpan EnricherTimeout { get; set; } = DefaultTimeout;
     public int MaxSuggestions { get; set; } = 5;
+
+    /// <summary>
+    /// Non-positive or out-of-range timeouts (which would make CancelAfter / WaitAsync
+    /// throw) fall back to the 2 s default. Applied in one place for all extension timeouts.
+    /// </summary>
+    internal static TimeSpan NormalizeTimeout(TimeSpan value) =>
+        value > TimeSpan.Zero && value.TotalMilliseconds < int.MaxValue ? value : DefaultTimeout;
 }
 
 public sealed class RedirectSuggestionService : IRedirectSuggestionService
@@ -71,6 +80,8 @@ public sealed class RedirectSuggestionService : IRedirectSuggestionService
         return results
             .SelectMany(r => r)
             .Where(s => !string.IsNullOrWhiteSpace(s.TargetUrl))
+            // Case-insensitive on purpose: these are editor-facing suggestions, so near-duplicates
+            // that differ only in casing are noise, even though URL paths are technically case-sensitive.
             .GroupBy(s => s.TargetUrl, StringComparer.OrdinalIgnoreCase)
             .Select(g => g.OrderByDescending(s => s.Confidence).First())
             .OrderByDescending(s => s.Confidence)
@@ -81,19 +92,22 @@ public sealed class RedirectSuggestionService : IRedirectSuggestionService
     private async Task<IReadOnlyList<RedirectSuggestion>> RunProviderAsync(
         IRedirectSuggestionProvider provider, RedirectSuggestionRequest request, CancellationToken cancellationToken)
     {
-        // The linked token lets cooperative providers stop early; WaitAsync cuts
-        // off providers that ignore it, so one slow provider never stalls the UI.
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        linked.CancelAfter(_options.SuggestionProviderTimeout);
+        var name = SafeName(provider);
+        var timeout = RedirectExtensibilityOptions.NormalizeTimeout(_options.SuggestionProviderTimeout);
 
         try
         {
+            // The linked token lets cooperative providers stop early; WaitAsync cuts
+            // off providers that ignore it, so one slow provider never stalls the UI.
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            linked.CancelAfter(timeout);
+
             var found = await provider.SuggestAsync(request, linked.Token)
-                .WaitAsync(_options.SuggestionProviderTimeout, cancellationToken)
+                .WaitAsync(timeout, cancellationToken)
                 .ConfigureAwait(false);
 
             return (found ?? Array.Empty<RedirectSuggestion>())
-                .Select(s => s with { Confidence = Math.Clamp(s.Confidence, 0d, 1d), Source = provider.Name })
+                .Select(s => s with { Confidence = NormalizeConfidence(s.Confidence), Source = name })
                 .ToList();
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -102,8 +116,31 @@ public sealed class RedirectSuggestionService : IRedirectSuggestionService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Redirect suggestion provider {Provider} failed or timed out", provider.Name);
+            _logger.LogWarning(ex, "Redirect suggestion provider {Provider} failed or timed out", name);
             return Array.Empty<RedirectSuggestion>();
         }
+    }
+
+    // NaN and -Infinity map to 0 (no confidence), +Infinity to 1; System.Text.Json
+    // throws on non-finite doubles, and Math.Clamp leaves NaN unchanged.
+    private static double NormalizeConfidence(double value) =>
+        double.IsNaN(value) ? 0d : Math.Clamp(value, 0d, 1d);
+
+    private static string SafeName(IRedirectSuggestionProvider provider)
+    {
+        try
+        {
+            var name = provider.Name;
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                return name;
+            }
+        }
+        catch
+        {
+            // fall through to the type name
+        }
+
+        return provider.GetType().FullName ?? "unknown";
     }
 }

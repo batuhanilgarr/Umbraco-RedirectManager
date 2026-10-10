@@ -37,14 +37,36 @@ public sealed class MissedRequestEnrichmentService : IMissedRequestEnrichmentSer
 
     public async Task EnrichAsync(IReadOnlyList<MissedRequestDto> rows, CancellationToken cancellationToken)
     {
-        // Sequential on purpose: enrichers write into the same row objects.
+        var timeout = RedirectExtensibilityOptions.NormalizeTimeout(_options.EnricherTimeout);
+
+        // Sequential on purpose. Each enricher gets its own staging copies so an enricher that
+        // times out (and keeps running) can only ever touch orphaned objects, never the real
+        // rows that the next enricher or the serializer is using.
         foreach (var enricher in _enrichers)
         {
             try
             {
-                await enricher.EnrichAsync(rows, cancellationToken)
-                    .WaitAsync(_options.EnricherTimeout, cancellationToken)
+                var staging = rows.Select(Copy).ToList();
+
+                using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                linked.CancelAfter(timeout);
+
+                await enricher.EnrichAsync(staging, linked.Token)
+                    .WaitAsync(timeout, cancellationToken)
                     .ConfigureAwait(false);
+
+                for (var i = 0; i < staging.Count && i < rows.Count; i++)
+                {
+                    if (staging[i].Extensions is not { } added)
+                    {
+                        continue;
+                    }
+
+                    foreach (var (key, value) in added.ToArray())
+                    {
+                        rows[i].SetExtension(key, value);
+                    }
+                }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -56,4 +78,15 @@ public sealed class MissedRequestEnrichmentService : IMissedRequestEnrichmentSer
             }
         }
     }
+
+    private static MissedRequestDto Copy(MissedRequestDto row) => new()
+    {
+        Id = row.Id,
+        Path = row.Path,
+        Domain = row.Domain,
+        HitCount = row.HitCount,
+        FirstSeenDate = row.FirstSeenDate,
+        LastSeenDate = row.LastSeenDate,
+        Category = row.Category
+    };
 }
