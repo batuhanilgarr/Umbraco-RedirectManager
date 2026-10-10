@@ -41,6 +41,11 @@ public class RedirectTelemetryPinger : IRedirectTelemetryPinger
     // / _APIKEY_OVERRIDE below exist only for the maintainer's own local
     // Docker testing and are undocumented for end users.
     private const string ProductionEndpointUrl = "https://redirectmanager-telemetry.azurewebsites.net/api/ping";
+
+    // NOT a secret, by design: this key ships inside the package, so anyone can
+    // read it. The collection service only accepts it for POST /api/ping
+    // (write-only); reading collected data requires a separate admin key that is
+    // never shipped or committed. Never reuse this value for anything else.
     private const string ProductionApiKey = "62db2a1ff665cab5c5fb2458b3d3dbd719eba57ebda92d2f431a6fc0d094d095";
 
     private readonly IRedirectTelemetrySettingsStore _settingsStore;
