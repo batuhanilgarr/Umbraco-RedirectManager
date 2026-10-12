@@ -38,6 +38,10 @@
     <Content Remove="Umbraco.RedirectManager.Tests/**" />
     <EmbeddedResource Remove="Umbraco.RedirectManager.Tests/**" />
     <None Remove="Umbraco.RedirectManager.Tests/**" />
+    <Compile Remove="samples/**" />
+    <Content Remove="samples/**" />
+    <EmbeddedResource Remove="samples/**" />
+    <None Remove="samples/**" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
