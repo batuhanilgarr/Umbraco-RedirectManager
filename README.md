@@ -197,7 +197,7 @@ never depend on it (see the [Free Forever Promise](docs/FREE-FOREVER.md)).
 The first time you open the dashboard, you'll be asked once: "Help
 improve Redirect Manager?" with **Yes** / **No thanks** — your answer is
 saved and you won't be asked again. You can change your mind anytime from
-the "Send anonymous usage data" toggle on the Overview tab. There is no
+the "Send anonymous usage data" toggle on the Settings tab. There is no
 appsettings.json configuration for this; the prompt/toggle is the only
 control.
 

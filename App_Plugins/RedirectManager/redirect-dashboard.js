@@ -520,6 +520,119 @@ class RedirectManagerDashboard extends UmbLitElement {
             color: #888;
         }
 
+        /* ── settings tab ── */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            align-items: stretch;
+            margin-top: 16px;
+        }
+
+        .settings-card {
+            box-sizing: border-box;
+            background: #fff;
+            border: 1px solid #e3e5ea;
+            border-radius: 8px;
+            padding: 16px 20px;
+        }
+
+        .settings-card h3 {
+            margin: 0 0 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #1b264f;
+        }
+
+        .settings-hint {
+            margin: 12px 0 0;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #666;
+        }
+
+        .settings-muted {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .edition-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .edition-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 999px;
+            background: #e8f7ee;
+            color: #167a3f;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .feature-list {
+            margin: 12px 0 0;
+            padding-left: 18px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .switch-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .switch-input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .switch-track {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 20px;
+            border-radius: 999px;
+            background: #c8ccd4;
+            transition: background 0.15s;
+            flex-shrink: 0;
+        }
+
+        .switch-track::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            transition: transform 0.15s;
+        }
+
+        .switch-input:checked + .switch-track { background: #2bc37c; }
+        .switch-input:checked + .switch-track::after { transform: translateX(16px); }
+        .switch-input:focus-visible + .switch-track { outline: 2px solid #3544b1; outline-offset: 2px; }
+        .switch-input:disabled + .switch-track { opacity: 0.5; }
+
+        .about-list {
+            display: grid;
+            grid-template-columns: max-content 1fr;
+            gap: 8px 16px;
+            margin: 0;
+            font-size: 13px;
+        }
+
+        .about-list dt { color: #888; }
+        .about-list dd { margin: 0; color: #1b264f; }
+
         /* ── table ── */
         .table-wrapper {
             overflow-x: auto;
@@ -1864,6 +1977,10 @@ class RedirectManagerDashboard extends UmbLitElement {
                         @click=${() => { this.activeTab = 'stats'; }}>
                     Overview
                 </button>
+                <button class="tab-btn ${this.activeTab === 'settings' ? 'active' : ''}"
+                        @click=${() => { this.activeTab = 'settings'; }}>
+                    Settings
+                </button>
                 ${this.tabExtensions.map(ext => html`
                     <button class="tab-btn ${this.activeTab === `ext:${ext.id}` ? 'active' : ''}"
                             @click=${() => { this.activeTab = `ext:${ext.id}`; }}>
@@ -2230,35 +2347,56 @@ class RedirectManagerDashboard extends UmbLitElement {
                             </div>
                         `}
                     </div>
+                `}
+            ` : ''}
 
-                    <div class="stat-section">
+            <!-- Settings tab: edition, telemetry, about -->
+            ${this.activeTab === 'settings' ? html`
+                <div class="settings-grid">
+                    <section class="settings-card">
                         <h3>Edition</h3>
-                        <p class="stat-section-hint">
-                            <strong>${this.capabilities.edition}</strong>${this.capabilities.edition === 'Standard' ? ' (free forever)' : ''}
-                            ${(this.capabilities.features || []).length ? html` · ${(this.capabilities.features || []).join(', ')}` : ''}
-                            <br />
-                            Redirects never depend on a license.
-                            <a href="https://github.com/batuhanilgarr/Umbraco-RedirectManager/blob/main/docs/FREE-FOREVER.md" target="_blank" rel="noopener">Free Forever Promise</a>
+                        <div class="edition-row">
+                            <span class="edition-badge">${this.capabilities.edition}</span>
+                            ${this.capabilities.edition === 'Standard' ? html`<span class="settings-muted">Free forever</span>` : ''}
+                        </div>
+                        ${(this.capabilities.features || []).length ? html`
+                            <ul class="feature-list">
+                                ${this.capabilities.features.map(f => html`<li>${f}</li>`)}
+                            </ul>
+                        ` : ''}
+                        <p class="settings-hint">
+                            Redirects never depend on a license. Everything that is free today stays free.
+                            <a href="https://github.com/batuhanilgarr/Umbraco-RedirectManager/blob/main/docs/FREE-FOREVER.md" target="_blank" rel="noopener">Read the Free Forever Promise</a>
                         </p>
-                    </div>
+                    </section>
 
-                    <div class="stat-section">
+                    <section class="settings-card">
                         <h3>Telemetry</h3>
-                        <p class="stat-section-hint">
-                            Opt-in. When enabled, sends a small anonymous ping (a random site ID,
-                            this site's domain, and the plugin/Umbraco version — no redirect data,
-                            no traffic, no IPs) so the plugin author can see it's still installed.
-                            Off by default.
-                        </p>
-                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                            <input type="checkbox"
+                        <label class="switch-row">
+                            <input type="checkbox" class="switch-input"
                                    .checked=${this.telemetryEnabled}
                                    ?disabled=${this.telemetryLoading}
                                    @change=${this.toggleTelemetryEnabled} />
+                            <span class="switch-track" aria-hidden="true"></span>
                             <span>Send anonymous usage data</span>
                         </label>
-                    </div>
-                `}
+                        <p class="settings-hint">
+                            Opt-in and off by default. Sends a small ping: a random site ID, this site's domain,
+                            and the plugin and Umbraco versions. No redirect data, no traffic, no IPs. It helps the
+                            maintainer decide which Umbraco versions to keep supporting.
+                        </p>
+                    </section>
+
+                    <section class="settings-card">
+                        <h3>About</h3>
+                        <dl class="about-list">
+                            <dt>Version</dt><dd>${this.currentVersion || 'unknown'}</dd>
+                            <dt>Source</dt><dd><a href="https://github.com/batuhanilgarr/Umbraco-RedirectManager" target="_blank" rel="noopener">GitHub</a></dd>
+                            <dt>Report an issue</dt><dd><a href="https://github.com/batuhanilgarr/Umbraco-RedirectManager/issues" target="_blank" rel="noopener">GitHub issues</a></dd>
+                            <dt>Extending</dt><dd><a href="https://github.com/batuhanilgarr/Umbraco-RedirectManager/blob/main/docs/EXTENDING.md" target="_blank" rel="noopener">Extension guide</a></dd>
+                        </dl>
+                    </section>
+                </div>
             ` : ''}
 
             <!-- Telemetry consent prompt (first dashboard load only, until accepted or declined) -->
@@ -2277,7 +2415,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                                     plugin/Umbraco version) shows which Umbraco versions are really in
                                     use, so I know what to keep supporting and fix first. No redirect
                                     data, no traffic, no IPs, never required, and the free features
-                                    never depend on it. You can change this anytime from the Overview tab.
+                                    never depend on it. You can change this anytime from the Settings tab.
                                 </p>
                                 <div style="display:flex; justify-content:flex-end; gap:8px;">
                                     <button class="btn" ?disabled=${this.telemetryLoading} @click=${this.declineTelemetryPrompt}>No thanks</button>
