@@ -22,6 +22,13 @@ public class SampleExtensionComposer : IComposer
     }
 }
 
+// Test hook: start the site with RM_SAMPLE_FAULT=throw|hang to prove that a misbehaving
+// extension cannot break the host (requests, the dashboard, the core API).
+internal static class SampleFault
+{
+    public static string? Mode => Environment.GetEnvironmentVariable("RM_SAMPLE_FAULT");
+}
+
 public sealed class SampleMissCounter
 {
     public int Count;
@@ -37,6 +44,8 @@ public sealed class SampleMissObserver : IMissedRequestObserver
 
     public void OnMissedRequest(MissedRequestContext context)
     {
+        if (SampleFault.Mode == "throw") throw new InvalidOperationException("sample observer fault");
+
         Interlocked.Increment(ref _counter.Count);
         _counter.LastReferrer = context.Referrer;
     }
@@ -51,6 +60,9 @@ public sealed class SampleEnricher : IMissedRequestEnricher
 
     public Task EnrichAsync(IReadOnlyList<MissedRequestDto> rows, CancellationToken cancellationToken)
     {
+        if (SampleFault.Mode == "throw") throw new InvalidOperationException("sample enricher fault");
+        if (SampleFault.Mode == "hang") return Task.Delay(TimeSpan.FromSeconds(30)); // ignores the token on purpose
+
         foreach (var row in rows)
         {
             row.SetExtension("sample.pathLength", row.Path.Length);
@@ -66,9 +78,12 @@ public sealed class SampleSuggestionProvider : IRedirectSuggestionProvider
 {
     public string Name => "Sample";
 
-    public Task<IReadOnlyList<RedirectSuggestion>> SuggestAsync(
+    public async Task<IReadOnlyList<RedirectSuggestion>> SuggestAsync(
         RedirectSuggestionRequest request, CancellationToken cancellationToken)
     {
+        if (SampleFault.Mode == "throw") throw new InvalidOperationException("sample provider fault");
+        if (SampleFault.Mode == "hang") await Task.Delay(TimeSpan.FromSeconds(30)); // ignores the token on purpose
+
         var suggestions = new List<RedirectSuggestion>();
         var trimmed = request.Path.TrimEnd('/');
         var slash = trimmed.LastIndexOf('/');
@@ -84,7 +99,7 @@ public sealed class SampleSuggestionProvider : IRedirectSuggestionProvider
             suggestions.Add(new RedirectSuggestion(trimmed[..dot], 0.8, "Same path without extension"));
         }
 
-        return Task.FromResult<IReadOnlyList<RedirectSuggestion>>(suggestions);
+        return suggestions;
     }
 }
 
