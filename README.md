@@ -208,7 +208,7 @@ given 24-hour window.
 
 ## License
 
-MIT
+MIT. See also the [Free Forever Promise](docs/FREE-FOREVER.md): what is free today stays free.
 
 ## Contributing
 
