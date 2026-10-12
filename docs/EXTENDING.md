@@ -154,6 +154,13 @@ per row, so never fetch on connect; wait for a user action (a click, or an `Inte
 The dashboard extensions are rendered by the **Lit dashboard (Umbraco 17+)**. The legacy AngularJS dashboard
 (Umbraco 13) ignores them; the server-side seams still compile for every supported target.
 
+## The Premium info section
+
+While no extension whose `Id` starts with `premium.` is registered (that prefix is reserved for the commercial
+`BT.RedirectManager.Premium` package) and the edition is Standard, the free dashboard shows one dismissible
+"Redirect Manager Premium (alpha)" card on the **Settings** tab with a "Request access" e-mail link. Dismissing it
+is remembered per browser. Nothing in the free dashboard is locked or limited, see `docs/FREE-FOREVER.md`.
+
 ## Guarantees
 
 * No behavior change when nothing is registered (same API payloads, same dashboard).

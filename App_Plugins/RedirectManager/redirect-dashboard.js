@@ -103,7 +103,8 @@ class RedirectManagerDashboard extends UmbLitElement {
         staleRedirectsSort: { type: Object },
         missedCategoryFilter: { type: Array },
         selectedMissedIds: { type: Array },
-        capabilities: { type: Object }
+        capabilities: { type: Object },
+        premiumPromoDismissed: { type: Boolean }
     };
 
     static styles = css`
@@ -622,6 +623,42 @@ class RedirectManagerDashboard extends UmbLitElement {
         .switch-input:focus-visible + .switch-track { outline: 2px solid #3544b1; outline-offset: 2px; }
         .switch-input:disabled + .switch-track { opacity: 0.5; }
 
+        .promo-card {
+            grid-column: 1 / -1;
+            border-color: #c9d0f0;
+            background: #f8f9ff;
+        }
+
+        .promo-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .promo-head h3 { margin-bottom: 8px; }
+
+        .promo-badge {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 1px 8px;
+            border-radius: 999px;
+            background: #eef1fb;
+            color: #3544b1;
+            font-size: 11px;
+            font-weight: 600;
+            vertical-align: middle;
+        }
+
+        .promo-shot {
+            display: block;
+            width: 100%;
+            max-width: 760px;
+            margin: 12px 0 4px;
+            border: 1px solid #e3e5ea;
+            border-radius: 6px;
+        }
+
         .about-list {
             display: grid;
             grid-template-columns: max-content 1fr;
@@ -1016,6 +1053,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.topRedirectsSort = { column: null, direction: 'asc', type: 'string' };
         this.staleRedirectsSort = { column: null, direction: 'asc', type: 'string' };
         this.capabilities = { edition: 'Standard', features: [], suggestionsAvailable: false, extensions: [] };
+        this.premiumPromoDismissed = this.readPremiumPromoDismissed();
     }
 
     showMessage(text, type = 'info') {
@@ -1330,6 +1368,24 @@ class RedirectManagerDashboard extends UmbLitElement {
     }
 
     /** Server-declared extensions (edition, extra tabs, 404-row panels). Failure => behave exactly like Standard. */
+    /** Per-browser preference only (never sent anywhere); any storage failure just means the card shows. */
+    readPremiumPromoDismissed() {
+        try { return window.localStorage.getItem('rm-premium-promo-dismissed') === '1'; } catch (e) { return false; }
+    }
+
+    dismissPremiumPromo() {
+        this.premiumPromoDismissed = true;
+        try { window.localStorage.setItem('rm-premium-promo-dismissed', '1'); } catch (e) { /* ignore */ }
+    }
+
+    /** Only while the Premium package is not installed (its extensions use the "premium." id prefix). */
+    get showPremiumPromo() {
+        const exts = this.capabilities?.extensions || [];
+        return !this.premiumPromoDismissed
+            && this.capabilities?.edition === 'Standard'
+            && !exts.some(e => typeof e.id === 'string' && e.id.startsWith('premium.'));
+    }
+
     async loadCapabilities() {
         try {
             const response = await this.authFetch('/umbraco/api/redirectmanager/capabilities');
@@ -2381,6 +2437,32 @@ class RedirectManagerDashboard extends UmbLitElement {
             <!-- Settings tab: edition, telemetry, about -->
             ${this.activeTab === 'settings' ? html`
                 <div class="settings-grid">
+                    ${this.showPremiumPromo ? html`
+                        <section class="settings-card promo-card">
+                            <div class="promo-head">
+                                <h3>Redirect Manager Premium <span class="promo-badge">Alpha</span></h3>
+                                <button class="btn btn-sm" @click=${this.dismissPremiumPromo} aria-label="Dismiss this notice">Dismiss</button>
+                            </div>
+                            <p class="settings-hint" style="margin-top:0">
+                                New, optional extras for teams that live in the 404 log. Everything in the free edition stays free;
+                                Premium only adds new things on top.
+                            </p>
+                            <ul class="feature-list">
+                                <li><strong>Search Console traffic</strong> shows how many Google clicks each 404 costs, so you fix the expensive ones first.</li>
+                                <li><strong>Smart target suggestions</strong> rank your own pages as redirect targets, using the old URL's words and the Google queries that used to reach it.</li>
+                            </ul>
+                            <img class="promo-shot" src="/App_Plugins/RedirectManager/assets/premium-404-suggestions.png?v=${this.currentVersion || ''}"
+                                 alt="404 log row showing Search Console clicks and a suggested redirect target" loading="lazy" />
+                            <p class="settings-hint">
+                                Free for design partners during the alpha. Requires Umbraco 17 or later.
+                                <a href="https://github.com/batuhanilgarr/Umbraco-RedirectManager/blob/main/docs/FREE-FOREVER.md" target="_blank" rel="noopener">Free Forever Promise</a>
+                            </p>
+                            <a class="btn btn-primary" style="display:inline-block; text-decoration:none"
+                               href="mailto:batuhannilgarr@gmail.com?subject=${encodeURIComponent('Redirect Manager Premium alpha access')}&body=${encodeURIComponent('Hi Batuhan,\n\nI would like to try the Premium alpha.\n\nUmbraco version:\nSite domain(s):\nWhat I would use it for:\n')}">
+                                Request access
+                            </a>
+                        </section>
+                    ` : ''}
                     <section class="settings-card">
                         <h3>Edition</h3>
                         <div class="edition-row">
