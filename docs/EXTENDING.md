@@ -140,7 +140,7 @@ Rules, enforced by the core (an extension that breaks them is dropped with a war
 The dashboard imports your ES module once and creates your element. It then assigns two properties:
 
 ```js
-element.api   // { authFetch(url, options), showMessage(text, type), createRedirectFromMissed(item),
+element.api   // { authFetch(url, options), showMessage(text, type), createRedirectFromMissed(item, { newUrl }?),
               //   reloadMissedRequests(), reloadRedirects(), reloadCapabilities() }
 element.item  // MissedRowPanel only: the 404 row ({ id, path, hitCount, category, extensions, ... })
 ```

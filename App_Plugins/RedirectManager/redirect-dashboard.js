@@ -1358,7 +1358,7 @@ class RedirectManagerDashboard extends UmbLitElement {
             this._extensionApi = {
                 authFetch: (url, options) => this.authFetch(url, options),
                 showMessage: (text, type) => this.showMessage(text, type),
-                createRedirectFromMissed: (item) => this.createRedirectFromMissed(item),
+                createRedirectFromMissed: (item, options) => this.createRedirectFromMissed(item, options),
                 reloadMissedRequests: () => this.loadMissedRequests(),
                 reloadRedirects: () => this.loadRedirects(),
                 // Re-reads the extension list (e.g. after a setup wizard made a column available).
@@ -1462,8 +1462,12 @@ class RedirectManagerDashboard extends UmbLitElement {
         }
     }
 
-    createRedirectFromMissed(item) {
+    /** `options.newUrl` pre-fills the target (used by extensions that suggest one); the editor still reviews and saves. */
+    createRedirectFromMissed(item, options = {}) {
         this.openAddModal(item.path);
+        if (typeof options?.newUrl === 'string' && options.newUrl) {
+            this.formData = { ...this.formData, newUrl: options.newUrl };
+        }
     }
 
     applyFilters() {
