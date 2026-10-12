@@ -1,6 +1,6 @@
 # Search Console Integration (404 Intelligence) — Design
 
-Status: DRAFT for owner review · 2026-10-12 · Phase 1 flagship candidate · Premium package only
+Status: DECISIONS CONFIRMED 2026-10-12 (see 8) · 2026-10-12 · Phase 1 flagship candidate · Premium package only
 Roadmap: `2026-10-10-monetization-roadmap-design.md` (Phase 1). Extension seams: `docs/EXTENDING.md`.
 
 ## 1. Goal
@@ -135,8 +135,9 @@ the backoffice.
 2. GSC client + store + sync + normalization, fully unit-tested.
 3. Enricher + 404-log columns + sort; fail-open verified with fault modes.
 4. Setup wizard + status tab; live verification against a real property.
-5. Suggestion boost + weekly digest.
-6. Alpha to design partners; collect feedback; decide on option C.
+5. Suggestion boost.
+6. Alpha to design partners (service-account auth only, no digest); collect feedback; decide on option C.
+7. Post-alpha: weekly digest.
 
 ## 8. Risks and open questions
 
@@ -149,8 +150,8 @@ the backoffice.
 | Customers with domain vs URL-prefix properties | Support both; mapping covered by tests |
 | Option C verification requirements unconfirmed | Confirm sensitivity of `webmasters.readonly` before choosing C |
 | Is GSC data covered by the customer's own privacy obligations (agencies, clients' data)? | Note in docs; data stays in customer infrastructure |
-| Owner decision: alpha auth = service account only? | Recommended yes |
-| Owner decision: digest in alpha or after? | Recommended after the GSC columns ship |
+| Owner decision: alpha auth = service account only? | **Confirmed 2026-10-12: yes.** Option C re-evaluated after Gate B |
+| Owner decision: digest in alpha or after? | **Confirmed 2026-10-12: after the alpha.** Weekly digest (4.6, milestone 5) is out of alpha scope |
 
 ## 9. Sources
 
