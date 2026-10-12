@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
 using Umbraco.Cms.Core.Security;
 using Umbraco.RedirectManager.Controllers;
+using Umbraco.RedirectManager.Extensibility;
 using Umbraco.RedirectManager.Models;
 using Umbraco.RedirectManager.Services;
 using Xunit;
@@ -11,6 +12,7 @@ namespace Umbraco.RedirectManager.Tests.Controllers;
 public class RedirectApiControllerMissedCategoryTests
 {
     private readonly IMissedRequestService _missedRequestService = Substitute.For<IMissedRequestService>();
+    private readonly IMissedRequestEnrichmentService _enrichment = Substitute.For<IMissedRequestEnrichmentService>();
     private readonly RedirectApiController _controller;
 
     public RedirectApiControllerMissedCategoryTests()
@@ -21,7 +23,8 @@ public class RedirectApiControllerMissedCategoryTests
             Substitute.For<IRedirectTelemetryPinger>(),
             Substitute.For<IRedirectTelemetrySettingsStore>(),
             Substitute.For<IRedirectVersionChecker>(),
-            Substitute.For<IBackOfficeSecurityAccessor>());
+            Substitute.For<IBackOfficeSecurityAccessor>(),
+            _enrichment);
     }
 
     [Fact]
@@ -66,5 +69,19 @@ public class RedirectApiControllerMissedCategoryTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var updated = ok.Value!.GetType().GetProperty("updated")!.GetValue(ok.Value);
         Assert.Equal(3, updated);
+    }
+
+    [Fact]
+    public async Task GetMissed_enriches_the_mapped_rows_once()
+    {
+        _missedRequestService.GetAll().Returns(new List<MissedRequest> { new() { Id = 1, Path = "/gone" } });
+
+        var result = await _controller.GetMissed(CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        Assert.Single(Assert.IsAssignableFrom<IEnumerable<MissedRequestDto>>(ok.Value));
+        await _enrichment.Received(1).EnrichAsync(
+            Arg.Is<IReadOnlyList<MissedRequestDto>>(r => r.Count == 1),
+            Arg.Any<CancellationToken>());
     }
 }

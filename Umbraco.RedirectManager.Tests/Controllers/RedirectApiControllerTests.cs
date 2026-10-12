@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
 using Umbraco.Cms.Core.Security;
 using Umbraco.RedirectManager.Controllers;
+using Umbraco.RedirectManager.Extensibility;
 using Umbraco.RedirectManager.Models;
 using Umbraco.RedirectManager.Services;
 using Xunit;
@@ -21,7 +22,8 @@ public class RedirectApiControllerTests
             Substitute.For<IRedirectTelemetryPinger>(),
             Substitute.For<IRedirectTelemetrySettingsStore>(),
             Substitute.For<IRedirectVersionChecker>(),
-            Substitute.For<IBackOfficeSecurityAccessor>());
+            Substitute.For<IBackOfficeSecurityAccessor>(),
+            Substitute.For<IMissedRequestEnrichmentService>());
     }
 
     private static CreateRedirectEntryDto ValidCreateDto() => new()

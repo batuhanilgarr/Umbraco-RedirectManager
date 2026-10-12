@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Umbraco.Cms.Core.Security;
 using Umbraco.Cms.Web.Common.Authorization;
+using Umbraco.RedirectManager.Extensibility;
 using Umbraco.RedirectManager.Models;
 using Umbraco.RedirectManager.Services;
 
@@ -22,6 +23,7 @@ public class RedirectApiController : Controller
     private readonly IRedirectTelemetrySettingsStore _telemetrySettingsStore;
     private readonly IRedirectVersionChecker _versionChecker;
     private readonly IBackOfficeSecurityAccessor _backOfficeSecurityAccessor;
+    private readonly IMissedRequestEnrichmentService _missedRequestEnrichment;
 
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromMilliseconds(100);
 
@@ -31,7 +33,8 @@ public class RedirectApiController : Controller
         IRedirectTelemetryPinger telemetryPinger,
         IRedirectTelemetrySettingsStore telemetrySettingsStore,
         IRedirectVersionChecker versionChecker,
-        IBackOfficeSecurityAccessor backOfficeSecurityAccessor)
+        IBackOfficeSecurityAccessor backOfficeSecurityAccessor,
+        IMissedRequestEnrichmentService missedRequestEnrichment)
     {
         _redirectService = redirectService;
         _missedRequestService = missedRequestService;
@@ -39,6 +42,7 @@ public class RedirectApiController : Controller
         _telemetrySettingsStore = telemetrySettingsStore;
         _versionChecker = versionChecker;
         _backOfficeSecurityAccessor = backOfficeSecurityAccessor;
+        _missedRequestEnrichment = missedRequestEnrichment;
     }
 
     // Resolves the display name of the currently authenticated backoffice user,
@@ -230,10 +234,11 @@ public class RedirectApiController : Controller
     }
 
     [HttpGet("missed")]
-    public IActionResult GetMissed()
+    public async Task<IActionResult> GetMissed(CancellationToken cancellationToken)
     {
-        var missed = _missedRequestService.GetAll();
-        return Ok(missed.Select(ToDto));
+        var rows = _missedRequestService.GetAll().Select(ToDto).ToList();
+        await _missedRequestEnrichment.EnrichAsync(rows, cancellationToken);
+        return Ok(rows);
     }
 
     [HttpDelete("missed/{id:int}")]
