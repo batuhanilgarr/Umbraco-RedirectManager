@@ -22,7 +22,9 @@ Tugberk Ilgar, and to every release of the `BT.RedirectManager` package.
 
 5. **No license is ever needed.** Installing or upgrading the free package never requires a key, never phones
    home to check one, and never disables anything. A paid edition, if it exists, is a separate package with its
-   own license. The free dashboard may show a single dismissible notice about it, nothing more.
+   own license. The free dashboard may show one dismissible Premium info section on the Settings tab, plus the
+   update-available notice, and nothing more. Free features are never locked, blurred, limited or interrupted
+   by upsell prompts.
 
 6. **Paid features can never break your redirects.** Redirect resolution does not depend on any license. If a
    paid package's license is missing, invalid or expired, only that package's own extra features stop; your

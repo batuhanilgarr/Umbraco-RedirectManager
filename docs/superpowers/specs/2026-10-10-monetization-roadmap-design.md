@@ -222,3 +222,15 @@ demo videos.
 - Whether the optional free "register for notices" capture is acceptable to
   the community (keep strictly optional).
 - Hosting for the new telemetry/license endpoints (domain + Azure subscription).
+
+## Decision log addendum (2026-10-12)
+
+- **Premium info section (Phase 1 deliverable).** The free dashboard gets one dismissible Premium section on
+  the Settings tab, shown only when the Premium package is not installed: short feature descriptions,
+  screenshots, "alpha" or "coming soon" labels for anything not yet shippable, and a "Request access" button
+  that opens an email request (manual license issuance, no checkout). No locked or blurred free features.
+  Wording is bound by `docs/FREE-FOREVER.md` item 5 (updated the same day). Ships with the Phase 1 alpha, not
+  before, so it never advertises something that does not exist.
+- **Phase 1 flagship candidate.** Search Console integration (clicks and impressions per 404, via the user's own
+  Google OAuth, no data through the maintainer's servers) inside 404 Intelligence, plus a weekly digest email.
+  Pending the owner's go-ahead on a design doc.
