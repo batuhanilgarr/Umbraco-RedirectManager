@@ -189,6 +189,11 @@ version" ping to the maintainer, so they can see which sites are actively
 using it. **This is entirely opt-in — nothing is ever sent unless you
 explicitly turn it on.**
 
+What is sent: a random site ID, the site's domain, and the plugin and Umbraco
+versions. Nothing else: no redirect data, traffic or IPs. It helps the
+maintainer decide which Umbraco versions to keep supporting. The free features
+never depend on it (see the [Free Forever Promise](docs/FREE-FOREVER.md)).
+
 The first time you open the dashboard, you'll be asked once: "Help
 improve Redirect Manager?" with **Yes** / **No thanks** — your answer is
 saved and you won't be asked again. You can change your mind anytime from

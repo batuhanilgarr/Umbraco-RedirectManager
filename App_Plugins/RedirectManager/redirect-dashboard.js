@@ -1767,6 +1767,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                     (you're currently on ${this.currentVersion}).
                     <code>dotnet add package BT.RedirectManager --version ${this.latestVersion}</code>
                     <a href="https://www.nuget.org/packages/BT.RedirectManager" target="_blank" rel="noopener">View on NuGet</a>
+                    <a href="https://github.com/batuhanilgarr/Umbraco-RedirectManager/releases" target="_blank" rel="noopener">What's new</a>
                 </div>
             ` : ''}
 
@@ -2260,10 +2261,12 @@ class RedirectManagerDashboard extends UmbLitElement {
                             </div>
                             <div class="form-body">
                                 <p style="margin:0 0 16px;">
-                                    Send a small anonymous ping (a random site ID, this site's domain,
-                                    and the plugin/Umbraco version — no redirect data, no traffic, no
-                                    IPs) so the author can see the plugin is still installed. You can
-                                    change this anytime from the Overview tab.
+                                    Redirect Manager is free and maintained by one person. A small
+                                    anonymous ping (a random site ID, this site's domain, and the
+                                    plugin/Umbraco version) shows which Umbraco versions are really in
+                                    use, so I know what to keep supporting and fix first. No redirect
+                                    data, no traffic, no IPs, never required, and the free features
+                                    never depend on it. You can change this anytime from the Overview tab.
                                 </p>
                                 <div style="display:flex; justify-content:flex-end; gap:8px;">
                                     <button class="btn" ?disabled=${this.telemetryLoading} @click=${this.declineTelemetryPrompt}>No thanks</button>
