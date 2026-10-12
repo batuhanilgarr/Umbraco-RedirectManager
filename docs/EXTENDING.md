@@ -141,7 +141,7 @@ The dashboard imports your ES module once and creates your element. It then assi
 
 ```js
 element.api   // { authFetch(url, options), showMessage(text, type), createRedirectFromMissed(item),
-              //   reloadMissedRequests(), reloadRedirects() }
+              //   reloadMissedRequests(), reloadRedirects(), reloadCapabilities() }
 element.item  // MissedRowPanel only: the 404 row ({ id, path, hitCount, category, extensions, ... })
 ```
 

@@ -1337,6 +1337,11 @@ class RedirectManagerDashboard extends UmbLitElement {
                 const caps = await response.json();
                 this.capabilities = { ...this.capabilities, ...caps, extensions: caps.extensions || [] };
                 // An extension may ask for its column to be the default sort until the user picks one.
+                // A sort on an extension column that is no longer offered (e.g. after disconnecting) is dropped.
+                if (this.missedSort.column?.startsWith('ext:') &&
+                    !this.rowPanelExtensions.some(e => `ext:${e.sortKey}` === this.missedSort.column)) {
+                    this.missedSort = { column: null, direction: 'asc', type: 'string' };
+                }
                 const preferred = this.rowPanelExtensions.find(e => e.sortKey && e.sortDefault);
                 if (preferred && !this.missedSort.column) {
                     this.missedSort = { column: `ext:${preferred.sortKey}`, direction: 'desc', type: preferred.sortType || 'number' };
@@ -1355,7 +1360,9 @@ class RedirectManagerDashboard extends UmbLitElement {
                 showMessage: (text, type) => this.showMessage(text, type),
                 createRedirectFromMissed: (item) => this.createRedirectFromMissed(item),
                 reloadMissedRequests: () => this.loadMissedRequests(),
-                reloadRedirects: () => this.loadRedirects()
+                reloadRedirects: () => this.loadRedirects(),
+                // Re-reads the extension list (e.g. after a setup wizard made a column available).
+                reloadCapabilities: () => this.loadCapabilities()
             };
         }
         return this._extensionApi;
