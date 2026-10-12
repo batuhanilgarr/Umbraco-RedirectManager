@@ -2232,6 +2232,17 @@ class RedirectManagerDashboard extends UmbLitElement {
                     </div>
 
                     <div class="stat-section">
+                        <h3>Edition</h3>
+                        <p class="stat-section-hint">
+                            <strong>${this.capabilities.edition}</strong>${this.capabilities.edition === 'Standard' ? ' (free forever)' : ''}
+                            ${(this.capabilities.features || []).length ? html` · ${(this.capabilities.features || []).join(', ')}` : ''}
+                            <br />
+                            Redirects never depend on a license.
+                            <a href="https://github.com/batuhanilgarr/Umbraco-RedirectManager/blob/main/docs/FREE-FOREVER.md" target="_blank" rel="noopener">Free Forever Promise</a>
+                        </p>
+                    </div>
+
+                    <div class="stat-section">
                         <h3>Telemetry</h3>
                         <p class="stat-section-hint">
                             Opt-in. When enabled, sends a small anonymous ping (a random site ID,
