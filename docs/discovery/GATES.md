@@ -7,7 +7,7 @@
   scale. Telemetry is opt-in, so treat the count as a floor, and note NuGet download trend next to it.
 - Record: date, active sites, versions split, NuGet 30-day downloads.
 
-## Gate B (proposed, confirm with the user)
+## Gate B (confirmed by the owner 2026-10-12)
 Go to Phase 1 build if at least 3 interviews give strong signals for the same capability AND at least 3 people
 agree to try a free alpha. Otherwise rerun 5 more interviews with a narrower segment (agencies with 5+ sites).
 
