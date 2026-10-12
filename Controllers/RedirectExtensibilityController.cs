@@ -43,7 +43,10 @@ public class RedirectExtensibilityController : Controller
                 label = e.Label,
                 moduleUrl = e.ModuleUrl,
                 elementName = e.ElementName,
-                weight = e.Weight
+                weight = e.Weight,
+                sortKey = e.EffectiveSortKey,
+                sortType = e.EffectiveSortKey is null ? null : e.EffectiveSortType,
+                sortDefault = e.EffectiveSortKey is not null && e.SortDefault
             }).ToList()
         });
     }

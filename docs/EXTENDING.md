@@ -115,13 +115,20 @@ discarded. Enrichers run one after another.
 
 ```csharp
 public sealed record DashboardExtension(string Id, DashboardSlot Slot, string Label,
-    string ModuleUrl, string ElementName, int Weight = 100);
+    string ModuleUrl, string ElementName, int Weight = 100,
+    string? SortKey = null, string SortType = "number", bool SortDefault = false);
 ```
 
 | Slot | Result |
 |---|---|
 | `Tab` | An extra tab after *Overview*; your element fills the tab body |
 | `MissedRowPanel` | An extra last column in the 404 log; one element per row |
+
+**Sortable row-panel columns (1.12+).** Set `SortKey` to a key your enricher writes with `SetExtension` and the
+column header becomes sortable. `SortType` is `number` (default), `string` or `date`. Rows without a value sort
+as "less than zero", so they end up last when descending. `SortDefault: true` sorts the 404 log by your column
+(descending) until the user picks another one. A `SortKey` may only contain letters, digits, `.`, `_` and `-`;
+an invalid key is ignored and the column stays unsortable.
 
 Rules, enforced by the core (an extension that breaks them is dropped with a warning):
 

@@ -15,13 +15,33 @@ public enum DashboardSlot
 /// <param name="Id">Unique, stable id (e.g. "premium.migration").</param>
 /// <param name="ModuleUrl">ES module URL; must start with <c>/App_Plugins/</c>.</param>
 /// <param name="ElementName">Custom element the module defines (lower-case, contains a hyphen).</param>
+/// <param name="SortKey">
+/// <see cref="DashboardSlot.MissedRowPanel"/> only. An enricher extension key (see
+/// <c>MissedRequestDto.SetExtension</c>) the column can be sorted by. Letters, digits, '.', '_' and '-' only;
+/// an invalid key is ignored (the column just is not sortable).
+/// </param>
+/// <param name="SortType">"number" (default), "string" or "date": how <paramref name="SortKey"/> values compare.</param>
+/// <param name="SortDefault">Sort the 404 log by <paramref name="SortKey"/> (descending) until the user picks another column.</param>
 public sealed record DashboardExtension(
     string Id,
     DashboardSlot Slot,
     string Label,
     string ModuleUrl,
     string ElementName,
-    int Weight = 100);
+    int Weight = 100,
+    string? SortKey = null,
+    string SortType = "number",
+    bool SortDefault = false)
+{
+    private static readonly Regex SortKeyPattern =
+        new(@"^[A-Za-z0-9._-]{1,64}\z", RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
+
+    /// <summary>The sort key if it is valid and this is a row panel; otherwise null.</summary>
+    public string? EffectiveSortKey =>
+        Slot == DashboardSlot.MissedRowPanel && SortKey is { } k && SortKeyPattern.IsMatch(k) ? k : null;
+
+    public string EffectiveSortType => SortType is "string" or "date" ? SortType : "number";
+}
 
 public interface IDashboardExtensionProvider
 {

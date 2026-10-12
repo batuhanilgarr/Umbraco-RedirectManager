@@ -61,6 +61,43 @@ public class RedirectExtensibilityControllerTests
     }
 
     [Fact]
+    public void Capabilities_expose_sort_settings_only_for_row_panels_with_a_valid_key()
+    {
+        _registry.GetExtensions().Returns(new[]
+        {
+            new DashboardExtension("p.row", DashboardSlot.MissedRowPanel, "Traffic", "/App_Plugins/P/p.js", "p-row", 7,
+                SortKey: "searchConsole.impact", SortDefault: true),
+            new DashboardExtension("p.bad", DashboardSlot.MissedRowPanel, "Bad", "/App_Plugins/P/p.js", "p-bad", 8,
+                SortKey: "no spaces allowed"),
+            new DashboardExtension("p.tab", DashboardSlot.Tab, "Tab", "/App_Plugins/P/p.js", "p-tab", 9,
+                SortKey: "ignored.on.tabs"),
+            new DashboardExtension("p.plain", DashboardSlot.MissedRowPanel, "Plain", "/App_Plugins/P/p.js", "p-plain", 10)
+        });
+
+        var ok = Assert.IsType<OkObjectResult>(_controller.GetCapabilities());
+        var ext = Prop<IEnumerable<object>>(ok.Value!, "extensions").ToList();
+
+        Assert.Equal("searchConsole.impact", Prop<string>(ext[0], "sortKey"));
+        Assert.Equal("number", Prop<string>(ext[0], "sortType"));
+        Assert.True(Prop<bool>(ext[0], "sortDefault"));
+        foreach (var rest in ext.Skip(1))
+        {
+            Assert.Null(Prop<string?>(rest, "sortKey"));
+            Assert.Null(Prop<string?>(rest, "sortType"));
+            Assert.False(Prop<bool>(rest, "sortDefault"));
+        }
+    }
+
+    [Theory]
+    [InlineData("string", "string")]
+    [InlineData("date", "date")]
+    [InlineData("number", "number")]
+    [InlineData("whatever", "number")]
+    public void Sort_type_falls_back_to_number(string given, string expected)
+        => Assert.Equal(expected, new DashboardExtension("p", DashboardSlot.MissedRowPanel, "L", "/App_Plugins/P/p.js", "p-row",
+            SortKey: "k", SortType: given).EffectiveSortType);
+
+    [Fact]
     public async Task Suggestions_require_a_path()
     {
         Assert.IsType<BadRequestObjectResult>(await _controller.GetSuggestions("  ", null, CancellationToken.None));

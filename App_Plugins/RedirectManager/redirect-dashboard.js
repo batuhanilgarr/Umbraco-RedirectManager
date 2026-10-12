@@ -1066,9 +1066,18 @@ class RedirectManagerDashboard extends UmbLitElement {
 
     sortRows(rows, column, direction, type) {
         const sign = direction === 'asc' ? 1 : -1;
+        // "ext:<key>" columns read the value an extension's enricher put in row.extensions.
+        const ext = column.startsWith('ext:') ? column.slice(4) : null;
+        const read = ext ? (row) => row.extensions?.[ext] : (row) => row[column];
         return [...rows].sort((a, b) => {
-            let av = a[column];
-            let bv = b[column];
+            let av = read(a);
+            let bv = read(b);
+            if (ext && type === 'number') {
+                // Rows an extension has no value for sort as "less than zero", so they end up last when descending.
+                av = av == null ? -1 : Number(av) || 0;
+                bv = bv == null ? -1 : Number(bv) || 0;
+                return sign * (av - bv);
+            }
             if (type === 'date') {
                 av = av ? new Date(av).getTime() : 0;
                 bv = bv ? new Date(bv).getTime() : 0;
@@ -1327,6 +1336,11 @@ class RedirectManagerDashboard extends UmbLitElement {
             if (response.ok) {
                 const caps = await response.json();
                 this.capabilities = { ...this.capabilities, ...caps, extensions: caps.extensions || [] };
+                // An extension may ask for its column to be the default sort until the user picks one.
+                const preferred = this.rowPanelExtensions.find(e => e.sortKey && e.sortDefault);
+                if (preferred && !this.missedSort.column) {
+                    this.missedSort = { column: `ext:${preferred.sortKey}`, direction: 'desc', type: preferred.sortType || 'number' };
+                }
             }
         } catch (error) {
             console.error('Failed to load capabilities:', error);
@@ -2181,7 +2195,10 @@ class RedirectManagerDashboard extends UmbLitElement {
                                         Last seen<span class="sort-indicator">${this.sortIndicator('missedSort', 'lastSeenDate')}</span>
                                     </th>
                                     <th>Category</th>
-                                    ${this.rowPanelExtensions.length ? html`<th>${this.rowPanelExtensions[0].label}</th>` : ''}
+                                    ${this.rowPanelExtensions.length ? (this.rowPanelExtensions[0].sortKey ? html`
+                                        <th class="center sortable" @click=${() => this.onSortClick('missedSort', `ext:${this.rowPanelExtensions[0].sortKey}`, this.rowPanelExtensions[0].sortType || 'number')}>
+                                            ${this.rowPanelExtensions[0].label}<span class="sort-indicator">${this.sortIndicator('missedSort', `ext:${this.rowPanelExtensions[0].sortKey}`)}</span>
+                                        </th>` : html`<th>${this.rowPanelExtensions[0].label}</th>`) : ''}
                                     <th></th>
                                 </tr>
                             </thead>
