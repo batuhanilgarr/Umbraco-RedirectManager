@@ -102,11 +102,11 @@ Expected: four `ok` lines.
 ```bash
 grep -rn "NET10_0_OR_GREATER\|NET8_0\|#if \|#else\|#endif" --include="*.cs" . | grep -v -E "/(bin|obj)/|Tests|samples" ; echo "grep-exit=$?"
 grep -c "class CreateRedirectManagerTable" Migrations/RedirectManagerMigrationPlan.cs
-grep -c "MigrationBase\b" Migrations/RedirectManagerMigrationPlan.cs
+grep -c ": MigrationBase" Migrations/RedirectManagerMigrationPlan.cs
 wc -l Migrations/RedirectManagerMigrationPlan.cs
 ```
-Expected: no `#if` lines (`grep-exit=1`), `1`, `0` (only `AsyncMigrationBase` remains; if the second count is non-zero check it is
-`AsyncMigrationBase`, which the pattern `\bMigrationBase\b` does not match), and roughly 310 lines in the migration file (was 580).
+Expected: no `#if` lines (`grep-exit=1`), `1`, `0` (the legacy `: MigrationBase` classes are gone; `: AsyncMigrationBase` remains), and
+roughly 310 lines in the migration file (was 580).
 
 - [ ] **Step 3: Fix the now-stale comments.** In `Services/RedirectCultureResolver.cs` the comment above
 `GetAllAsync` mentions "this TFM" and "net8.0 targets 13.9.2"; replace the whole comment block with:
@@ -242,7 +242,7 @@ build and confirm there is no migration work and nothing is lost:
 
 ```bash
 sqlite3 /Users/bhan/Documents/works/sites/RedirectManagerTestSite/RmTestSite/umbraco/Data/Umbraco.sqlite.db \
-  "select count(*) from RedirectManagerRedirects; select key, state from umbracoKeyValue where key like '%RedirectManager%';"
+  "select count(*) from RedirectManagerEntries; select key, state from umbracoKeyValue where key like '%RedirectManager%';"
 grep -i "package migration\|RedirectManager" /tmp/rm-site.log | head
 ```
 Expected: the row count is unchanged from before the upgrade (note it first), the state is the last migration GUID
