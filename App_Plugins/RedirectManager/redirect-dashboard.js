@@ -12,6 +12,63 @@ const MISSED_CATEGORIES = [
     { value: 'NeedsInvestigation', label: 'Needs investigation' }
 ];
 
+const extensionModuleCache = new Map();
+
+function loadExtensionModule(url) {
+    if (!extensionModuleCache.has(url)) {
+        extensionModuleCache.set(url, import(url));
+    }
+    return extensionModuleCache.get(url);
+}
+
+/**
+ * Hosts one extension element declared server-side by an IDashboardExtensionProvider.
+ * Imports the extension's ES module, creates its custom element and hands it the
+ * dashboard API plus (for the 404-row panel) the row. A failing extension shows a small
+ * inline notice and never breaks the dashboard.
+ */
+class RedirectManagerExtensionHost extends LitElement {
+    static properties = { ext: { type: Object }, api: { type: Object }, item: { type: Object } };
+
+    static styles = css`:host { display: block; } .err { color: #991b1b; font-size: 11px; }`;
+
+    constructor() {
+        super();
+        this._el = null;
+        this._failed = false;
+        this._loading = false;
+    }
+
+    updated() {
+        if (this._failed) return;
+        if (this._el) {
+            this._el.api = this.api;
+            if (this.item !== undefined) this._el.item = this.item;
+            return;
+        }
+        if (!this.ext || this._loading) return;
+        this._loading = true;
+        loadExtensionModule(this.ext.moduleUrl)
+            .then(() => {
+                const el = document.createElement(this.ext.elementName);
+                el.api = this.api;
+                if (this.item !== undefined) el.item = this.item;
+                this._el = el;
+                this.renderRoot.appendChild(el);
+            })
+            .catch((error) => {
+                console.error('Redirect Manager extension failed to load:', this.ext?.id, error);
+                this._failed = true;
+                this.requestUpdate();
+            });
+    }
+
+    render() {
+        return this._failed ? html`<span class="err">Extension unavailable</span>` : html``;
+    }
+}
+customElements.define('redirect-manager-extension-host', RedirectManagerExtensionHost);
+
 class RedirectManagerDashboard extends UmbLitElement {
     static properties = {
         redirects: { type: Array },
@@ -45,7 +102,8 @@ class RedirectManagerDashboard extends UmbLitElement {
         topRedirectsSort: { type: Object },
         staleRedirectsSort: { type: Object },
         missedCategoryFilter: { type: Array },
-        selectedMissedIds: { type: Array }
+        selectedMissedIds: { type: Array },
+        capabilities: { type: Object }
     };
 
     static styles = css`
@@ -844,6 +902,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.missedSort = { column: null, direction: 'asc', type: 'string' };
         this.topRedirectsSort = { column: null, direction: 'asc', type: 'string' };
         this.staleRedirectsSort = { column: null, direction: 'asc', type: 'string' };
+        this.capabilities = { edition: 'Standard', features: [], suggestionsAvailable: false, extensions: [] };
     }
 
     showMessage(text, type = 'info') {
@@ -1009,6 +1068,7 @@ class RedirectManagerDashboard extends UmbLitElement {
         this.loadRedirects();
         this.loadMissedRequests();
         this.loadStats();
+        this.loadCapabilities();
         this.loadTelemetryStatus();
         this.pingTelemetry();
         this.loadUpdateStatus();
@@ -1145,6 +1205,41 @@ class RedirectManagerDashboard extends UmbLitElement {
             console.error('Failed to load missed requests:', error);
         }
         this.missedLoading = false;
+    }
+
+    /** Server-declared extensions (edition, extra tabs, 404-row panels). Failure => behave exactly like Standard. */
+    async loadCapabilities() {
+        try {
+            const response = await this.authFetch('/umbraco/api/redirectmanager/capabilities');
+            if (response.ok) {
+                const caps = await response.json();
+                this.capabilities = { ...this.capabilities, ...caps, extensions: caps.extensions || [] };
+            }
+        } catch (error) {
+            console.error('Failed to load capabilities:', error);
+        }
+    }
+
+    /** Stable object handed to extension elements as `api`. */
+    get extensionApi() {
+        if (!this._extensionApi) {
+            this._extensionApi = {
+                authFetch: (url, options) => this.authFetch(url, options),
+                showMessage: (text, type) => this.showMessage(text, type),
+                createRedirectFromMissed: (item) => this.createRedirectFromMissed(item),
+                reloadMissedRequests: () => this.loadMissedRequests(),
+                reloadRedirects: () => this.loadRedirects()
+            };
+        }
+        return this._extensionApi;
+    }
+
+    get tabExtensions() {
+        return this.capabilities.extensions.filter(e => e.slot === 'tab');
+    }
+
+    get rowPanelExtensions() {
+        return this.capabilities.extensions.filter(e => e.slot === 'missed-row-panel');
     }
 
     async loadStats() {
@@ -1768,6 +1863,12 @@ class RedirectManagerDashboard extends UmbLitElement {
                         @click=${() => { this.activeTab = 'stats'; }}>
                     Overview
                 </button>
+                ${this.tabExtensions.map(ext => html`
+                    <button class="tab-btn ${this.activeTab === `ext:${ext.id}` ? 'active' : ''}"
+                            @click=${() => { this.activeTab = `ext:${ext.id}`; }}>
+                        ${ext.label}
+                    </button>
+                `)}
             </div>
 
             <!-- Redirects tab -->
@@ -1962,6 +2063,7 @@ class RedirectManagerDashboard extends UmbLitElement {
                                         Last seen<span class="sort-indicator">${this.sortIndicator('missedSort', 'lastSeenDate')}</span>
                                     </th>
                                     <th>Category</th>
+                                    ${this.rowPanelExtensions.length ? html`<th>${this.rowPanelExtensions[0].label}</th>` : ''}
                                     <th></th>
                                 </tr>
                             </thead>
@@ -1993,6 +2095,13 @@ class RedirectManagerDashboard extends UmbLitElement {
                                                 ${MISSED_CATEGORIES.map(cat => html`<option value="${cat.value}" ?selected=${cat.value === item.category}>${cat.label}</option>`)}
                                             </select>
                                         </td>
+                                        ${this.rowPanelExtensions.length ? html`
+                                            <td>
+                                                ${this.rowPanelExtensions.map(ext => html`
+                                                    <redirect-manager-extension-host .ext=${ext} .api=${this.extensionApi} .item=${item}></redirect-manager-extension-host>
+                                                `)}
+                                            </td>
+                                        ` : ''}
                                         <td>
                                             <div class="act-group">
                                                 ${existing ? html`
@@ -2013,6 +2122,11 @@ class RedirectManagerDashboard extends UmbLitElement {
                     </div>
                 `}
             ` : ''}
+
+            <!-- Extension tabs (only present when an extension registers one) -->
+            ${this.tabExtensions.map(ext => this.activeTab === `ext:${ext.id}` ? html`
+                <redirect-manager-extension-host .ext=${ext} .api=${this.extensionApi}></redirect-manager-extension-host>
+            ` : '')}
 
             <!-- Overview tab -->
             ${this.activeTab === 'stats' ? html`
